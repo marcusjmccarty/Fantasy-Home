@@ -1,5 +1,7 @@
 # Fantasy Hub — GRIDIRON/86 v9.6, Cloudflare edition
 
+Live site: https://fantasy-home.fantasy-hub.workers.dev/
+
 The existing v9.6 website now has a JavaScript Cloudflare bridge. Your computer does not need to stay running. Website assets and `/api/*` share one hostname, avoiding separate bridge hosting and CORS configuration.
 
 ## 1. Upload to GitHub
@@ -24,10 +26,10 @@ Use a **Worker**, with the complete project, not a static-only Pages upload.
 
 | Setting | Value |
 | --- | --- |
-| Root directory | Repository root, `/` or blank |
+| Root directory | `fantasy-hub` for the Fantasy-Home repository |
 | Build command | `npm test` |
 | Deploy command | `npx wrangler deploy` |
-| Worker name | `fantasy-hub` |
+| Worker name | `fantasy-home` |
 | Assets directory | Already configured as `./public` |
 
 5. Save and deploy. If needed, use **Retry build** or push a README change to trigger the first build. Cloudflare installs dependencies from the package files. No frontend compilation or `dist` folder is needed.
@@ -127,7 +129,7 @@ Replace the example with a domain in your Cloudflare account. Keep `workers_dev:
 
 ## Optional AI outlook — skip for the simplest launch
 
-League stats, charts and ESPN editorial news need no AI key. AI generation defaults off. Both Gemini and OpenAI integrations from the Python project are ported, but are not live-tested using paid keys.
+League stats, charts and ESPN editorial news need no AI key. AI generation defaults off. Both Gemini and OpenAI integrations from the Python project are ported. Gemini is enabled on the current deployment with a Cloudflare secret; live generation was verified.
 
 In **Worker Settings → Variables and Secrets**, add one **secret**: `GEMINI_API_KEY` or `OPENAI_API_KEY`. Deploy/apply the change when prompted. Alternatively:
 
@@ -137,9 +139,9 @@ npx wrangler secret put GEMINI_API_KEY
 
 Paste the key at the prompt. For OpenAI substitute `OPENAI_API_KEY`. Never put API keys in the frontend, GitHub or Wrangler config.
 
-Optional text variables: `GRIDIRON_AI_PROVIDER` (`gemini` or `openai`), `GRIDIRON_GEMINI_MODEL`, `GRIDIRON_AI_MODEL`. Default model IDs preserve the source project's `gemini-3.1-flash-lite` and `gpt-4.1-mini`; choose a model available to your account if a default is unavailable. Gemini wins when both keys exist unless overridden.
+Optional text variables: `GRIDIRON_AI_PROVIDER` (`gemini` or `openai`), `GRIDIRON_GEMINI_MODEL`, `GRIDIRON_AI_MODEL`. The checked-in Cloudflare configuration selects `gemini-3.5-flash-lite`, which was verified on this deployment. The code fallback is `gemini-3.1-flash-lite`; OpenAI defaults to `gpt-4.1-mini`. Choose a model available to your account if a model is unavailable. Gemini wins when both keys exist unless overridden.
 
-The original 12 requests/minute check is retained per Worker instance, with a ten-minute memory cache. This is not a global spending limit. Set provider-side spending limits before enabling AI on a public site. Leaving AI disabled is the simplest free configuration.
+AI provider calls are capped globally at 12 per UTC minute and 200 per UTC day using a dedicated named Durable Object in the existing binding. The ten-minute public-stat cache avoids some repeated calls. Failed calls also consume a reservation. This public endpoint has no user login: someone can exhaust the shared allowance. Provider-side quotas and billing settings remain separate; keep them restricted. The cap covers calls made through this app, not direct use of a leaked key.
 
 ## Troubleshooting
 
@@ -162,3 +164,11 @@ Recovered October 21, 2026 from `Documents/Funz/Websites/Fantasy-Hub/GRIDIRON86-
 Session storage changes from process RAM to one temporary Durable Object per browser, because Worker instances cannot reliably share process memory. Public in-memory caches contain no ESPN credentials or private league results.
 
 Official references: [asset routing](https://developers.cloudflare.com/workers/static-assets/binding/), [Git-connected builds](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/), [workers.dev subdomains](https://developers.cloudflare.com/workers/configuration/routing/workers-dev/), [custom domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/), [Durable Object storage](https://developers.cloudflare.com/durable-objects/best-practices/access-durable-objects-storage/), [OpenAI text generation](https://developers.openai.com/api/docs/guides/text), [Gemini generation](https://ai.google.dev/api/generate-content).
+
+## Security review — October 21, 2026
+
+The review tightened ESPN credential redirect handling, prevented a pending league request from restoring credentials after logout, preserved renewed sessions during stale expiry alarms, required JSON request content types, bounded local imports and protected player dictionaries from inherited property names. Browser headers restrict embedded objects, camera/microphone/location access, framing and referrers. A shared Durable Object caps AI provider requests at 12/minute and 200/UTC day, including failures. Automated regressions use fictional credentials. No real key belongs in this repository.
+
+Rotate any API key shared in chat or another channel: create its replacement in Google AI Studio, update the existing Cloudflare `GEMINI_API_KEY` secret and deploy, confirm an overview works, then revoke the old key. Keep the replacement out of chat, source and screenshots. The public AI endpoint is not authenticated; another visitor can exhaust the shared allowance. Rate limits are not account authentication or a guarantee against service disruption. Review provider quotas/billing independently.
+
+This was a bounded code, dependency, repository-history and deployment review, not a penetration test or an audit of account permissions, third-party systems, backup retention or all historical credential formats. ESPN, Google, Cloudflare, nflverse and Sleeper availability remains external.
