@@ -339,7 +339,7 @@ async function loadSleeper(leagueId, requestedRoster=null, preferredUserId=null)
         const mine=rows.find(m=>String(m.roster_id)===String(roster.roster_id));
         if(!mine)return null;
         const opponent=rows.find(m=>m!==mine && m.matchup_id!=null && mine.matchup_id!=null && String(m.matchup_id)===String(mine.matchup_id));
-        const starters={};
+        const starters=Object.create(null);
         for(const [i,pid] of (mine.starters||[]).entries()){
           const p=mine.players_points?.[pid]??(Array.isArray(mine.starters_points)?mine.starters_points[i]:null);
           if(players[pid] && number(p)!==null)starters[String(pid)]=p;
@@ -389,11 +389,11 @@ async function connect(id,roster,owner){
   catch(e){setDialogMessage(e.message||'Could not load this league.','error')}
 }
 function importJSON(d){
-  if(!d||!Array.isArray(d.teams)||!d.teams.length)throw new Error('JSON needs a nonempty "teams" array. Download the sample format.');
+  if(!d||!Array.isArray(d.teams)||!d.teams.length||d.teams.length>100)throw new Error('JSON needs a nonempty "teams" array. Download the sample format.');
   const maxWeeks=Math.min(18,Math.max(0,...d.teams.map(t=>Array.isArray(t.weeks)?t.weeks.length:0)));
   if(!maxWeeks)throw new Error('Each team must have a "weeks" array of scored weekly team points.');
   const weeks=Array.from({length:maxWeeks},(_,i)=>i+1);
-  const players={};
+  const players=Object.create(null);
   const teams=d.teams.map((t,i)=>{
     const id=String(t.id??i+1),members=Array.isArray(t.roster)?t.roster:[];
     const playerIds=members.map((p,j)=>{
@@ -405,7 +405,7 @@ function importJSON(d){
     return {id,name:String(t.name||`Team ${i+1}`),owner:String(t.owner||'Imported member'),wins:Number(t.wins)||0,losses:Number(t.losses)||0,ties:Number(t.ties)||0,playerIds,
       history:(t.weeks||[]).slice(0,maxWeeks).map((v,index)=>{
         const opponentId=t.opponents?.[index]==null?null:String(t.opponents[index]);
-        const starters={};
+        const starters=Object.create(null);
         members.forEach((p,j)=>{const pid=playerIds[j];if(p.starter!==false && number(p.weeks?.[index])!==null)starters[pid]=p.weeks[index]});
         return {week:index+1,points:number(v)??0,oppPoints:null,opponentId,starters};
       })};
@@ -448,7 +448,7 @@ el('refresh-button').addEventListener('click',()=>{if(model.source==='sleeper')c
 el('team-select').addEventListener('change',e=>{currentTeamId=e.target.value;currentPlayerId=null;currentWeek=Number(model.currentWeek||model.liveWeek||model.weeks.at(-1)||1);updateUI()});
 el('week-select').addEventListener('change',e=>{currentWeek=Number(e.target.value);drawMatchup(getTeam())});
 el('sort-players').addEventListener('change',()=>drawRoster(getTeam()));
-el('json-file').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const data=JSON.parse(await file.text());importJSON(data);setDialogMessage('FILE IMPORTED','success');el('data-dialog').close()}catch(error){setDialogMessage(`Unable to import: ${error.message}`,'error')}finally{e.target.value=''}});
+el('json-file').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{if(file.size>5000000)throw new Error('File exceeds 5 MB.');const data=JSON.parse(await file.text());importJSON(data);setDialogMessage('FILE IMPORTED','success');el('data-dialog').close()}catch(error){setDialogMessage(`Unable to import: ${error.message}`,'error')}finally{e.target.value=''}});
 el('download-template').addEventListener('click',()=>{
   const blob=new Blob([JSON.stringify(TEMPLATE,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='gridiron86-example.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -487,7 +487,7 @@ function normalizeESPN(input,leagueId,year){const raw=input.base||{},sourceTeams
  if(!sourceTeams.length)throw Error('ESPN supplied no rostered teams.');
  const current=Number(raw.scoringPeriodId||raw.status?.currentScoringPeriod?.id||input.boxscores?.at(-1)?.week||1);
  const teams=sourceTeams.map(t=>({id:String(t.id),name:String(t.name||[t.location,t.nickname].filter(Boolean).join(' ')||t.abbrev||`Team ${t.id}`),owner:(t.owners||[]).map(o=>{const m=memberMap[String(o)];return m?.displayName||[m?.firstName,m?.lastName].filter(Boolean).join(' ')||'League manager'}).join(' & ')||'League manager',wins:Number(t.record?.overall?.wins||0),losses:Number(t.record?.overall?.losses||0),ties:Number(t.record?.overall?.ties||0),pf:espnN(t.record?.overall?.pointsFor),pa:espnN(t.record?.overall?.pointsAgainst),playerIds:[],currentLineup:[],history:[]}));
- const byId=Object.fromEntries(teams.map(t=>[t.id,t]));const players={};
+ const byId=Object.fromEntries(teams.map(t=>[t.id,t]));const players=Object.create(null);
  for(const original of sourceTeams){const team=byId[String(original.id)];for(const entry of original.roster?.entries||[]){const p=makeEspnPlayer(entry,current);if(!p)continue;players[p.id]=players[p.id]||p;players[p.id].starter=p.starter;team.playerIds.push(p.id);const currentStats=rosterStatsFromEntry(entry,current);team.currentLineup.push({id:p.id,slot:Number(entry.lineupSlotId),starter:p.starter,points:currentStats.actual,projected:currentStats.projected})}}
  // Full-season matchup scoreboard: only count scoring periods through the current NFL week,
  // and avoid recording scheduled future 0-0 matchups as completed games.
