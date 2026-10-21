@@ -1,0 +1,164 @@
+# Fantasy Hub — GRIDIRON/86 v9.6, Cloudflare edition
+
+The existing v9.6 website now has a JavaScript Cloudflare bridge. Your computer does not need to stay running. Website assets and `/api/*` share one hostname, avoiding separate bridge hosting and CORS configuration.
+
+## 1. Upload to GitHub
+
+1. Unzip the bundle and open `fantasy-hub`.
+2. Sign into GitHub → **+ → New repository** → name it `fantasy-hub` → **Create repository**. Public or private is fine.
+3. Click **uploading an existing file** (or **Add file → Upload files**).
+4. Drag the **contents** of `fantasy-hub` into the upload area: `public/`, `src/`, `test/`, `package.json`, `package-lock.json`, `wrangler.jsonc`, `.gitignore`, and documentation. Finder's Command–Shift–Period reveals hidden files.
+5. Click **Commit changes**. This saves the source in GitHub. Do not upload the ZIP, `node_modules`, `.wrangler`, `.env`, `.dev.vars`, cookies or API keys.
+6. Confirm `wrangler.jsonc` and `package.json` are at the repository root, alongside `public/` and `src/`, without an extra outer folder.
+
+For an existing repo, replace the old website with this layout on its production branch. Remove obsolete `wrangler.toml` or conflicting Wrangler configs. Remove old deploy arguments such as `--assets ./`. Only `public/` should be exposed as website assets.
+
+## 2. Connect Cloudflare
+
+Use a **Worker**, with the complete project, not a static-only Pages upload.
+
+1. Cloudflare → **Workers & Pages → fantasy-hub** (your existing Worker).
+2. Find **Settings → Build**, **Builds**, or its Git repository connection area. Connect GitHub and authorize access to this repository.
+3. Select the repository and production branch, usually `main`.
+4. Set the following:
+
+| Setting | Value |
+| --- | --- |
+| Root directory | Repository root, `/` or blank |
+| Build command | `npm test` |
+| Deploy command | `npx wrangler deploy` |
+| Worker name | `fantasy-hub` |
+| Assets directory | Already configured as `./public` |
+
+5. Save and deploy. If needed, use **Retry build** or push a README change to trigger the first build. Cloudflare installs dependencies from the package files. No frontend compilation or `dist` folder is needed.
+6. The included migration creates the `ESPN_SESSIONS` Durable Object binding automatically. No KV, D1, database ID, or shared ESPN secret needs manual setup.
+7. Open the Worker URL. Later commits to the production branch deploy automatically.
+
+If creating a new Worker, use **Workers & Pages → Create application / Create Worker → Import a repository**, choose this repo, and use the same settings. Labels vary; select the Git-connected Worker flow that runs Wrangler. If the name already exists, update that Worker or change the name in **both** the dashboard and `wrangler.jsonc`.
+
+## 3. Connect ESPN
+
+1. Open the deployed HTTPS website. The existing demo should load.
+2. Open league connection → **ESPN**. Enter league ID and season. The ID is the number after `leagueId=` in an ESPN league URL.
+3. Public league: try both cookie fields blank.
+4. Private league: log into ESPN in a browser with an account that can view the league. Open developer tools. Chrome/Edge: **Application → Storage → Cookies**. Safari: enable web developer features, then **Develop → Show Web Inspector → Storage → Cookies**.
+5. Find `SWID` and `espn_s2` under ESPN's domains. Copy each **value only**, without `SWID=`, `espn_s2=`, semicolons or cookie attributes. Retain SWID's braces if present.
+6. Paste the values into the matching site fields and click **CONNECT**. Allow time for the weekly box scores to load.
+7. Each friend connects with their own league and authorized ESPN cookies. Do not configure one owner's cookies for everyone.
+
+Each browser receives a random HttpOnly session cookie. ESPN credentials stay in a separate Cloudflare Durable Object for up to three hours and are deleted on expiry or **CLEAR PRIVATE SESSION**. This is temporary Cloudflare server storage, **not RAM-only**, unlike the old Python bridge. Closing a tab does not immediately delete it. Credentials are never returned in JSON, put in URLs, saved in browser storage, or logged by this code. Observability is disabled. Do not enable request-header/body logging when debugging.
+
+Reloading restores the demo as in the original site. To reload ESPN data, open ESPN connection and click CONNECT again; during an active session, cookie fields can remain blank. Clearing a private session deletes server credentials but does not erase scores already displayed in the open page.
+
+## 4. Test the deployed site
+
+- Open `https://YOUR-WORKER-HOST/api/health`: expect `ok: true`, `bridge: "cloudflare-worker"`.
+- Open `/api/espn/session`: expect `active: false` before connecting, `active: true` afterward, without ESPN cookie values.
+- Connect a known league. Compare league name, standings, teams, rosters, matchup scores and weekly player scores with ESPN.
+- Open Player Pool, load available players and D/ST, change position filters, inspect a player game log and weekly chart. Missing upstream data should stay missing.
+- Load advanced stats and check season/source. An unpublished nflverse season may be unavailable; existing CSV import remains available.
+- Open player editorial news. Some athlete feeds return no verified articles; empty results are valid.
+- Verify Sleeper and JSON import still work.
+- Open a private/incognito window. It must show no active ESPN session while your first window is connected. Connect a second league there if desired.
+- Clear the first window's session. Its session endpoint should return false; the other window should stay connected.
+- Repeat the Position Analytics filters on desktop, phone, and Safari. v9.6's existing mounted-control and pagination fixes are retained.
+
+No private ESPN credentials were used during construction. Automated tests use fictional fixtures. A local build cannot prove ESPN accepts Cloudflare-origin requests; if ESPN blocks its IPs, the site will report that failure.
+
+## 5. Local preview or direct deployment
+
+Install a supported Node.js LTS release, then open Terminal in this project folder:
+
+```sh
+npm ci
+npm test
+npm run dev
+```
+
+Open the local URL Wrangler prints, normally `http://localhost:8787`. Local sessions are separate from production. Never commit `.wrangler/`.
+
+To deploy directly instead of using GitHub builds:
+
+```sh
+npx wrangler login
+npm run deploy
+```
+
+Wrangler opens Cloudflare login in your browser. No Cloudflare token belongs in this repository. For packaging validation without publishing:
+
+```sh
+npx wrangler deploy --dry-run
+```
+
+## Routing and configuration
+
+`wrangler.jsonc` includes the Worker entry point `src/worker.js`, the `ASSETS` binding for `public/`, `run_worker_first: ["/api/*"]`, `workers_dev: true`, and the `ESPN_SESSIONS` binding plus SQLite migration. Leave the migration in place after deployment.
+
+No additional route pattern is required for workers.dev. All frontend requests use `/api/...` relative to the current hostname. Do not replace these with localhost or a separate API URL. Cross-origin requests are intentionally rejected; no wildcard CORS header is needed.
+
+| Method | Endpoint | Function |
+| --- | --- | --- |
+| GET | `/api/health` | Bridge health |
+| GET | `/api/espn/session` | Session status |
+| POST | `/api/espn/league` | League and weekly boxscore import |
+| POST | `/api/espn/logout` | Credential deletion |
+| GET | `/api/espn/free-agents` | Available players, D/ST and previous-week scores |
+| GET | `/api/espn/player-overview` | Verified athlete editorial overview |
+| GET | `/api/espn/news` | Fantasy feed compatibility |
+| GET | `/api/nfl/game-status` | NFL game states and opponents |
+| GET | `/api/nfl/matchup-strength` | Previous completed games' NFL points scored/allowed |
+| GET | `/api/nflverse/advanced` | Public regular-season player stats |
+| GET | `/api/ai/status` | Optional AI availability |
+| POST | `/api/ai/outlook` | Optional generated commentary |
+
+## Remove your name from the URL
+
+Renaming the Worker changes only the first part of `fantasy-hub.ACCOUNT.workers.dev`.
+
+For a free neutral URL, find your account's **workers.dev subdomain** settings in the **Workers & Pages overview** and edit `marcus-j-mccarty` to an available neutral name. This is an account-wide change affecting other workers.dev addresses in that account. Share the new URL afterward. Existing browser sessions on the old hostname do not transfer.
+
+For a domain you own, attach a **Custom Domain** in the Worker's **Settings → Domains & Routes**. In a Wrangler-managed project also add your real domain to `wrangler.jsonc`, for example:
+
+```json
+"routes": [{"pattern": "fantasy.your-real-domain.com", "custom_domain": true}]
+```
+
+Replace the example with a domain in your Cloudflare account. Keep `workers_dev: true` if you want both addresses. Domain purchase is optional.
+
+## Optional AI outlook — skip for the simplest launch
+
+League stats, charts and ESPN editorial news need no AI key. AI generation defaults off. Both Gemini and OpenAI integrations from the Python project are ported, but are not live-tested using paid keys.
+
+In **Worker Settings → Variables and Secrets**, add one **secret**: `GEMINI_API_KEY` or `OPENAI_API_KEY`. Deploy/apply the change when prompted. Alternatively:
+
+```sh
+npx wrangler secret put GEMINI_API_KEY
+```
+
+Paste the key at the prompt. For OpenAI substitute `OPENAI_API_KEY`. Never put API keys in the frontend, GitHub or Wrangler config.
+
+Optional text variables: `GRIDIRON_AI_PROVIDER` (`gemini` or `openai`), `GRIDIRON_GEMINI_MODEL`, `GRIDIRON_AI_MODEL`. Default model IDs preserve the source project's `gemini-3.1-flash-lite` and `gpt-4.1-mini`; choose a model available to your account if a default is unavailable. Gemini wins when both keys exist unless overridden.
+
+The original 12 requests/minute check is retained per Worker instance, with a ten-minute memory cache. This is not a global spending limit. Set provider-side spending limits before enabling AI on a public site. Leaving AI disabled is the simplest free configuration.
+
+## Troubleshooting
+
+- **Demo works, bridge unavailable:** deploy the complete project with Wrangler, not just `public/`. Check `/api/health` and the session binding/migration.
+- **ESPN 401/403:** check league/season and fresh cookies from an authorized account. If local Python works but Cloudflare still fails with the same values, ESPN may be blocking Cloudflare requests; there is no setting that guarantees access.
+- **Missing weeks:** import returns `unavailableWeeks`, preserving the original UI notice. Retry later.
+- **Advanced stats unavailable:** nflverse may not have published the season, the release may be temporarily unavailable, or it may exceed the size/compute limit. Use the existing CSV import. Large season CSV parsing can exceed Cloudflare's free CPU allowance; inspect usage if this route repeatedly fails.
+- **Unknown binding/migration:** retain the included config. If this existing Worker already has conflicting migration tags/classes, resolve with a new migration tag rather than deleting deployed migrations.
+- **Wrong files/404:** repository root must contain `wrangler.jsonc`; assets must be `./public`; remove old deploy arguments and competing config files. Hard-refresh after deploying.
+- **CORS:** keep frontend and API together on one hostname. Do not open HTML directly as a file.
+- **Session disappears:** expiry, changing browsers/profiles, or changing hostnames requires reconnecting.
+- **Free tier:** requests, CPU, Durable Object operations and storage have quotas. SQLite Durable Objects support the free plan; verify account allowances. Usage is not unlimited. AI provider charges are separate.
+
+## Provenance and integration notes
+
+Recovered October 21, 2026 from `Documents/Funz/Websites/Fantasy-Hub/GRIDIRON86-v9.6`, matching the latest accessible project conversation. The source folder was left untouched. `style.css` is unchanged. The original frontend scripts retain their logic with cloud connection-message edits. HTML wording is updated, and the owner's default league ID is removed.
+
+`src/worker.js` replaces `server.py`. Python is unnecessary for this deployment and is not shipped as a public asset. League envelopes (`source`, `base`, `boxscores`, `unavailableWeeks`, `preferredTeamId`) and player/stat response fields match the existing frontend. The existing demo, Sleeper, JSON/CSV import, team views, player explorer and charts are retained.
+
+Session storage changes from process RAM to one temporary Durable Object per browser, because Worker instances cannot reliably share process memory. Public in-memory caches contain no ESPN credentials or private league results.
+
+Official references: [asset routing](https://developers.cloudflare.com/workers/static-assets/binding/), [Git-connected builds](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/), [workers.dev subdomains](https://developers.cloudflare.com/workers/configuration/routing/workers-dev/), [custom domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/), [Durable Object storage](https://developers.cloudflare.com/durable-objects/best-practices/access-durable-objects-storage/), [OpenAI text generation](https://developers.openai.com/api/docs/guides/text), [Gemini generation](https://ai.google.dev/api/generate-content).

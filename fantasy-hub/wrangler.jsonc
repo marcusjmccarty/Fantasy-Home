@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "fantasy-hub",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "assets": {"directory": "./public", "binding": "ASSETS", "run_worker_first": ["/api/*"]},
+  "durable_objects": {"bindings": [{"name": "ESPN_SESSIONS", "class_name": "EspnSession"}]},
+  "migrations": [{"tag": "v1", "new_sqlite_classes": ["EspnSession"]}],
+  "observability": {"enabled": false}
+}

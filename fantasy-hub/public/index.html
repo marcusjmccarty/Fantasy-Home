@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#dfded6">
+  <title>GRIDIRON 86 / Fantasy Team Terminal</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+  <script src="explorer.js" defer></script>
+</head>
+<body>
+  <div class="desktop" id="desktop">
+    <header class="menu-bar">
+      <div class="menu-left"><span class="system-glyph" aria-hidden="true">▦</span><b>GRIDIRON/86</b><span class="menu-divider"></span><span>Fantasy Team Terminal</span></div>
+      <div class="menu-right"><span id="system-clock"></span><button id="about-button" class="menu-action">ABOUT</button><button id="open-data" class="menu-action highlighted">+ LOAD DATA</button></div>
+    </header>
+
+    <div class="utility-bar">
+      <div class="team-selector"><label for="team-select">TEAM:</label><select id="team-select" aria-label="Select fantasy team"></select></div>
+      <div class="context"><b id="league-name">EXHIBITION LEAGUE</b><span class="separator">/</span><span id="season-name">2026 SEASON</span></div>
+      <div class="utility-right"><span class="status-dot" id="status-dot"></span><span id="connection-status">SAMPLE DATA</span><button id="refresh-button" title="Reload connected data">↻ REFRESH</button><label class="home-go-label" for="home-go-to">GO TO <select id="home-go-to" aria-label="Open statistical workspace"><option value="" selected>SELECT WINDOW…</option><option value="summary">FRANCHISE</option><option value="matchup">MATCHUP CENTER</option><option value="weekly">WEEKLY PRODUCTION</option><option value="standings">LEAGUE TABLE</option><option value="roster">PERSONNEL REGISTER</option><option value="profile">PLAYER TERMINAL</option><option value="player-analytics">FULL PLAYER LOG</option><option value="agents">FREE AGENTS</option><option value="positions">POSITION ALLOCATION</option><option value="graph">VARIABLE LAB</option></select></label></div>
+    </div>
+
+    <div class="team-strip">
+      <div class="team-headline"><div class="tiny-label">FANTASY FOOTBALL / CLUB DOSSIER</div><h1 id="team-name">THE GRIDIRON CLUB</h1><span id="team-owner">Example franchise · Select a team to inspect</span></div>
+      <div class="team-header-stats">
+        <div><span class="tiny-label">CURRENT WEEK</span><b id="header-current-week">—</b></div>
+        <div><span class="tiny-label">RECORD</span><b id="header-record">4–2</b></div>
+        <div><span class="tiny-label">LEAGUE RANK</span><b id="header-rank">03 / 08</b></div>
+        <div><span class="tiny-label">SCORING</span><b id="header-scoring">PPR</b></div>
+      </div>
+    </div>
+
+    <main class="window-grid" aria-label="Fantasy football dashboard">
+      <section class="win summary-window expandable" data-explore="summary" tabindex="0" aria-label="Open expanded summary statistics" aria-labelledby="title-summary">
+        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-summary">CLUB OVERVIEW</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
+        <div class="win-inner summary-inner">
+          <span class="section-label">POINTS SCORED / SEASON</span>
+          <div class="hero-figure"><strong id="total-points">742.60</strong><span>PTS</span></div>
+          <div class="micro-rule"></div>
+          <div class="summary-home-section">SCORING & EFFICIENCY</div>
+          <div class="summary-home-grid">
+            <div><span>PER WEEK</span><strong id="avg-points">123.77</strong></div>
+            <div><span>VS LEAGUE AVG</span><strong id="home-league-delta">—</strong></div>
+            <div><span>POINTS ALLOWED</span><strong id="points-against">698.30</strong></div>
+            <div><span>SCORING σ</span><strong id="home-scoring-std">—</strong></div>
+            <div><span>LEAGUE POSITION</span><strong id="home-league-position">—</strong></div>
+          </div>
+          <div class="summary-home-section">RECORD & PERFORMANCE</div>
+          <div class="summary-home-grid">
+            <div><span>HEAD-TO-HEAD</span><strong id="home-record">—</strong></div>
+            <div><span>LEAGUE STANDING</span><strong id="home-standing">—</strong></div>
+            <div><span>BEST WEEK</span><strong id="best-week">W04 / 145.8</strong></div>
+            <div><span>POINT DIFFERENTIAL</span><strong id="home-point-diff">—</strong></div>
+            <div><span>REPORTED WEEKS</span><strong id="weeks-reported">06</strong></div>
+          </div>
+          <p id="summary-footnote" class="muted-note">This is sample data. Load a league for actual scores.</p>
+        </div>
+      </section>
+
+      <section class="win weekly-window expandable" data-explore="weekly" tabindex="0" aria-label="Open expanded weekly statistics" aria-labelledby="title-weekly">
+        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-weekly">WEEKLY PRODUCTION</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
+        <div class="win-inner">
+          <div class="window-topline"><span>SCORING HISTORY</span><span id="chart-range">WK 01—06</span></div>
+          <div class="chart-area" id="weekly-chart" aria-label="Weekly team score chart"></div>
+          <div class="chart-key"><span><i class="key-solid"></i>TEAM PTS</span><span><i class="key-dash"></i>SEASON AVG</span></div>
+          <div class="weekly-home-table-wrap"><table class="dense-table weekly-home-table"><thead><tr><th>WK</th><th>OPPONENT</th><th class="num">PTS</th><th class="num">OPP</th><th class="num">RANK</th></tr></thead><tbody id="weekly-home-rows"></tbody></table></div>
+        </div>
+      </section>
+
+      <section class="win standings-window expandable" data-explore="standings" tabindex="0" aria-label="Open expanded standings statistics" aria-labelledby="title-standings">
+        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-standings">LEAGUE TABLE</h2><label class="home-standing-sort" for="home-standing-sort">SORT <select id="home-standing-sort" aria-label="Sort homepage league standings"><option value="rank">OFFICIAL ORDER</option><option value="points">POINTS SCORED</option><option value="avg">WEEKLY AVERAGE</option><option value="against">FEWEST ALLOWED</option><option value="wins">WINS</option></select></label><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
+        <div class="win-inner no-padding">
+          <table class="dense-table league-table"><thead><tr><th>#</th><th>CLUB</th><th>W–L</th><th class="num">PF</th></tr></thead><tbody id="standings-body"></tbody></table>
+        </div>
+      </section>
+
+      <section class="win positions-window expandable" data-explore="positions" tabindex="0" aria-label="Open expanded positions statistics" aria-labelledby="title-positions">
+        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-positions">POSITION ALLOCATION</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
+        <div class="win-inner"><div class="window-topline"><span>STARTER POINTS BY POSITION</span><span id="positions-note">6 WEEKS</span></div><div id="position-chart" class="position-chart"></div><div class="muted-note" id="position-caption">Actual starting-lineup contribution.</div></div>
+      </section>
+
+      <section class="win matchup-window expandable" data-explore="matchup" tabindex="0" aria-label="Open Matchup Center" aria-labelledby="title-matchup">
+        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-matchup">MATCHUP CENTER</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
+        <div class="win-inner"><div class="window-topline"><span>SELECT LIVE OR PAST WEEK</span><label class="week-label">WEEK <select id="week-select" aria-label="Select matchup week"></select></label></div><div id="matchup-panel" class="matchup-panel"></div><div class="tiny-caption" id="matchup-comment">Scores reflect selected week.</div></div>
+      </section>
+
+      <section class="win profile-window expandable" data-explore="profile" tabindex="0" aria-label="Open expanded profile statistics" aria-labelledby="title-profile">
+        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-profile">PLAYER TERMINAL</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
+        <div class="win-inner"><div class="window-topline"><span>SELECTED PLAYER</span><span id="player-pos-top">—</span></div><div class="profile-heading"><strong id="profile-name">SELECT A PLAYER</strong><span id="profile-team">—</span></div><div class="profile-figures"><div><span>TOTAL PTS</span><b id="profile-total">—</b></div><div><span>LAST WK</span><b id="profile-last">—</b></div><div><span>AVG/WK</span><b id="profile-average">—</b></div></div><div id="player-spark" class="mini-chart" aria-label="Selected player weekly scoring"></div><div class="tiny-caption" id="player-caption">Click a roster player to inspect their history.</div></div>
+      </section>
+
+
+      <section class="win freeagents-window expandable" data-explore="agents" tabindex="0" aria-label="Expand free agent explorer">
+        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2>FREE AGENT WIRE</h2><button class="chrome" type="button" aria-label="Expand free agents">▣</button></header>
+        <div class="win-inner"><div class="window-topline"><span>AVAILABLE PLAYER POOL</span><span id="fa-source-tag">DEMO POOL</span></div><div class="home-fa-controls" aria-label="Free agent quick filters">
+              <label>POS <select id="home-fa-position" aria-label="Free agent position"><option>ALL</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option><option>K</option><option value="DEF">D/ST</option></select></label>
+              <label>SORT <select id="home-fa-sort" aria-label="Free agent sorting"><option value="projected">PROJECTED</option><option value="avg">PTS / WK</option><option value="recent">LAST 3</option><option value="total">SEASON PTS</option><option value="owned">ROSTER %</option></select></label>
+              <label class="home-fa-search">FIND <input id="home-fa-search" type="search" placeholder="Player or NFL team" aria-label="Search free agents"></label>
+            </div><div id="fa-summary" class="fa-teaser"></div><div class="tiny-caption" id="fa-note">Expand to search, compare, and inspect free agents.</div></div>
+      </section>
+      <section class="win grapher-window expandable" data-explore="graph" tabindex="0" aria-label="Expand custom statistical grapher">
+        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2>VARIABLE LAB / CUSTOM GRAPHER</h2><button class="chrome" type="button" aria-label="Expand variable lab">▣</button></header>
+        <div class="win-inner"><div class="home-graph-controls" aria-label="Variable Lab quick graph controls">
+              <label>POS <select id="home-graph-pos" aria-label="Graph position"><option value="ALL">ALL</option><option>QB</option><option>RB</option><option>WR</option><option>TE</option><option>K</option><option value="DEF">D/ST</option></select></label>
+              <label>X <select id="home-graph-x" aria-label="Graph X axis"></select></label>
+              <label>Y <select id="home-graph-y" aria-label="Graph Y axis"></select></label>
+              <label class="home-graph-check"><input id="home-graph-trend" type="checkbox" checked> TREND</label><label class="home-graph-check"><input id="home-graph-labels" type="checkbox"> LABELS</label>
+            </div><div id="graph-teaser" class="graph-teaser" aria-label="Interactive chart of actual loaded data"></div></div>
+      </section>
+      <section class="win roster-window expandable" data-explore="roster" tabindex="0" aria-label="Open expanded roster statistics" aria-labelledby="title-roster">
+        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-roster">PERSONNEL REGISTER / CURRENT ROSTER</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
+        <div class="roster-tools"><span id="roster-label">ROSTER ENTRIES / SAMPLE</span><label>SORT <select id="sort-players"><option value="points">TOTAL PTS</option><option value="week">LAST WEEK</option><option value="name">NAME A—Z</option><option value="position">POSITION</option></select></label></div>
+        <div class="table-scroll"><table class="dense-table roster-table"><thead><tr><th>POS</th><th>PLAYER</th><th>NFL</th><th>STATUS</th><th class="num">TOTAL</th><th class="num">LAST WK</th><th class="num">AVG / WK</th><th>OUTPUT</th></tr></thead><tbody id="player-rows"></tbody></table></div>
+        <div class="roster-footer"><span id="player-count">00 PLAYERS</span><span id="roster-footnote">SELECT ROW TO EXAMINE PLAYER DATA · VALUES ARE DEMONSTRATION ONLY</span></div>
+      </section>
+    </main>
+    <section class="dossiers-section" aria-label="Individual player statistical files"><div class="dossiers-heading"><b>INDIVIDUAL PLAYER FILES</b><span>SIX METRICS PER PLAYER · SEASON HISTORY</span></div><div id="player-dossiers" class="dossier-list"></div></section>
+
+    <dialog id="explore-dialog" class="explore-dialog" aria-labelledby="explore-title">
+      <div class="explore-title-bar"><div><span class="explore-history-controls"><button id="explore-back" class="explore-icon explore-back" type="button" title="Previous expanded view" aria-label="Previous expanded view">&lt;</button><button id="explore-forward" class="explore-icon explore-back" type="button" title="Next view" aria-label="Forward to next view" disabled>&gt;</button></span><span id="explore-match-week" class="explore-match-week" hidden></span><b id="explore-title">STATISTICAL WORKSPACE</b><span id="explore-club" class="explore-club" title="Current report franchise">THE GRIDIRON CLUB</span><small id="explore-context">DEMO</small></div><div class="explore-top-actions"><label class="explore-jump-label" for="explore-jump">GO TO <select id="explore-jump" aria-label="Open another workspace"><option value="summary">FRANCHISE</option><option value="matchup">MATCHUP</option><option value="weekly">WEEKLY</option><option value="standings">LEAGUE TABLE</option><option value="roster">ROSTER</option><option value="profile">PLAYER FILE</option><option value="player-analytics">FULL PLAYER LOG</option><option value="agents">FREE AGENTS</option><option value="positions">POSITIONS</option><option value="position-compare">POSITION / PLAYERS</option><option value="league-contributions">LEAGUE / WEEKLY</option><option value="graph">VARIABLE LAB</option></select></label><button type="button" id="explore-close" class="explore-close" aria-label="Close expanded window">× CLOSE</button></div></div>
+      <div class="explore-content" id="explore-content"></div>
+      <footer class="explore-footer"><span id="explore-source">Data source: demo</span><span>ESC TO CLOSE · CLICK A PLAYER TO INSPECT</span></footer>
+    </dialog>
+    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.6</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
+  </div>
+
+  <dialog id="data-dialog" aria-labelledby="dialog-title">
+    <div class="dialog-title"><b id="dialog-title">▦ OPEN FANTASY DATA</b><button type="button" class="dialog-x" data-close-dialog aria-label="Close">×</button></div>
+    <div class="dialog-inner"><p class="dialog-lead">Connect ESPN (including private leagues), Sleeper, or a local JSON file. Each browser gets its own temporary ESPN connection.</p>
+      <div class="dialog-tabs" role="tablist" aria-label="Choose data source"><button id="tab-espn" class="active" data-tab="espn" role="tab" aria-selected="true">ESPN</button><button id="tab-sleeper" data-tab="sleeper" role="tab" aria-selected="false">SLEEPER LIVE</button><button id="tab-json" data-tab="json" role="tab" aria-selected="false">JSON FILE</button></div>
+      <div id="espn-pane" class="tab-pane">
+<form id="espn-form"><label class="field-label" for="espn-league">ESPN LEAGUE ID</label><div class="field-grid direct"><input id="espn-league" value="" placeholder="Your league ID" inputmode="numeric" required><input id="espn-season" type="number" value="2026" min="2018" max="2100" aria-label="Season"><button class="action-button" type="submit" id="espn-submit">CONNECT</button></div><p class="dialog-hint">For private leagues, enter ESPN session cookies once. The bridge reuses them for up to three hours or until you clear the session.</p><label class="field-label" for="espn-swid">SWID (PRIVATE LEAGUES)</label><input id="espn-swid" autocomplete="off" placeholder="{...}"><label class="field-label" for="espn-s2" style="margin-top:10px">ESPN_S2 (PRIVATE LEAGUES)</label><input id="espn-s2" type="password" autocomplete="new-password" placeholder="Paste cookie value only"><p class="dialog-hint">No ESPN OAuth sign-in exists for third-party hobby dashboards. Log into ESPN in your browser, then paste fresh session cookies here once; the Cloudflare bridge holds them temporarily.</p><p id="espn-session-state" class="dialog-hint">Checking authorization…</p><button type="button" id="espn-forget">CLEAR PRIVATE SESSION</button></form></div><div id="sleeper-pane" class="tab-pane" hidden>
+        <form id="lookup-user-form"><label class="field-label" for="username-input">LOOK UP A USERNAME</label><div class="field-grid"><input id="username-input" placeholder="Sleeper username" autocomplete="off"><input id="season-input" type="number" min="2017" max="2100" value="2026" aria-label="Season year"><button type="submit" class="action-button">FIND LEAGUES</button></div></form>
+        <div id="league-results" class="league-results" aria-live="polite"></div>
+        <div class="or-rule"><span>OR</span></div>
+        <form id="direct-league-form"><label class="field-label" for="league-id-input">OPEN BY LEAGUE ID OR SLEEPER LEAGUE URL</label><div class="field-grid direct"><input id="league-id-input" placeholder="1234567890123456789"><button type="submit" class="action-button">OPEN LEAGUE</button></div></form>
+        <p class="dialog-hint">Sleeper lets this site read public league information. Search any Sleeper account, then select a league and a team. You can also paste a league URL. <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">API documentation ↗</a></p>
+      </div>
+      <div id="json-pane" class="tab-pane" hidden><p class="dialog-hint">For Yahoo or custom leagues, you can import a dataset in the simple GRIDIRON/86 JSON format. Platform exports may need converting; this is not an automatic ESPN or Yahoo connector.</p><label class="field-label" for="json-file">CHOOSE LOCAL JSON FILE</label><input id="json-file" type="file" accept=".json,application/json"><div class="template-bar"><button type="button" id="download-template" class="action-button">GET EXAMPLE FORMAT ↓</button><span>Read locally in this browser; no upload to a server.</span></div></div>
+      <p id="dialog-message" class="dialog-message" role="status" aria-live="polite"></p>
+      <div class="dialog-bottom"><button id="demo-button" type="button">RETURN TO DEMO</button><button type="button" data-close-dialog>CLOSE</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="about-dialog" aria-labelledby="about-title"><div class="dialog-title"><b id="about-title">ABOUT GRIDIRON/86</b><button class="dialog-x" data-close-dialog aria-label="Close">×</button></div><div class="dialog-inner"><p>A compact fantasy football dashboard inspired by monochrome workstation software of the 1980s. Built with plain HTML, CSS, and JavaScript.</p><p><b>Live leagues:</b> Connect ESPN via the Cloudflare bridge or use the read-only Sleeper API. Team history, ranks, matchup points, and individual player scoring are calculated from your league's data.</p><p><b>Other leagues:</b> Import a correctly structured JSON file; no external account integration is implied.</p><p><b>Important:</b> In-progress weekly totals can change. If past player-level details are missing from the provider, this terminal displays a dash rather than inventing stats. Demo figures are fictional.</p><button data-close-dialog class="action-button">OK</button></div></dialog>
+</body>
+</html>
