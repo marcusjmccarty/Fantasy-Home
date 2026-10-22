@@ -21,3 +21,9 @@ test('AI comparisons distinguish opponent strengths from league unit averages wi
  const units={A:{defense:{yardsPerPlay:4,sackRate:10}},B:{defense:{yardsPerPlay:6,sackRate:4}}};
  const c=unitComparisons(units,'A','defense');assert.equal(c.yardsPerPlay.leagueUnitMean,5);assert.equal(c.yardsPerPlay.differenceFromMean,-1);assert.equal(c.sackRate.differenceFromMean,3);assert.equal(c.epaPerPlay,null);assert.equal(unitComparisons(units,'X','offense'),null);
 });
+
+test('AI evidence focuses on role and keeps data limits instead of repeating raw tables',async()=>{
+ const {focusMatchupFacts}=await import('../src/matchup-context.js');
+ const result=focusMatchupFacts({position:'RB',opponentVsLeague:{rushYardsPerPlay:{value:5,leagueUnitMean:4},sackRate:{value:8}},opponentPlayByPlay:{sacks:8},ownPlayByPlay:{yards:999},playerWorkload:{recordedWeeks:4,inside5Carries:8,redzoneCarries:12,redzoneTargets:4,seasonCarriesPerWeek:20,seasonTargetsPerWeek:2,recentThree:{carriesPerWeek:21},basis:'prior weeks'}});
+ assert.equal(result.opponentVsLeague.rushYardsPerPlay.value,5);assert.equal(result.opponentVsLeague.sackRate,undefined);assert.equal(result.opponentPlayByPlay,undefined);assert.equal(result.playerWorkload.inside5CarriesPerWeek,2);
+});

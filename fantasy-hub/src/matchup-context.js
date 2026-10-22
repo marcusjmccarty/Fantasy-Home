@@ -37,3 +37,18 @@ export function unitComparisons(units,team,side){
   return [key,{value,leagueUnitMean:+mean.toFixed(3),differenceFromMean:+(value-mean).toFixed(3),teams:values.length,basis:'Unweighted mean of team rates; not opponent-adjusted'}];
  }));
 }
+
+// Give the analyst a focused evidence file rather than duplicate stat tables.
+export function focusMatchupFacts(facts){
+ const defense=['DEF','D/ST'].includes(facts.position),runner=facts.position==='RB';
+ const keys=defense?['sackRate','turnoversPerGame','epaPerPlay']:runner?['rushYardsPerPlay','successRate','explosiveRate']:['netPassYardsPerPlay','sackRate','explosiveRate'];
+ const pick=source=>source?Object.fromEntries(keys.filter(k=>source[k]!=null).map(k=>[k,source[k]])):null;
+ facts.opponentVsLeague=pick(facts.opponentVsLeague);facts.ownUnitVsLeague=pick(facts.ownUnitVsLeague);
+ // The comparisons already contain the underlying observed value and mean.
+ delete facts.opponentPlayByPlay;delete facts.ownPlayByPlay;
+ const workload=facts.playerWorkload;
+ if(workload){
+  facts.playerWorkload={recordedWeeks:workload.recordedWeeks,seasonCarriesPerWeek:workload.seasonCarriesPerWeek,seasonTargetsPerWeek:workload.seasonTargetsPerWeek,recentThree:workload.recentThree,inside5CarriesPerWeek:workload.inside5Carries/workload.recordedWeeks,redzoneCarriesPerWeek:workload.redzoneCarries/workload.recordedWeeks,redzoneTargetsPerWeek:workload.redzoneTargets/workload.recordedWeeks,basis:workload.basis};
+ }
+ return facts;
+}
