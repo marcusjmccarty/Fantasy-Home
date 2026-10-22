@@ -172,3 +172,16 @@ The review tightened ESPN credential redirect handling, prevented a pending leag
 Rotate any API key shared in chat or another channel: create its replacement in Google AI Studio, update the existing Cloudflare `GEMINI_API_KEY` secret and deploy, confirm an overview works, then revoke the old key. Keep the replacement out of chat, source and screenshots. The public AI endpoint is not authenticated; another visitor can exhaust the shared allowance. Rate limits are not account authentication or a guarantee against service disruption. Review provider quotas/billing independently.
 
 This was a bounded code, dependency, repository-history and deployment review, not a penetration test or an audit of account permissions, third-party systems, backup retention or all historical credential formats. ESPN, Google, Cloudflare, nflverse and Sleeper availability remains external.
+
+
+## 9.7 / Original-theme strategy windows
+
+The original GRIDIRON/86 Xerox-style theme is retained. Defensive Outlook, Touches & Share, and Trade Calculator sit together below Free Agent Wire / Variable Lab and above Personnel Register. The compact WINDOWED / TABBED switch in the menu bar stores the preferred layout locally. Tabbed mode reuses the existing expanded reports, supports arrow-key navigation, and hides the home tiles and individual dossiers.
+
+Defensive Outlook shows a provider projection (or prior scoring mean), a scenario floor / ceiling, and the upcoming NFL opponent's team-level scoring rank. Ranges need four prior recorded weeks and use at most eight. They are not calibrated confidence intervals or position-adjusted defensive forecasts.
+
+Touches & Share uses the compact public `public/data/usage-SEASON.json` dataset, generated daily by `.github/workflows/opportunity-data.yml` from NFLverse play-by-play. It includes carries, targets, receptions, team opportunity shares and inside-20 / inside-10 / inside-5 carries and targets. Shares cover the player's recorded weeks. Missing coverage stays blank. Refresh data in the report after the published dataset updates. Exhibition data is explicitly synthetic.
+
+Trade Calculator compares modeled weekly scoring and both teams' optimized starting lineups. Starter format is user-selected. It does not submit trades or price keeper value. Both package selections persist while moving between views and reset when the active league/team changes.
+
+Validation: `npm test` and `python3 -m unittest discover -s test -p 'test_usage.py'` from `fantasy-hub/`.

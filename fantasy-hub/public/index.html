@@ -6,14 +6,18 @@
   <meta name="theme-color" content="#dfded6">
   <title>GRIDIRON 86 / Fantasy Team Terminal</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="workspace.css">
   <script src="script.js" defer></script>
   <script src="explorer.js" defer></script>
+  <script src="analytics-math.js" defer></script>
+  <script src="strategy.js" defer></script>
+  <script src="workspace.js" defer></script>
 </head>
 <body>
   <div class="desktop" id="desktop">
     <header class="menu-bar">
       <div class="menu-left"><span class="system-glyph" aria-hidden="true">▦</span><b>GRIDIRON/86</b><span class="menu-divider"></span><span>Fantasy Team Terminal</span></div>
-      <div class="menu-right"><span id="system-clock"></span><button id="about-button" class="menu-action">ABOUT</button><button id="open-data" class="menu-action highlighted">+ LOAD DATA</button></div>
+      <div class="menu-right"><div class="layout-switch" role="group" aria-label="Workspace view"><button id="mode-dashboard" type="button" data-layout="dashboard" aria-pressed="true">WINDOWED</button><button id="mode-tabbed" type="button" data-layout="tabbed" aria-pressed="false">TABBED</button></div><span id="system-clock"></span><button id="about-button" class="menu-action">ABOUT</button><button id="open-data" class="menu-action highlighted">+ LOAD DATA</button></div>
     </header>
 
     <div class="utility-bar">
@@ -109,6 +113,20 @@
               <label class="home-graph-check"><input id="home-graph-trend" type="checkbox" checked> TREND</label><label class="home-graph-check"><input id="home-graph-labels" type="checkbox"> LABELS</label>
             </div><div id="graph-teaser" class="graph-teaser" aria-label="Interactive chart of actual loaded data"></div></div>
       </section>
+      <div class="strategy-windows" aria-label="Player strategy reports">
+        <section class="win strategy-window expandable" data-explore="outlook" tabindex="0" aria-labelledby="title-outlook">
+          <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-outlook">DEFENSIVE OUTLOOK</h2><button class="chrome" type="button" aria-label="Expand defensive outlook">▣</button></header>
+          <div class="win-inner"><label class="strategy-home-picker" for="home-outlook-player">PLAYER <select id="home-outlook-player"></select></label><div id="outlook-preview"></div></div>
+        </section>
+        <section class="win strategy-window expandable" data-explore="opportunity" tabindex="0" aria-labelledby="title-share">
+          <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-share">TOUCHES &amp; SHARE</h2><button class="chrome" type="button" aria-label="Expand touches and share data">▣</button></header>
+          <div class="win-inner"><label class="strategy-home-picker" for="home-share-player">PLAYER <select id="home-share-player"></select></label><div id="share-preview"></div></div>
+        </section>
+        <section class="win strategy-window expandable" data-explore="trade" tabindex="0" aria-labelledby="title-trade">
+          <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-trade">TRADE CALCULATOR</h2><button class="chrome" type="button" aria-label="Expand trade calculator">▣</button></header>
+          <div class="win-inner" id="trade-preview"></div>
+        </section>
+      </div>
       <section class="win roster-window expandable" data-explore="roster" tabindex="0" aria-label="Open expanded roster statistics" aria-labelledby="title-roster">
         <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-roster">PERSONNEL REGISTER / CURRENT ROSTER</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
         <div class="roster-tools"><span id="roster-label">ROSTER ENTRIES / SAMPLE</span><label>SORT <select id="sort-players"><option value="points">TOTAL PTS</option><option value="week">LAST WEEK</option><option value="name">NAME A—Z</option><option value="position">POSITION</option></select></label></div>
@@ -118,12 +136,13 @@
     </main>
     <section class="dossiers-section" aria-label="Individual player statistical files"><div class="dossiers-heading"><b>INDIVIDUAL PLAYER FILES</b><span>SIX METRICS PER PLAYER · SEASON HISTORY</span></div><div id="player-dossiers" class="dossier-list"></div></section>
 
+    <nav id="workspace-navigation" class="workspace-navigation" aria-label="Statistical reports" hidden><div id="workspace-tabs" role="tablist" aria-label="Choose a full report"></div></nav>
     <dialog id="explore-dialog" class="explore-dialog" aria-labelledby="explore-title">
       <div class="explore-title-bar"><div><span class="explore-history-controls"><button id="explore-back" class="explore-icon explore-back" type="button" title="Previous expanded view" aria-label="Previous expanded view">&lt;</button><button id="explore-forward" class="explore-icon explore-back" type="button" title="Next view" aria-label="Forward to next view" disabled>&gt;</button></span><span id="explore-match-week" class="explore-match-week" hidden></span><b id="explore-title">STATISTICAL WORKSPACE</b><span id="explore-club" class="explore-club" title="Current report franchise">THE GRIDIRON CLUB</span><small id="explore-context">DEMO</small></div><div class="explore-top-actions"><label class="explore-jump-label" for="explore-jump">GO TO <select id="explore-jump" aria-label="Open another workspace"><option value="summary">FRANCHISE</option><option value="matchup">MATCHUP</option><option value="weekly">WEEKLY</option><option value="standings">LEAGUE TABLE</option><option value="roster">ROSTER</option><option value="profile">PLAYER FILE</option><option value="player-analytics">FULL PLAYER LOG</option><option value="agents">FREE AGENTS</option><option value="positions">POSITIONS</option><option value="position-compare">POSITION / PLAYERS</option><option value="league-contributions">LEAGUE / WEEKLY</option><option value="graph">VARIABLE LAB</option></select></label><button type="button" id="explore-close" class="explore-close" aria-label="Close expanded window">× CLOSE</button></div></div>
       <div class="explore-content" id="explore-content"></div>
       <footer class="explore-footer"><span id="explore-source">Data source: demo</span><span>ESC TO CLOSE · CLICK A PLAYER TO INSPECT</span></footer>
     </dialog>
-    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.6</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
+    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.7</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
   </div>
 
   <dialog id="data-dialog" aria-labelledby="dialog-title">

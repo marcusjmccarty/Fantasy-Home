@@ -1,0 +1,38 @@
+name: Refresh NFL opportunity data
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - fantasy-hub/scripts/build_usage.py
+      - .github/workflows/opportunity-data.yml
+  schedule:
+    - cron: '25 11 * * *'
+permissions:
+  contents: write
+concurrency:
+  group: nfl-opportunity-data
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify aggregation
+        run: python -m unittest discover -s fantasy-hub/test -p 'test_usage.py'
+      - name: Build compact public dataset
+        run: python fantasy-hub/scripts/build_usage.py
+      - name: Publish refreshed data
+        run: |
+          git config user.name 'gridiron-data[bot]'
+          git config user.email 'gridiron-data[bot]@users.noreply.github.com'
+          git add fantasy-hub/public/data/usage-*.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Refresh NFL opportunity dataset'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
