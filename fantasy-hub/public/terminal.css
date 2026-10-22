@@ -175,27 +175,45 @@ svg text.weekly-data-label{paint-order:stroke fill;stroke:#fff;stroke-width:3px;
    v9.21 — title bar with explicit report tabs, inline width slider,
    team-name picker and arrangeable tiles.
    ====================================================================== */
-/* The title bar and its tab strip span the whole window (like an OS menu bar),
-   so changing the page width never moves the controls under the pointer. */
-.app-chrome{max-width:none;width:auto;margin:0;background:#272927;color:#f6f5f0;border:1px solid #30322f;border-bottom:0}
-body>.menu-bar{border-radius:0}
-body>.workspace-navigation.report-tabs{position:sticky;top:0;z-index:40;margin:0 0 0;padding:4px 10px 0;background:#272927;border:1px solid #30322f;border-top:1px solid #3d403c;border-bottom:0;box-shadow:none}
-body>.desktop{border-top:0}
-.report-tabs .report-bar{flex-wrap:wrap;gap:4px 14px;align-items:flex-end;overflow:visible}
-.report-tabs .report-group{flex-direction:row;align-items:flex-end;gap:0;position:relative;padding-left:14px}
+/* ---------- Title bar: logo · report tabs · controls (moves with the page width) ---------- */
+.desktop>.menu-bar{display:flex;align-items:stretch;flex-wrap:nowrap;gap:12px;height:auto;min-height:40px;padding:0 10px 0 12px;white-space:nowrap}
+.desktop>.menu-bar>.menu-left{flex:0 0 auto;align-items:center}
+.desktop>.menu-bar>.menu-right{flex:0 0 auto;align-items:center;flex-wrap:nowrap;margin-left:0}
+#palette-button,#system-clock{display:none!important}
+.report-tabs{position:static;margin:0;padding:0;background:transparent;border:0;box-shadow:none;min-width:0}
+.report-tabs .report-bar{display:flex;flex-wrap:wrap;align-items:stretch;gap:0 6px;overflow:visible;height:100%}
+.report-tabs .report-group{display:flex;flex-direction:row;align-items:stretch;gap:0;position:relative;padding-left:7px}
 .report-tabs .report-group:first-child{padding-left:0}
-.report-tabs .report-group+.report-group::before{content:'';position:absolute;left:0;top:7px;bottom:7px;border-left:1px solid #5b5f59}
+.report-tabs .report-group+.report-group::before{content:'';position:absolute;left:0;top:11px;bottom:11px;border-left:1px solid #5b5f59}
 .report-tabs .report-group-label{display:none}
-.report-tabs .report-group-items{gap:2px}
-.report-tabs .report-bar button{margin:0;padding:8px 11px 9px;min-height:34px;border:1px solid transparent;border-bottom:0;background:transparent;color:#d9dad3;font:500 12.5px/1 var(--mono);box-shadow:none}
+.report-tabs .report-group-items{display:flex;gap:1px;align-items:stretch}
+.report-tabs .report-bar button{margin:0;padding:0 8px;min-height:40px;border:0;border-radius:0;background:transparent;color:#d9dad3;font:500 12px/1 var(--mono);box-shadow:none;white-space:nowrap;cursor:pointer}
 .report-tabs .report-bar button:hover{background:#3a3d39;color:#fff}
-.report-tabs .report-bar button[aria-current=page]{background:var(--paper);color:#111512;font-weight:700;border-color:#30322f;box-shadow:inset 0 3px 0 #3f6b5e}
+.report-tabs .report-bar button[aria-current=page]{background:#f1f0e9;color:#111512;font-weight:700;box-shadow:inset 0 -3px 0 #3f6b5e}
 .report-tabs .report-bar button:focus-visible{outline:2px solid #9cc2ff;outline-offset:-3px}
-.report-tabs .report-home-glyph{font-size:14px}
+.report-tabs .report-home-glyph{display:none}
+/* On the dashboard the logo is the way home, so the Dashboard tab only appears in tab view. */
+.in-titlebar #workspace-tab-dashboard,.in-titlebar .report-group:first-child{display:none!important}
+.in-titlebar .report-group:nth-child(2){padding-left:0}
+.in-titlebar .report-group:nth-child(2)::before{content:none}
+.desktop>.menu-bar>.report-tabs{flex:1 1 auto}
+/* Tab view: tabs live in the report's dark bar, between the arrows and Close. */
+.explore-title-bar>.report-tabs{flex:1 1 auto;align-self:stretch;margin:0 8px}
+.explore-title-bar>.report-tabs .report-bar button{min-height:36px;padding:0 8px}
+body[data-layout=tabbed] .explore-title-bar{position:sticky;top:0;z-index:30;display:flex;align-items:stretch;flex-wrap:nowrap;gap:6px;padding-top:0;padding-bottom:0}
+body[data-layout=tabbed] .explore-title-bar>div:first-child{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+body[data-layout=tabbed] .explore-title-bar .explore-top-actions{align-self:center;flex:0 0 auto}
+body[data-layout=tabbed] #explore-title{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+body[data-layout=tabbed] #explore-context{display:none}
+/* Tab view hides the team header: the report fills the page under the title bar. */
+body[data-layout=tabbed] .utility-bar,body[data-layout=tabbed] .team-strip{display:none!important}
 @media (max-width:899px){
-  .report-tabs .report-bar{flex-wrap:nowrap;overflow-x:auto;padding-right:28px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+  .report-tabs .report-bar{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+  .desktop>.menu-bar{flex-wrap:wrap}
+  .desktop>.menu-bar>.report-tabs{order:3;flex-basis:100%;border-top:1px solid #444}
+  body[data-layout=tabbed] .explore-title-bar{flex-wrap:wrap}
+  .explore-title-bar>.report-tabs{order:3;flex-basis:100%;margin:0}
 }
-@media (max-width:700px){body>.app-chrome,body>.workspace-navigation.report-tabs{border-left:0;border-right:0}}
 
 /* Width: a plain slider with − / + steps and a readout that resets to 100%. */
 .width-slider{display:inline-flex;align-items:center;gap:4px;font:11.5px var(--mono);color:#d9dad3}
@@ -204,7 +222,7 @@ body>.desktop{border-top:0}
 .width-step:hover:not(:disabled),.width-readout:hover{border-color:#8c8f88}
 .width-step:disabled{opacity:.35;cursor:default}
 .width-readout{font:12px var(--mono);min-width:44px;text-align:right}
-#page-width{-webkit-appearance:none;appearance:none;width:120px;height:24px;margin:0;padding:0;background:transparent;cursor:ew-resize}
+#page-width{-webkit-appearance:none;appearance:none;touch-action:none;width:110px;height:24px;margin:0;padding:0;background:transparent;cursor:ew-resize}
 #page-width::-webkit-slider-runnable-track{height:3px;background:linear-gradient(90deg,#c9ccc3 var(--fill,100%),#5f635d var(--fill,100%));border:0}
 #page-width::-moz-range-track{height:3px;background:#5f635d;border:0}
 #page-width::-moz-range-progress{height:3px;background:#c9ccc3}
@@ -248,3 +266,30 @@ body.is-arranging .window-grid>.win:nth-child(2n):not(.is-lifted):not(.is-held){
 .arrange-reset:hover{background:#fff}
 body[data-layout=tabbed] .arrange-bar{display:none}
 .window-grid{position:relative}
+
+/* Compact title-bar controls so the tabs fit on one line. */
+.desktop>.menu-bar .width-slider-label{display:none}
+.desktop>.menu-bar #page-width{width:90px}
+.desktop>.menu-bar .menu-right{gap:2px}
+.desktop>.menu-bar .menu-action{padding:5px 7px}
+.report-tabs .report-bar button{padding:0 6px;font-size:11.5px}
+.desktop>.menu-bar.tabs-own-row{flex-wrap:wrap;row-gap:0}
+.desktop>.menu-bar.tabs-own-row>.menu-right{margin-left:auto}
+.desktop>.menu-bar.tabs-own-row>.report-tabs{order:3;flex-basis:100%;border-top:1px solid #444843;margin:0 -10px 0 -12px;padding:0 6px}
+.desktop>.menu-bar.tabs-own-row>.report-tabs .report-bar button{min-height:34px}
+.report-tabs .report-bar button{padding:0 5px;font-size:11px;letter-spacing:0}
+.report-tabs .report-bar{gap:0 4px}.report-tabs .report-group{padding-left:5px}
+.desktop>.menu-bar{gap:8px}
+.desktop>.menu-bar #page-width{width:80px}
+.desktop>.menu-bar .menu-action{padding:5px 6px}
+.desktop>.menu-bar .keys-icon{min-width:28px;font-weight:700;font-size:13px;border:1px solid #6b6f69!important;padding:3px 0!important;text-align:center}
+.desktop>.menu-bar .menu-left b{font-size:13px;letter-spacing:.6px}
+/* Tabs wrap one by one (not group by group); a rule marks where each group starts. */
+.report-tabs .report-group,.report-tabs .report-group-items{display:contents}
+.report-tabs .report-group+.report-group::before{content:none}
+.report-tabs .report-group+.report-group .report-group-items>button:first-child{margin-left:5px;box-shadow:-6px 0 0 -5px #5b5f59}
+.report-tabs .report-group+.report-group .report-group-items>button[aria-current=page]:first-child{box-shadow:-6px 0 0 -5px #5b5f59,inset 0 -3px 0 #3f6b5e}
+.in-titlebar .report-group:nth-child(2) .report-group-items>button:first-child{margin-left:0;box-shadow:none}
+.report-tabs .report-bar{align-content:flex-start;column-gap:2px}
+body[data-layout=tabbed] #explore-team-switch{max-width:170px}
+.explore-title-bar>.report-tabs #workspace-tab-dashboard{font-weight:600}

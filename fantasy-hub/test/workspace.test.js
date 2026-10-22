@@ -19,6 +19,9 @@ function setup(hash=''){
   matches(sel){return sel===':modal'?this.modal:false}
   getBoundingClientRect(){return {top:200-scrollY}}
   querySelectorAll(){return this.children}
+  querySelector(sel){return get(sel)}
+  insertBefore(node){node.parentElement=this;return node}
+  get classList(){const el=this;return this._cl??={set:new Set(),add(c){this.set.add(c)},remove(c){this.set.delete(c)},contains(c){return this.set.has(c)},toggle(c,f){(f??!this.set.has(c))?this.set.add(c):this.set.delete(c)}}}
   set innerHTML(html){this.html=html;if(this.id==='workspace-tabs')this.children=[...html.matchAll(/id="([^"]+)" data-workspace="([^"]+)"/g)].map(([_,id,type],i)=>{const n=get(id);n.dataset.workspace=type;n.offsetLeft=i*100;return n})}
   show(){this.open=true;this.modal=false}
   showModal(){this.open=true;this.modal=true}
@@ -36,7 +39,7 @@ function setup(hash=''){
  const document={body,get activeElement(){return active||body},querySelector:get,addEventListener(k,fn){(docEvents.get(k)||docEvents.set(k,[]).get(k)).push(fn)},dispatchEvent(e){for(const fn of docEvents.get(e.type)||[])fn(e)}};
  const window={addEventListener(k,fn){(winEvents.get(k)||winEvents.set(k,[]).get(k)).push(fn)},scrollTo(_,y){scrollY=y},get scrollY(){return scrollY}};
  const XL={open:null,player:null,viewWeek:null,history:[],future:[],lineupScenarios:new Map(),free:[]};
- const context=vm.createContext({document,window,location,history,URL,el:get,XL,currentTeamId:'1',currentPlayerId:'p1',currentWeek:6,model:{season:2026,teams:[{id:'1'},{id:'2'},{id:'3'}],players:{p1:{id:'p1'}}},findTeam:id=>({id:String(id)}),updateUI(){},getTeam:()=>({id:'1'}),rowsFor:()=>[{id:'p1'}],explorerClubHeader(){},renderExplorer(){renders.push(XL.open)},CustomEvent:class{constructor(type,{detail}){this.type=type;this.detail=detail}}});
+ const context=vm.createContext({ResizeObserver:class{observe(){}},document,window,location,history,URL,el:get,XL,currentTeamId:'1',currentPlayerId:'p1',currentWeek:6,model:{season:2026,teams:[{id:'1'},{id:'2'},{id:'3'}],players:{p1:{id:'p1'}}},findTeam:id=>({id:String(id)}),updateUI(){},getTeam:()=>({id:'1'}),rowsFor:()=>[{id:'p1'}],explorerClubHeader(){},renderExplorer(){renders.push(XL.open)},CustomEvent:class{constructor(type,{detail}){this.type=type;this.detail=detail}}});
  vm.runInContext(explorer.slice(explorer.indexOf('function openExplorer('),explorer.indexOf('function focusWeeklyLedger()')),context);
  vm.runInContext(explorer.slice(explorer.indexOf('function exploreBack('),explorer.indexOf('function refreshMatchupHeader(')),context);
  vm.runInContext(explorer.slice(explorer.indexOf("el('explore-club').addEventListener('change'"),explorer.indexOf("el('explore-content').addEventListener('change'",explorer.indexOf("el('explore-club').addEventListener('change'"))),context);
@@ -64,10 +67,15 @@ test('every report opens inline from the report bar with exactly one current ite
   assert.deepEqual(current(h),[button.dataset.workspace]);
  }
 });
-test('expanding a dashboard window opens the same inline report and focuses its title',()=>{
+test('expanding a dashboard window opens a floating window; tabs open the inline view',()=>{
  const h=setup();h.run("openExplorer('weekly')");
- assert.equal(h.get('explore-dialog').modal,false);assert.equal(h.body.dataset.layout,'tabbed');
- assert.equal(h.active(),h.get('explore-title'));assert.equal(h.location.hash,'#/weekly');
+ assert.equal(h.get('explore-dialog').modal,true);assert.equal(h.body.dataset.layout,'dashboard');
+ assert.equal(h.location.hash,'');
+ h.get('explore-dialog').close();h.flush();
+ h.click('weekly');assert.equal(h.get('explore-dialog').modal,false);assert.equal(h.body.dataset.layout,'tabbed');
+ assert.equal(h.location.hash,'#/weekly');
+ assert.equal(h.get('workspace-navigation').parentElement,h.get('#explore-dialog .explore-title-bar'));
+ h.click('dashboard');assert.equal(h.get('workspace-navigation').parentElement,h.get('.menu-bar'));
 });
 test('closing a report returns to the dashboard and the window grid',()=>{
  const h=setup();h.click('roster');h.get('explore-dialog').close();h.flush();
@@ -96,8 +104,11 @@ test('arrow keys move focus along the report bar without opening reports',()=>{
  press(tabs[0],'End');assert.equal(h.active(),tabs.at(-1));press(tabs.at(-1),'Home');assert.equal(h.active(),tabs[0]);
  assert.equal(h.XL.open,null);
 });
-test('the report franchise selector changes the active franchise, including team drilldowns',()=>{
- const h=setup();h.run("openExplorer('summary')");
+test('the window franchise selector is independent; in tab view it changes the active franchise',()=>{
+ const w=setup();w.run("openExplorer('summary')");
+ w.get('explore-club').fire('change',{target:{id:'explore-team-switch',value:'2'}});
+ assert.equal(w.run('currentTeamId'),'1');assert.equal(w.XL.viewTeamId,'2');
+ const h=setup();h.click('summary');
  h.get('explore-club').fire('change',{target:{id:'explore-team-switch',value:'2'}});
  assert.equal(h.run('currentTeamId'),'2');assert.equal(h.XL.viewTeamId,'2');
  h.run("openExplorer('summary',null,{teamId:'3'})");assert.equal(h.run('currentTeamId'),'3');

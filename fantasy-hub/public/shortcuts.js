@@ -177,7 +177,7 @@ if(typeof globalThis!=='undefined')globalThis.GridironKeys=GridironKeys;
  function syncHints(){
   const on=enabled.checked;
   for(const button of helpButtons()){
-   button.textContent=on?'KEYS ?':'KEYS';
+   button.textContent=button.closest('.menu-bar')?'?':(on?'KEYS ?':'KEYS');button.classList.toggle('keys-icon',!!button.closest('.menu-bar'));
    button.title=on?'Keyboard shortcuts (?)':'Keyboard shortcuts (single-key shortcuts are off)';
    button.setAttribute('aria-label',on?'Keyboard shortcuts':'Keyboard shortcuts, single-key shortcuts off');
    button.setAttribute('aria-controls',help.id);

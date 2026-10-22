@@ -7,32 +7,35 @@
   <title>GRIDIRON 86 / Fantasy Team Terminal</title>
   <link rel="preload" href="fonts/IBMPlexMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/IBMPlexMono-Bold.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="type.css?v=9.21.0">
-  <link rel="stylesheet" href="style.css?v=9.21.0">
-  <link rel="stylesheet" href="workspace.css?v=9.21.0">
-  <link rel="stylesheet" href="readability.css?v=9.21.0">
-  <link rel="stylesheet" href="refinements.css?v=9.21.0">
-  <link rel="stylesheet" href="polish.css?v=9.21.0">
-  <link rel="stylesheet" href="terminal.css?v=9.21.0">
-  <link rel="stylesheet" href="keyboard.css?v=9.21.0">
-  <script src="script.js?v=9.21.0" defer></script>
-  <script src="interactions.js?v=9.21.0" defer></script>
-  <script src="explorer.js?v=9.21.0" defer></script>
-  <script src="analytics-math.js?v=9.21.0" defer></script>
-  <script src="strategy.js?v=9.21.0" defer></script>
-  <script src="workspace.js?v=9.21.0" defer></script>
-  <script src="arrange.js?v=9.21.0" defer></script>
-  <script src="page-width.js?v=9.21.0" defer></script>
-  <script src="shortcuts.js?v=9.21.0" defer></script>
+  <link rel="stylesheet" href="type.css?v=9.22.0">
+  <link rel="stylesheet" href="style.css?v=9.22.0">
+  <link rel="stylesheet" href="workspace.css?v=9.22.0">
+  <link rel="stylesheet" href="readability.css?v=9.22.0">
+  <link rel="stylesheet" href="refinements.css?v=9.22.0">
+  <link rel="stylesheet" href="polish.css?v=9.22.0">
+  <link rel="stylesheet" href="terminal.css?v=9.22.0">
+  <link rel="stylesheet" href="keyboard.css?v=9.22.0">
+  <script src="script.js?v=9.22.0" defer></script>
+  <script src="interactions.js?v=9.22.0" defer></script>
+  <script src="explorer.js?v=9.22.0" defer></script>
+  <script src="analytics-math.js?v=9.22.0" defer></script>
+  <script src="strategy.js?v=9.22.0" defer></script>
+  <script src="workspace.js?v=9.22.0" defer></script>
+  <script src="arrange.js?v=9.22.0" defer></script>
+  <script src="page-width.js?v=9.22.0" defer></script>
+  <script src="shortcuts.js?v=9.22.0" defer></script>
 
 </head>
 <body>
-  <header class="menu-bar app-chrome">
-      <div class="menu-left"><span class="system-glyph" aria-hidden="true">▦</span><b>GRIDIRON/86</b><span class="menu-divider"></span><span>Fantasy Team Terminal</span></div>
+
+
+  <div class="desktop" id="desktop">
+    <header class="menu-bar">
+      <div class="menu-left"><span class="system-glyph" aria-hidden="true">▦</span><b>GRIDIRON/86</b></div>
+      <nav id="workspace-navigation" class="workspace-navigation report-tabs in-titlebar" aria-label="Reports"><div id="workspace-tabs" class="report-bar"></div></nav>
       <div class="menu-right"><div class="width-slider" role="group" aria-label="Page width"><span class="width-slider-label" aria-hidden="true">WIDTH</span><button type="button" id="page-width-down" class="width-step" aria-label="Narrower page" title="Narrower">−</button><input id="page-width" type="range" min="60" max="100" step="1" value="100" aria-label="Page width" aria-valuetext="100 percent" title="Drag to set page width (W)"><button type="button" id="page-width-up" class="width-step" aria-label="Wider page" title="Wider">+</button><button type="button" id="page-width-readout" class="width-readout" title="Reset to full width" aria-label="Page width 100 percent. Reset to full width">100%</button></div><span id="system-clock"></span><button type="button" class="menu-action" data-shortcuts-help aria-haspopup="dialog" title="Keyboard shortcuts (?)">KEYS ?</button><button id="about-button" class="menu-action">ABOUT</button><button id="open-data" class="menu-action highlighted">+ LOAD DATA</button></div>
     </header>
-    <nav id="workspace-navigation" class="workspace-navigation report-tabs" aria-label="Reports"><div id="workspace-tabs" class="report-bar"></div></nav>
-  <div class="desktop" id="desktop">
+
 
 
     <div class="utility-bar">
@@ -145,7 +148,7 @@
       <div class="explore-content" id="explore-content"></div>
       <footer class="explore-footer"><span id="explore-source">Data source: demo</span><span class="explore-footer-keys">ESC CLOSES CARDS, THEN RETURNS TO THE DASHBOARD · CTRL+K FIND · ? KEYS</span></footer>
     </dialog>
-    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.21.0</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
+    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.22.0</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
   </div>
 
   <dialog id="data-dialog" aria-labelledby="dialog-title">

@@ -21,7 +21,7 @@ const WORKSPACE_GROUPS=[
     ['league-contributions','Trends','Weekly position contributions'],
   ]],
   ['Players',[
-    ['profile','Player file','Individual player report'],
+    ['profile','Player','Individual player report'],
     ['player-analytics','Game logs','Statistical archive'],
     ['agents','Free agents','Waiver wire scouting'],
     ['position-compare','Compare','Compare players by position'],
@@ -31,7 +31,7 @@ const WORKSPACE_GROUPS=[
     ['outlook','Outlook','Player outlook and range'],
     ['opportunity','Touches','Touches and opportunity share'],
     ['trade','Trades','Trade calculator: roster impact of trades'],
-    ['graph','Variable lab','Custom grapher'],
+    ['graph','Lab','Custom grapher'],
   ]],
 ];
 // Flat list of reports (excludes the dashboard), kept for other scripts.
@@ -75,14 +75,39 @@ function remember(view,player){
   }catch{}
 }
 function reportTop(){
-  // Scroll so the report starts just below the sticky tab strip.
-  const nav=el('workspace-navigation'),report=el('explore-dialog');
-  return Math.max(0,report.getBoundingClientRect().top+window.scrollY-(nav.offsetHeight||0)-10);
+  // In tab view the team header is hidden, so the report starts right under the title bar.
+  return Math.max(0,el('explore-dialog').getBoundingClientRect().top+window.scrollY-8);
+}
+/* The tab strip lives in exactly one place: the top title bar on the dashboard,
+   or the report's own dark bar (between the arrows and Close) in tab view. */
+/* If the tabs don't fit beside the logo and controls, they take their own
+   row inside the same black title bar instead of scattering across lines. */
+const tabsFit=new ResizeObserver(()=>{
+  const nav=el('workspace-navigation'),menu=nav.parentElement;
+  if(!menu?.classList.contains('menu-bar'))return;
+  menu.classList.remove('tabs-own-row');
+  const tabs=[...nav.querySelectorAll('[data-workspace]')].filter(t=>t.offsetParent);
+  const tops=new Set(tabs.map(t=>Math.round(t.getBoundingClientRect().top)));
+  if(tops.size>1||nav.scrollWidth>nav.clientWidth+1)menu.classList.add('tabs-own-row');
+});
+function placeTabs(){
+  const nav=el('workspace-navigation');
+  if(document.body.dataset.layout==='tabbed'){
+    const bar=document.querySelector('#explore-dialog .explore-title-bar'),actions=bar.querySelector('.explore-top-actions');
+    if(nav.parentElement!==bar)bar.insertBefore(nav,actions);
+    nav.classList.remove('in-titlebar');
+  }else{
+    const menu=document.querySelector('.menu-bar'),right=menu.querySelector('.menu-right');
+    if(nav.parentElement!==menu)menu.insertBefore(nav,right);
+    nav.classList.add('in-titlebar');
+  }
 }
 
 /* Called by openExplorer before it renders: switch the page into report view. */
 function enterReportView(){
-  if(document.body.dataset.layout==='tabbed')return;
+  // Tiles open as floating windows (modal); only tabs, shortcuts, history and
+  // deep links switch the page into tab view.
+  if(document.body.dataset.layout==='tabbed'||!workspace.wantInline)return;
   const active=document.activeElement;
   workspace.origin=active&&active!==document.body?(active.closest('.win')||active):null;
   workspace.dashboardScroll=window.scrollY;
@@ -93,6 +118,7 @@ function enterReportView(){
   document.querySelector('.dossiers-section').hidden=true;
   report.setAttribute('role','region');report.removeAttribute('aria-modal');
   workspace.entering=true;
+  placeTabs();
 }
 function showDashboard({fromHistory=false}={}){
   const report=el('explore-dialog'),wasReport=document.body.dataset.layout==='tabbed';
@@ -105,8 +131,9 @@ function showDashboard({fromHistory=false}={}){
   report.removeAttribute('role');
   el('explore-content').removeAttribute('aria-labelledby');
   XL.open=null;
+  placeTabs();
   markCurrent('dashboard');
-  if(!fromHistory)remember('dashboard');
+  if(!fromHistory&&wasReport)remember('dashboard');
   if(wasReport){
     if(typeof renderGraphHome==='function')renderGraphHome();
     window.scrollTo(0,workspace.dashboardScroll||0);
@@ -119,13 +146,16 @@ function openReport(type,{player=null,focus=true}={}){
   if(!WORKSPACE_IDS.has(type))return;
   if(type===XL.open&&document.body.dataset.layout==='tabbed')return;
   workspace.focusReport=focus;
-  openExplorer(type,player??playerFor(type));
+  workspace.wantInline=true;
+  try{openExplorer(type,player??playerFor(type));}finally{workspace.wantInline=false;}
 }
 
 document.addEventListener('workspace:opened',event=>{
   const type=event.detail.type;
   markCurrent(type);
   el('explore-content').setAttribute('aria-labelledby','explore-title');
+  // Floating windows are transient: only tab view gets addresses and history entries.
+  if(document.body.dataset.layout!=='tabbed')return;
   remember(type,XL.player);
   const entering=workspace.entering;workspace.entering=false;
   if(!workspace.restoring){
@@ -145,6 +175,7 @@ document.addEventListener('workspace:opened',event=>{
 el('explore-dialog').addEventListener('close',()=>{
   // The close button, or anything else that closes the report, returns to the dashboard.
   if(!workspace.closing&&document.body.dataset.layout==='tabbed')showDashboard();
+  else if(!workspace.closing)markCurrent('dashboard');
 });
 
 workspaceTabs.addEventListener('click',event=>{
@@ -174,7 +205,7 @@ window.addEventListener('popstate',event=>{
       const seq=state?.seq??0;
       if(open&&seq<workspace.seq&&XL.history.length)exploreBack();
       else if(open&&seq>workspace.seq&&XL.future.length)exploreForward();
-      else openExplorer(target,state?.player??playerFor(target));
+      else{workspace.wantInline=true;try{openExplorer(target,state?.player??playerFor(target));}finally{workspace.wantInline=false;}}
     }
     if(state?.seq!=null)workspace.seq=state.seq;
   }finally{workspace.restoring=false;}
@@ -194,6 +225,8 @@ el('explore-close').setAttribute('aria-label','Close report and return to the da
 (()=>{
   const start=location.hash.replace(/^#\/?/,'');
   try{history.replaceState({gridiron:true,view:'dashboard',player:null,seq:0},'',location.href.replace(/#.*$/,''));}catch{}
+  document.body.dataset.layout='dashboard';
+  placeTabs();tabsFit.observe(document.querySelector('.menu-bar'));
   markCurrent('dashboard');
   if(WORKSPACE_IDS.has(start)){workspace.quietStart=true;openReport(start);workspace.quietStart=false;}
 })();
