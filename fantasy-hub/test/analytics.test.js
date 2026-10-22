@@ -36,8 +36,34 @@ test('empty packages have zero value but partial packages remain unavailable',()
 });
 test('historical ranges never borrow current projections or their own outcomes',()=>{
  const p={espnProj:999,scores:{1:0,2:10,3:20,4:30,5:100,6:900},projections:{5:25}};
- const rows=M.scoringHistory(p,6),week5=rows[0],week4=rows[1];
+ const rows=M.scoringHistory(p,6),week5=rows.find(r=>r.week===5),week4=rows.find(r=>r.week===4);
  assert.equal(rows.length,5);assert.equal(week5.floor,16);assert.equal(week5.ceiling,34);assert.equal(week5.projection,25);assert.equal(week5.actual,100);
  assert.equal(week4.center,10);assert.equal(week4.projection,null);assert.equal(week4.floor,null);
- assert.equal(M.scoringHistory({...p,scores:{...p.scores,5:9999,6:99999}},6)[0].ceiling,34);
+ assert.equal(M.scoringHistory({...p,scores:{...p.scores,5:9999,6:99999}},6).find(r=>r.week===5).ceiling,34);
+});
+
+test('projection position preserves asymmetric scoring history rather than forcing midpoint',()=>{
+ const o=M.outlook({scores:{1:3,2:4,3:5,4:6,5:14,6:30},projections:{7:17}},7);
+ assert.notEqual(o.center,(o.floor+o.ceiling)/2);
+ const fraction=(o.center-o.floor)/(o.ceiling-o.floor);assert.ok(fraction>.5);
+ assert.deepEqual(M.scoringHistory({scores:{3:3,1:1,2:2}},4).map(r=>r.week),[1,2,3]);
+});
+test('TD model ignores future games, shrinks noisy frequency and requires coverage',()=>{
+ const row=(id,td)=>({gsis_id:id,position:'RB',weeks:Object.fromEntries([1,2,3,4].map(w=>[w,{carries:10,targets:2,receptions:1,rushing_tds:td,receiving_tds:0,redzone_carries:2}]))});
+ const a=row('a',1),b=row('b',.5),data={td_schema:1,players:[a,b]};
+ const o=M.touchdownEstimate(a,data,5);assert.equal(o.lambda,.75);assert.ok(Math.abs(o.chance-52.7633)<.001);
+ a.weeks[5]={carries:100,rushing_tds:99};assert.equal(M.touchdownEstimate(a,data,5).chance,o.chance);
+ assert.equal(M.touchdownEstimate(a,{players:[a,b]},5),null);assert.equal(M.touchdownEstimate(a,data,4),null);
+ assert.equal(M.touchdownEstimate(row('zero',0),{td_schema:1,players:[row('zero',0),row('peer',0)]},5).chance,0);
+});
+test('weekly share chart uses the matching team denominator and chronological weeks',()=>{
+ const rows=M.weeklyShares({weeks:{2:{carries:5,targets:5,team_totals:{carries:20,targets:30}},1:{carries:0,targets:0,team_totals:{carries:0,targets:0}},3:{carries:99}}},3);
+ assert.deepEqual(rows,[{week:1,share:null},{week:2,share:20}]);
+});
+test('trade analysis exposes consolidation benefit, both teams and optional drops',()=>{
+ const own=[player('r1','RB',20),player('r2','RB',15),player('r3','RB',8)],their=[player('q1','RB',25),player('q2','RB',5)];
+ const a=M.tradeAnalysis(own,their,['r2','r3'],['q1'],['RB','FLEX'],5,'projection');
+ assert.equal(a.delta,2);assert.equal(a.impact,10);assert.equal(a.theirImpact,-7);assert.equal(a.afterOwn.length,2);
+ assert.equal(M.tradeAnalysis(own,their,['r2','r3'],['q1'],['RB','FLEX'],5,'projection',{give:['r1'],get:[]}).after,null);
+ assert.equal(M.tradeAnalysis(own,their,[],[],['RB'],5).ready,false);
 });

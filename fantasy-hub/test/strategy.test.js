@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 const read=name=>readFileSync(new URL('../public/'+name,import.meta.url),'utf8');
 function setup(){
  let html='';const nodes=new Map();const el=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',addEventListener(){},add(){}});return nodes.get(id)};
- const c=vm.createContext({document:{addEventListener(){}},el,Option:class{},setExplorer:s=>{html=s},heading:(title,copy)=>`<div><h3>${title}</h3><p>${copy}</p></div>`,currentWeek:6,currentPlayerId:'allen',XL:{player:null},normalizeNFLAbbr:x=>x,esc:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;'),labFormat:(v,d=1)=>v==null?'—':Number(v).toFixed(d),labPct:v=>v==null?'—':Number(v).toFixed(1)+'%',nameKey:v=>String(v).toLowerCase().replace(/[^a-z0-9]/g,''),expandTable:(headers,rows)=>`<table>${headers.join('|')}${rows.join('')}</table>`});
+ const c=vm.createContext({document:{addEventListener(){}},sourceName:()=>"Exhibition",el,Option:class{},setExplorer:s=>{html=s},heading:(title,copy)=>`<div><h3>${title}</h3><p>${copy}</p></div>`,currentWeek:6,currentPlayerId:'allen',XL:{player:null},normalizeNFLAbbr:x=>x,esc:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;'),labFormat:(v,d=1)=>v==null?'—':Number(v).toFixed(d),labPct:v=>v==null?'—':Number(v).toFixed(1)+'%',nameKey:v=>String(v).toLowerCase().replace(/[^a-z0-9]/g,''),expandTable:(headers,rows)=>`<table>${headers.join('|')}${rows.join('')}</table>`});
  const script=read('script.js');vm.runInContext(script.slice(script.indexOf('function makeDemo()'),script.indexOf('function updateUI()')),c);
  vm.runInContext("var model=makeDemo();var currentTeamId='1';var getTeam=()=>model.teams.find(t=>t.id===currentTeamId);var findTeam=id=>model.teams.find(t=>t.id===id);var getPool=()=>Object.values(model.players);var rowsFor=t=>t.playerIds.map(id=>model.players[id]);var teamName=t=>t?.name||'No team';",c);
  vm.runInContext(read('analytics-math.js'),c);vm.runInContext(read('strategy.js'),c);
@@ -32,7 +32,7 @@ test('home windows follow player selection and keep unavailable data blank',()=>
  assert.match(h.node('home-share-player').innerHTML,/value="cook" selected/);
  assert.match(h.node('share-preview').innerHTML,/SYNTHETIC EXHIBITION DATA/);
  h.run("currentPlayerId='dal';renderStrategyHome()");
- assert.match(h.node('share-preview').innerHTML,/TOUCHES<\/span><b>—/);
+ assert.match(h.node('share-preview').innerHTML,/Touches<\/span><strong>—/);
  h.run("currentPlayerId='allen';model.players.allen.scores={};renderStrategyHome()");
  assert.match(h.node('outlook-preview').innerHTML,/Estimated floor.*?<strong>—<\/strong>/);
 });
@@ -55,5 +55,29 @@ test('home trade controls update the same packages used in the full calculator',
 });
 test('D/ST report labels the opposing offense and Scouting File opens Player Outlook',()=>{
  const h=setup();h.run("STRATEGY.player='dal';renderDefensiveOutlook()");assert.match(h.html(),/OPPOSING OFFENSE/);assert.match(h.html(),/Sack rate conceded/);
- const file=h.run("scoutingFile(model.players.allen)");assert.match(file,/data-strategy-open="outlook"/);assert.match(file,/range-floor/);assert.match(file,/PRIOR SCORING/);assert.ok(!file.includes('data-strategy-open="trade"'));
+ const file=h.run("scoutingFile(model.players.allen)");assert.match(file,/data-strategy-open="outlook"/);assert.match(file,/range-floor/);assert.match(file,/Availability/);assert.ok(!file.includes('PRIOR SCORING'));assert.ok(!file.includes('data-strategy-open="trade"'));
+});
+
+test('eight share bars and actionable metrics render in both scopes',()=>{
+ const h=setup();h.run("STRATEGY.player='cook';renderStrategy('opportunity')");
+ assert.match(h.html(),/Est. TD chance/);assert.match(h.html(),/Inside-10 share/);assert.match(h.html(),/Recent touches/);
+ assert.equal((h.node('share-preview').innerHTML.match(/class="strategy-share share-/g)||[]).length,8);
+ assert.match(h.run("shareHistoryChart(model.players.cook)"),/data-share-week="1"/);
+});
+test('leader filter roundtrip retains player and uses roster identity lookup only once per member',()=>{
+ const h=setup();const active=h.run('opportunityRows(usageDataset()).map(r=>r.r.gsis_id).join()');
+ h.run("STRATEGY.player='cook';STRATEGY.leaders='all';opportunityRows(usageDataset());STRATEGY.leaders='active'");
+ assert.equal(h.run('opportunityRows(usageDataset()).map(r=>r.r.gsis_id).join()'),active);assert.equal(h.run('STRATEGY.player'),'cook');
+ h.run('var matches=0;var originalLookup=usageFor;usageFor=(...args)=>{matches++;return originalLookup(...args)};opportunityRows(usageDataset())');
+ assert.equal(h.run('matches'),h.run('tradeRoster(getTeam()).length'));
+});
+test('TD estimate is hidden for unavailable players and data coverage stays explicit',()=>{
+ const h=setup();assert.ok(h.run('usageForecast(model.players.cook,usageDataset()).chance')>0);
+ h.run("model.players.cook.status='OUT'");assert.equal(h.run('usageForecast(model.players.cook,usageDataset()).chance'),null);
+});
+test('trade workbench compares lineups and counteroffers without changing league rosters',()=>{
+ const h=setup();const roster=h.run('getTeam().playerIds.join()');
+ h.run("renderStrategy('trade');STRATEGY.trade.give=['cook'];STRATEGY.trade.get=['demo-1-1'];renderTrade();findTradeAlternatives()");
+ assert.match(h.html(),/STARTING LINEUP/);assert.match(h.html(),/COUNTEROFFER WORKBENCH/);assert.ok(!h.html().includes('ROSTER FIT'));
+ assert.equal(h.run('getTeam().playerIds.join()'),roster);
 });

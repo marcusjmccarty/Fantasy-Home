@@ -1,4 +1,4 @@
-# Fantasy Hub — GRIDIRON/86 v9.8, Cloudflare edition
+# Fantasy Hub — GRIDIRON/86 v9.9, Cloudflare edition
 
 Live site: https://fantasy-home.fantasy-hub.workers.dev/
 
@@ -195,3 +195,13 @@ The nightly NFLverse dataset now includes weekly offensive/defensive units. Matc
 The optional AI matchup report requests 2–3 paragraphs. The Worker retrieves the opponent and team statistics itself; it does not accept caller-supplied opponent statistics. Existing server-side credentials, quotas and caching remain in effect. Exhibition data stays explicitly synthetic and does not trigger AI generation.
 
 Outlook and opportunity reports have franchise/all-player selectors. Opportunity Leaders switches between the active franchise and all NFL players: click anywhere in a row to select, double-click for the Player Terminal; keyboard Enter selects and Enter again opens. Touches & Share includes four distinct share colors and compact workload context. The homepage trade builder supports player packages, partner changes, valuation modes and removal/clearing, sharing state with the full simulator.
+
+
+## v9.9 — readable Star workspaces
+
+- Larger data typography and controls throughout the original full-width desktop, with responsive clickable backdrop margins around reports.
+- Chronological Player Outlook history, aligned range/evidence panels, tabular opponent stats and data-grounded AI interpretation using league comparisons and recent workload.
+- Eight workload-share measures, weekly share charts with week-specific scoring drilldowns, and a labeled rushing/receiving TD probability scenario. TD estimates use recorded TDs with position shrinkage and recent workload, require four prior recorded weeks, and are not calibrated forecasts. Methodology remains available in the report.
+- Stable roster-filter controls with indexed player matching and in-place result updates. Variable Lab uses a viewport-bounded canvas without the forced enrichment gap.
+- Original scouting facts restored alongside a compact Outlook. Home Player Terminal gains a share chart.
+- Trade scenarios now compare both optimized starting lineups, optional roster drops, projection/form/floor/ceiling valuations, package balance, and balancing counteroffers. No trade is submitted; dynasty/keeper/draft-pick and rest-of-season values are not supplied.

@@ -37,3 +37,14 @@ class UnitTests(unittest.TestCase):
         self.assertEqual(unit,offense);self.assertEqual(unit['plays'],3);self.assertEqual(unit['yards'],5);self.assertEqual(unit['yard_plays'],2)
         self.assertEqual(unit['epa_plays'],2);self.assertEqual(unit['successes'],1);self.assertEqual(unit['sacks'],1);self.assertEqual(unit['explosives'],1)
         self.assertEqual(len(data['players']),1)
+
+class TouchdownTests(unittest.TestCase):
+    def test_td_counts_credit_scorer_and_exclude_penalties_and_passing_qb(self):
+        rows=[play(rush_touchdown='1',td_player_id='a'),play(pid='b',kind='pass',play_id='2',complete_pass='1',pass_touchdown='1',passer_player_id='q',td_player_id='b'),play(pid='b',kind='pass',play_id='3',complete_pass='1',pass_touchdown='1',td_player_id='c'),play(play_id='4',rush_touchdown='1',no_play='1')]
+        data=usage.aggregate(rows);players={p['gsis_id']:p['weeks']['1'] for p in data['players']}
+        self.assertEqual(data['td_schema'],1)
+        self.assertEqual(players['a']['rushing_tds'],1)
+        self.assertEqual(players['b']['receiving_tds'],1)
+        self.assertEqual(players['c']['receiving_tds'],1)
+        self.assertNotIn('q',players)
+        self.assertEqual(players['a']['team_totals']['receiving_tds'],2)

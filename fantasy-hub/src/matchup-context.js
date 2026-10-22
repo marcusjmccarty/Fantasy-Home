@@ -20,8 +20,20 @@ export function playerWorkload(data,player,week){
  const pool=data?.players||[],idMatch=pool.find(r=>r.espn_id&&String(r.espn_id)===String(player.id));
  const named=pool.filter(r=>names(r.name)===names(player.name));
  const row=idMatch||(named.length===1?named[0]:null);
- const weeks=Object.entries(row?.weeks||{}).filter(([w])=>Number(w)>0&&Number(w)<week).map(([,r])=>r);
+ const weeks=Object.entries(row?.weeks||{}).filter(([w])=>Number(w)>0&&Number(w)<week).sort((a,b)=>Number(a[0])-Number(b[0])).map(([,r])=>r);
  if(!weeks.length)return null;
  const sum=k=>weeks.reduce((s,r)=>s+(Number(r[k])||0),0),carries=sum('carries'),targets=sum('targets'),receptions=sum('receptions');
- return {recordedWeeks:weeks.length,carries,targets,receptions,touches:carries+receptions,opportunities:carries+targets,touchesPerRecordedWeek:+((carries+receptions)/weeks.length).toFixed(2),redzoneCarries:sum('redzone_carries'),redzoneTargets:sum('redzone_targets'),inside5Carries:sum('inside5_carries'),basis:'NFLverse recorded plays strictly before requested week; no-play penalties, kneels, spikes and two-point attempts excluded'};
+ const recent=weeks.slice(-3),avg=(rows,key)=>rows.reduce((s,r)=>s+Number(r[key]||0),0)/rows.length;
+ return {recordedWeeks:weeks.length,carries,targets,receptions,touches:carries+receptions,opportunities:carries+targets,touchesPerRecordedWeek:+((carries+receptions)/weeks.length).toFixed(2),redzoneCarries:sum('redzone_carries'),redzoneTargets:sum('redzone_targets'),inside5Carries:sum('inside5_carries'),recentThree:{recordedWeeks:recent.length,carriesPerWeek:avg(recent,'carries'),targetsPerWeek:avg(recent,'targets'),redzoneChancesPerWeek:avg(recent,'redzone_carries')+avg(recent,'redzone_targets')},seasonTargetsPerWeek:targets/weeks.length,seasonCarriesPerWeek:carries/weeks.length,basis:'NFLverse recorded plays strictly before requested week; no-play penalties, kneels, spikes and two-point attempts excluded'};
+}
+
+export function unitComparisons(units,team,side){
+ const unit=units?.[team]?.[side];if(!unit)return null;
+ const keys=['yardsPerPlay','netPassYardsPerPlay','rushYardsPerPlay','sackRate','turnoversPerGame','epaPerPlay','successRate','explosiveRate'];
+ return Object.fromEntries(keys.map(key=>{
+  const values=Object.values(units).map(t=>t[side]?.[key]).filter(Number.isFinite),value=unit[key];
+  if(!values.length||!Number.isFinite(value))return [key,null];
+  const mean=values.reduce((a,b)=>a+b,0)/values.length;
+  return [key,{value,leagueUnitMean:+mean.toFixed(3),differenceFromMean:+(value-mean).toFixed(3),teams:values.length,basis:'Unweighted mean of team rates; not opponent-adjusted'}];
+ }));
 }

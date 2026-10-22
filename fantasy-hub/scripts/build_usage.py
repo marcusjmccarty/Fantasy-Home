@@ -7,7 +7,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-FIELDS=('carries','targets','receptions','redzone_carries','redzone_targets','inside10_carries','inside10_targets','inside5_carries','inside5_targets')
+FIELDS=('carries','targets','receptions','redzone_carries','redzone_targets','inside10_carries','inside10_targets','inside5_carries','inside5_targets','rushing_tds','receiving_tds')
 UNIT_FIELDS=('plays','yards','yard_plays','pass_plays','pass_yards','pass_yard_plays','rush_plays','rush_yards','rush_yard_plays','sacks','turnovers','explosives','redzone_plays','epa','epa_plays','successes')
 def number(v):
     try: return float(v)
@@ -46,6 +46,16 @@ def aggregate(rows, identities=None, season=2026):
         events=[]
         if number(r.get('rush_attempt'))==1 and r.get('rusher_player_id'): events.append(('rusher','carries'))
         if number(r.get('pass_attempt'))==1 and r.get('receiver_player_id') and number(r.get('sack'))!=1: events.append(('receiver','targets'))
+        # Credit the actual scorer (laterals may change the scoring player).
+        td_kind='rushing_tds' if number(r.get('rush_touchdown'))==1 else 'receiving_tds' if number(r.get('pass_touchdown'))==1 else None
+        if td_kind:
+            prefix='rusher' if td_kind=='rushing_tds' else 'receiver'
+            scorer=r.get('td_player_id') or r.get(prefix+'_player_id')
+            if scorer:
+                identity=identities.get(scorer,{})
+                p=players.setdefault(scorer,{'gsis_id':scorer,'espn_id':str(identity.get('espn_id') or ''),'name':identity.get('name') or r.get('td_player_name') or r.get(prefix+'_player_name') or scorer,'position':identity.get('position') or '', 'weeks':{}})
+                p['weeks'].setdefault(str(week),{'team':team,**dict.fromkeys(FIELDS,0)})[td_kind]+=1
+                teams[team][str(week)][td_kind]+=1
         if not events: continue
         weeks.add(week);games.add(game)
         for prefix,kind in events:
@@ -62,7 +72,7 @@ def aggregate(rows, identities=None, season=2026):
     # players absent from the fantasy pool. Each row carries its own team/week.
     for p in players.values():
         for week,row in p['weeks'].items(): row['team_totals']=teams[row['team']][week]
-    return {'schema':1,'season':season,'source':'nflverse play-by-play','generated_at':datetime.now(timezone.utc).isoformat(),'through_week':max(weeks,default=0),'weeks':sorted(weeks),'games':len(games),'basis':'Recorded regular-season plays; penalties marked no_play, kneels, spikes and two-point attempts excluded. Targets require an identified receiver. Red zone ≤20 yards; inside 10 ≤10; goal line ≤5. Shares use team opportunities during the player’s reported weeks.','players':list(players.values()),'units':units}
+    return {'schema':1,'td_schema':1,'season':season,'source':'nflverse play-by-play','generated_at':datetime.now(timezone.utc).isoformat(),'through_week':max(weeks,default=0),'weeks':sorted(weeks),'games':len(games),'basis':'Recorded regular-season plays; penalties marked no_play, kneels, spikes and two-point attempts excluded. Targets require an identified receiver. Red zone ≤20 yards; inside 10 ≤10; goal line ≤5. Shares use team opportunities during the player’s reported weeks. TDs credit the scoring player; rushing and receiving only.','players':list(players.values()),'units':units}
 
 def download(url):
     return urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'GRIDIRON86 opportunity builder'}),timeout=120)
