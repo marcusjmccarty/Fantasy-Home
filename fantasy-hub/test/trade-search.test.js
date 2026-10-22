@@ -21,7 +21,7 @@ test('Sleeper lineup settings and recorded ESPN starters retain their actual slo
 const own=[player('a1','RB',25),player('a2','RB',22),player('a3','WR',8),player('a4','WR',2)];
 const their=[player('b1','WR',25),player('b2','WR',22),player('b3','RB',8),player('b4','RB',2)];
 test('automatic trade search finds every feasible one- and two-player improvement for both teams',()=>{
- const originals=JSON.stringify([own,their]),slots=['RB','WR'],found=M.searchTrades(own,their,slots,7,'projection');
+ const originals=JSON.stringify([own,their]),slots=['RB','WR'],found=M.searchTrades(own,their,slots,7,'projection',{collapse:false});
  assert.equal(found.checked,100);assert.equal(found.total,100);assert.equal(found.limited,false);
  assert.ok(found.results.some(r=>r.give.length!==r.get.length));
  const key=(give,get)=>give.join(',')+'|'+get.join(',');
@@ -43,7 +43,9 @@ test('automatic trade search finds every feasible one- and two-player improvemen
  assert.equal(JSON.stringify([own,their]),originals);
 });
 test('unavailable scores do not produce recommendations and searches report partial scope honestly',()=>{
- assert.equal(M.searchTrades(own,their,['QB'],7).unavailable,true);
+ assert.equal(M.searchTrades(own,their,[],7).unavailable,true);
+ // Neither team rosters a QB: both lineups score 0 and no trade can help.
+ const noQB=M.searchTrades(own,their,['QB'],7);assert.equal(noQB.unavailable,undefined);assert.equal(noQB.results.length,0);
  const partial=M.searchTrades(own,their,['RB','WR'],7,'projection',{limit:20});
  assert.equal(partial.checked,20);assert.equal(partial.limited,true);assert.match(partial.scope,/1-for-1/);
  assert.ok(partial.results.every(r=>r.give.length===1||r.get.length===1));

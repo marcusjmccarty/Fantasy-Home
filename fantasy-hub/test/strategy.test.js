@@ -214,3 +214,30 @@ test('home trade accepts every rostered player, fits into adaptive packages and 
  h.run("STRATEGY.trade.give=['cook'];STRATEGY.trade.get=['demo-1-1'];renderHomeTrade();renderTrade()");
  assert.match(h.html(),/This week’s projections/);assert.match(h.html(),/\+3\.1 pts \/ week/);assert.match(h.node('trade-preview').innerHTML,/\+3\.1/);
 });
+
+test('trade player list is keyboard and screen-reader friendly',()=>{
+ const h=setup();h.run("renderStrategy('trade')");const html=h.html();
+ assert.ok(!/class="lab-panel trade-side[^"]*"[^>]*role="link"/.test(html),'trade side is not a link');
+ assert.ok(!/class="trade-player[^"]*"[^>]*tabindex/.test(html),'rows add no extra tab stop');
+ assert.ok(!html.includes('double-click'));
+ assert.match(html,/<input type="checkbox" id="trade-give-cook"[^>]*>/);assert.match(html,/<label for="trade-give-cook"/);
+ assert.match(html,/data-trade-details="cook" aria-label="Details for James Cook"/);
+ assert.match(html,/1\. Players Team A gives/);assert.match(html,/2\. Players Team B gives/);
+ assert.match(html,/<p role="status" class="trade-verdict-text"><b>Choose at least one player from each team/);
+ assert.ok(!/class="trade-verdict"[^>]*aria-live/.test(html));
+ h.run("STRATEGY.trade.give=['cook'];STRATEGY.trade.get=['demo-1-1'];renderTrade()");
+ assert.match(h.html(),/role="status" class="trade-verdict-text"><b>Team A gains 3\.1 pts; Team B (gains|loses|stays)/);
+});
+test('trade recommendations explain an empty result and offer the closest options',()=>{
+ const h=setup();h.run("XL.open='trade';var Worker=class{postMessage(d){this.data=d}terminate(){}};var hostNode=el('trade-recommendations');renderTrade();STRATEGY.trade.partner='8';renderTrade()");
+ h.run("tradeSearch.result=FantasyMath.searchTrades(tradeRoster(tradeTeam()),tradeRoster(findTeam('8')),tradeConfig().slots,strategyWeek(),STRATEGY.trade.mode);renderTradeRecommendations()");
+ const out=h.node('trade-recommendations').innerHTML;
+ assert.match(out,/No trade improves both starting lineups/);assert.match(out,/Why none were found/);assert.match(out,/Closest options/);assert.match(out,/data-trade-kind="near"/);
+ h.run("STRATEGY.trade.partner='2';tradeSearch.result=FantasyMath.searchTrades(tradeRoster(tradeTeam()),tradeRoster(findTeam('2')),tradeConfig().slots,strategyWeek(),STRATEGY.trade.mode);renderTradeRecommendations()");
+ assert.match(h.node('trade-recommendations').innerHTML,/\d+ mutually beneficial trades/);
+});
+test('trade valuation falls back to rest of season when no projections exist',()=>{
+ const h=setup();h.run("for(const p of Object.values(model.players))p.projections={};STRATEGY.trade.modeChosen=false;ensureTrade()");
+ assert.equal(h.run('STRATEGY.trade.mode'),'season');
+ assert.ok(h.run("FantasyMath.tradeValue(tradeRoster(getTeam())[0],strategyWeek(),STRATEGY.trade.mode)")>0);
+});

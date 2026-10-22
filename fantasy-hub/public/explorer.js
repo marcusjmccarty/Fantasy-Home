@@ -1535,7 +1535,7 @@ function graphPresetAvailable(x,y){
 }
 function activeMetricOptions(list){const counts=Object.fromEntries(METRICS.map(m=>[m[0],0]));for(const p of list)for(const key of Object.keys(counts))if(metricValue(p,key)!==null)counts[key]++;return counts;}
 function graphData(){return graphCandidates().map(p=>({p,x:metricValue(p,XL.graph.x),y:metricValue(p,XL.graph.y)})).filter(r=>r.x!==null&&r.y!==null)}
-function graphCorrelations(rows){const n=rows.length;if(n<2)return null;const x=labSum(rows.map(v=>v.x))/n,y=labSum(rows.map(v=>v.y))/n;const cov=labSum(rows.map(v=>(v.x-x)*(v.y-y))),sx=labSum(rows.map(v=>(v.x-x)**2)),sy=labSum(rows.map(v=>(v.y-y)**2));return {r:sx&&sy?cov/Math.sqrt(sx*sy):null,slope:sx?cov/sx:null,intercept:sx?y-cov/sx*x:null};}
+function graphCorrelations(rows){const n=rows.length;if(n<2)return null;const x=labSum(rows.map(v=>v.x))/n,y=labSum(rows.map(v=>v.y))/n;const cov=labSum(rows.map(v=>(v.x-x)*(v.y-y))),flat=(d,m)=>d<=1e-12*Math.max(1,labSum(rows.map(v=>v[m]**2))),rawX=labSum(rows.map(v=>(v.x-x)**2)),rawY=labSum(rows.map(v=>(v.y-y)**2)),sx=flat(rawX,'x')?0:rawX,sy=flat(rawY,'y')?0:rawY;/* rounding noise in a constant column is not variation */return {r:sx&&sy?cov/Math.sqrt(sx*sy):null,slope:sx?cov/sx:null,intercept:sx?y-cov/sx*x:null};}
 // Descriptive statistics are computed exclusively from complete X/Y pairs.
 // A dash is used when correlation or a fitted model is undefined.
 function graphStatistics(rows){

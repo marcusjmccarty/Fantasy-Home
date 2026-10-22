@@ -64,7 +64,9 @@ test('trade analysis exposes consolidation benefit, both teams and optional drop
  const own=[player('r1','RB',20),player('r2','RB',15),player('r3','RB',8)],their=[player('q1','RB',25),player('q2','RB',5)];
  const a=M.tradeAnalysis(own,their,['r2','r3'],['q1'],['RB','FLEX'],5,'projection');
  assert.equal(a.delta,2);assert.equal(a.impact,10);assert.equal(a.theirImpact,-7);assert.equal(a.afterOwn.length,2);
- assert.equal(M.tradeAnalysis(own,their,['r2','r3'],['q1'],['RB','FLEX'],5,'projection',{give:['r1'],get:[]}).after,null);
+ // Dropping the last other RB leaves FLEX empty (0 points), not an unscorable lineup.
+ const thin=M.tradeAnalysis(own,their,['r2','r3'],['q1'],['RB','FLEX'],5,'projection',{give:['r1'],get:[]});
+ assert.equal(thin.after.total,25);assert.equal(thin.after.empty,1);assert.equal(thin.impact,-10);
  assert.equal(M.tradeAnalysis(own,their,[],[],['RB'],5).ready,false);
 });
 
