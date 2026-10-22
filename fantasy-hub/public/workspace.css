@@ -30,7 +30,7 @@
 /* Folder tabs display the existing expanded windows inline. */
 .workspace-navigation{margin:12px 12px 0;border-bottom:1px solid #444a43}
 .workspace-navigation[hidden],body[data-layout=tabbed] .window-grid,body[data-layout=tabbed] .dossiers-section{display:none!important}
-#workspace-tabs{display:flex;align-items:stretch;gap:3px;overflow-x:auto;padding:3px 2px 0;scrollbar-width:thin;scrollbar-color:#858b81 #e5e4dc}
+#workspace-tabs{position:relative;display:flex;align-items:stretch;gap:3px;overflow-x:auto;padding:3px 2px 0;scrollbar-width:thin;scrollbar-color:#858b81 #e5e4dc}
 #workspace-tabs button{flex:0 0 auto;white-space:nowrap;border:1px solid #777d72;border-bottom:0;border-radius:0;background:#d4d6cd;padding:8px 11px;font:bold 11px 'Courier New',monospace;color:#363c36;cursor:pointer}
 #workspace-tabs button:hover{background:#f3f4ed}
 #workspace-tabs button[aria-selected=true]{background:var(--white);color:#161e1a;box-shadow:inset 0 3px 0 #4a6c61}

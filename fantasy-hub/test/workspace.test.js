@@ -28,12 +28,12 @@ function setup(saved=null,blocked=false){
  const document={body,querySelector:get,querySelectorAll:()=>modes,addEventListener(k,fn){(events.get(k)||events.set(k,[]).get(k)).push(fn)},dispatchEvent(e){for(const fn of events.get(e.type)||[])fn(e)}};
  const storage=new Map(saved?[['gridiron86-workspace-v2',JSON.stringify(saved)]]:[]);
  const XL={open:null,player:null,viewWeek:null,history:[],future:[],lineupScenarios:new Map(),free:[]};
- const context=vm.createContext({document,localStorage:{getItem(k){if(blocked)throw Error('blocked');return storage.get(k)},setItem(k,v){if(blocked)throw Error('blocked');storage.set(k,v)}},el:get,XL,currentTeamId:'1',currentPlayerId:'p1',currentWeek:6,model:{season:2026,players:{p1:{id:'p1'}}},getTeam:()=>({id:'1'}),rowsFor:()=>[{id:'p1'}],explorerClubHeader(){},renderExplorer(){renders.push(XL.open)},CustomEvent:class{constructor(type,{detail}){this.type=type;this.detail=detail}}});
+ const context=vm.createContext({document,window:document,localStorage:{getItem(k){if(blocked)throw Error('blocked');return storage.get(k)},setItem(k,v){if(blocked)throw Error('blocked');storage.set(k,v)}},el:get,XL,currentTeamId:'1',currentPlayerId:'p1',currentWeek:6,model:{season:2026,players:{p1:{id:'p1'}}},getTeam:()=>({id:'1'}),rowsFor:()=>[{id:'p1'}],explorerClubHeader(){},renderExplorer(){renders.push(XL.open)},CustomEvent:class{constructor(type,{detail}){this.type=type;this.detail=detail}}});
  vm.runInContext(explorer.slice(explorer.indexOf('function openExplorer('),explorer.indexOf('function focusWeeklyLedger()')),context);
  // Same queued close handling as the production dialog listener.
  get('explore-dialog').addEventListener('close',()=>{if(get('explore-dialog').open)return;XL.open=null;XL.viewWeek=null;XL.history=[];XL.future=[];XL.viewTeamId=null;XL.lineupScenarios.clear()});
  vm.runInContext(source,context);
- return {get,body,XL,storage,renders,run:code=>vm.runInContext(code,context),flush(){while(queue.length)queue.shift()()},active:()=>active};
+ return {get,body,XL,storage,renders,run:code=>vm.runInContext(code,context),flush(){while(queue.length)queue.shift()()},active:()=>active,resize(){document.dispatchEvent({type:'resize'})}};
 }
 test('Dashboard remains default; Tabbed opens a nonmodal full report and hides tiles',()=>{
  const h=setup();assert.equal(h.body.dataset.layout,'dashboard');assert.equal(h.get('explore-dialog').open,false);
@@ -80,4 +80,12 @@ test('player drilldowns synchronize the active tab and Escape leaves inline repo
  assert.equal(h.XL.player,'p1');assert.equal(h.get('workspace-tab-profile').attributes['aria-selected'],'true');
  assert.equal(h.get('explore-dialog').fire('cancel').prevented,true);
  assert.equal(JSON.parse(h.storage.get('gridiron86-workspace-v2')).tab,'profile');
+});
+
+test('resizing a narrow viewport keeps the selected tab in the visible strip',()=>{
+ const h=setup({layout:'tabbed',tab:'trade'}),strip=h.get('workspace-tabs'),active=h.get('workspace-tab-trade');
+ strip.clientWidth=300;strip.scrollLeft=0;h.resize();
+ assert.ok(active.offsetLeft>=strip.scrollLeft);
+ assert.ok(active.offsetLeft+active.offsetWidth<=strip.scrollLeft+strip.clientWidth);
+ assert.equal(h.XL.open,'trade');
 });

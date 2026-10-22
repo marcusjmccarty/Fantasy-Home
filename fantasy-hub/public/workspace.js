@@ -87,5 +87,8 @@ workspaceTabs.addEventListener('keydown',event=>{
   event.preventDefault();tabs[next].focus();activateWorkspace(tabs[next].dataset.workspace);
 });
 document.addEventListener('workspace:opened',event=>syncWorkspaceTab(event.detail.type));
+window.addEventListener('resize',()=>{
+  if(document.body.dataset.layout==='tabbed'&&XL.open)syncWorkspaceTab(XL.open);
+});
 el('explore-dialog').addEventListener('cancel',event=>{if(document.body.dataset.layout==='tabbed')event.preventDefault();});
 setWorkspaceLayout(workspacePreference.layout);
