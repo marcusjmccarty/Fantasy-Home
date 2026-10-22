@@ -11,7 +11,7 @@
  enabled.addEventListener('change',()=>{
   try{localStorage.setItem(preferenceKey,enabled.checked?'on':'off');}catch{}
  });
- const visible=node=>node&&!node.disabled&&node.getClientRects().length>0&&!node.closest('[hidden]');
+ const visible=node=>node&&!node.disabled&&node.getClientRects().length>0&&!node.closest('[hidden],[inert]')&&getComputedStyle(node).visibility==='visible';
  const editing=target=>target instanceof Element&&!!target.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="textbox"],[role="combobox"],[role="slider"]');
  function dismissRanking(){
    for(const [id,selector] of [['player-ranking-host','.player-rank-trigger'],['summary-ranking-host','.summary-rank-trigger'],['position-ranking-host','.position-rank-trigger']]){
@@ -31,10 +31,11 @@
  // Native restoration is sufficient unless an asynchronous report update has
  // removed its opener. Recover only stranded focus, never override a new modal.
  help.addEventListener('close',()=>{
-  if(help.open||document.activeElement!==document.body&&!help.contains(document.activeElement))return;
-  const top=modal();if(top&&top!==report)return;
-  const fallback=(report.open?report:document).querySelector('[data-shortcuts-help]');
-  if(visible(fallback))fallback.focus({preventScroll:true});
+  const active=document.activeElement;
+  if(help.open||active!==document.body&&!help.contains(active)&&visible(active))return;
+  const scope=modal()||(report.open?report:document);
+  const fallback=[...scope.querySelectorAll('[data-shortcuts-help]'),...scope.querySelectorAll('button,input,select,textarea,a[href],[tabindex]')].find(visible);
+  fallback?.focus({preventScroll:true});
  });
  document.querySelectorAll('[data-shortcuts-help]').forEach(button=>button.addEventListener('click',showHelp));
  document.addEventListener('keydown',event=>{
