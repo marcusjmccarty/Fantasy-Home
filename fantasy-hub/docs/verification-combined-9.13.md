@@ -32,3 +32,9 @@ The first keyboard script run on the earlier combined candidate failed its metri
 The initial custom help/debounce probe also made an invalid assumption: programmatic click does not focus its button, so native dialog return may correctly restore the still-live input. Explicitly focusing the help opener before activation resolves that test assumption; no product change was made for it.
 
 This is an integration-review candidate, not approval to merge or deploy. Original PR branches remain intact. Earlier performance numbers remain historical measurements, not rebenchmarked v9.13 claims.
+
+## Final UI compatibility gates
+
+The complete graph/UI browser script passes **28/28**, 0 failed/skipped (35.45 seconds). It includes all earlier cases plus separate Complete Statistical File → Player Stat Archive coverage, header/Matchup/strategy active-week synchronization in both selector directions, and home AI button player routing without opening its parent tile. The AI test injects a demo fixture control and stubs generation; it verifies event handling only, with no provider calls. The expanded Matchup picker is correctly read from `#lab-match-week` in the heading; the old dark-chrome slot is intentionally empty in main.
+
+No application fix was needed for these compatibility gates. The unresolved intermittent keyboard metric-focus result above remains explicitly open pending the keyboard owner's investigation.

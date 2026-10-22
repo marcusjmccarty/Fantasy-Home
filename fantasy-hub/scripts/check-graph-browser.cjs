@@ -185,3 +185,31 @@ test('Player Terminal Weekly Points opens Position Allocation by click and keybo
   assert.equal(await page.evaluate(()=>XL.open),'positions');
  }
 });
+test('Complete Statistical File retains its separate Player Stat Archive destination',async()=>{
+ await page.evaluate(()=>openExplorer('profile',currentPlayerId));await settle();
+ await page.locator('[data-open-player-analytics] h4').click();
+ assert.equal(await page.evaluate(()=>XL.open),'player-analytics');
+});
+test('global active week synchronizes Matchup and strategy analysis',async()=>{
+ await page.selectOption('#header-current-week','3');
+ assert.equal(await page.locator('#week-select').inputValue(),'3');
+ assert.equal(await page.evaluate(()=>strategyWeek()),3);
+ await page.locator('.expandable[data-explore="matchup"] .title-bar h2').click();
+ assert.equal(await page.evaluate(()=>XL.open),'matchup');
+ assert.equal(await page.locator('#lab-match-week').inputValue(),'3');
+ await page.locator('#explore-close').click();await settle();
+ await page.selectOption('#week-select','4');
+ assert.equal(await page.locator('#header-current-week').inputValue(),'4');
+ assert.equal(await page.evaluate(()=>strategyWeek()),4);
+});
+test('home AI button routes its selected player without opening the parent tile',async()=>{
+ // Demo omits paid AI controls. Inject a fixture control and stub generation;
+ // this exercises event routing only, without any provider request.
+ const expected=await page.evaluate(()=>{
+  const id=String(getPool()[0].id),button=document.createElement('button');button.dataset.matchupAi=id;button.id='fixture-ai';button.textContent='Fixture AI';
+  document.querySelector('.expandable[data-explore="outlook"] .win-inner').append(button);
+  window.aiCalls=[];window.generateMatchupAI=p=>aiCalls.push(String(p.id));return id;
+ });
+ await page.locator('#fixture-ai').click();
+ assert.deepEqual(await page.evaluate(()=>aiCalls),[expected]);assert.equal(await page.evaluate(()=>XL.open),null);
+});
