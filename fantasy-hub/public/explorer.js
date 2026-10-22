@@ -117,8 +117,8 @@ function trendBars(items,colorFn=()=>COLORS.QB,maximum=null){
  const max=maximum||Math.max(1,...items.map(v=>Math.max(0,labNum(v.v)||0)));
  return `<div class="lab-histogram ${items.length>12?'dense-weeks':''}" style="--week-count:${items.length}">${items.map((v,i)=>`<div class="lab-hist-col" title="${esc(v.label)} · ${labFormat(v.v)}"><strong>${labFormat(v.v,0)}</strong><button type="button" class="lab-hist-bar ${v.week?'player-week-bar':''}" ${v.week?`data-player-week="${v.week}" aria-label="Open Week ${v.week} starter contributions"`: 'disabled'} style="height:${Math.max(2,(labNum(v.v)||0)/max*100)}%;background:${colorFn(v,i)}"></button><small>${esc(v.short??v.label)}</small></div>`).join('')}</div>`;
 }
-var graphResizeObserver=null;
-function setExplorer(html){if(typeof closeStatHelp==='function')closeStatHelp();graphResizeObserver?.disconnect();el('explore-content').innerHTML=html;el('explore-source').textContent=sourceName();}
+var graphResizeObserver=null,graphPaintFrame=null;
+function setExplorer(html){if(graphPaintFrame!==null){cancelAnimationFrame(graphPaintFrame);graphPaintFrame=null;}if(typeof closeStatHelp==='function')closeStatHelp();graphResizeObserver?.disconnect();el('explore-content').innerHTML=html;el('explore-source').textContent=sourceName();}
 function explorerClubHeader(type,playerId=null){
  const host=el('explore-club');if(!host)return;
  const id=String(explorerTeam().id);
@@ -222,11 +222,12 @@ function eligibleBench(slot,pos,originalPos){
 // Shared lineup state and totals: Franchise Report and Matchup Center always
 // show the same read-only what-if scenario for the same team and week.
 function weeklyLineupData(t,wanted){
- const activeWeek=Number(model.currentWeek||model.liveWeek||currentWeek||wanted);
+ const activeWeek=Number(model.currentWeek||model.liveWeek||t.currentMatchup?.week||currentWeek||wanted);
+ const liveMatch=Number(t.currentMatchup?.week)===wanted?t.currentMatchup:null;
  const weekHistory=(t.history||[]).find(h=>Number(h.week)===wanted);
  const hasWeekEntries=!!(weekHistory?.lineup?.length||Object.keys(weekHistory?.starters||{}).length);
  const liveRoster=wanted===activeWeek?(t.currentLineup||[]):[];
- const chosen=hasWeekEntries?weekHistory:liveRoster.length?{week:wanted,points:weekHistory?.points??t.currentMatchup?.points??null,lineup:liveRoster,starters:{}}:weekHistory||null;
+ const chosen=hasWeekEntries?weekHistory:liveRoster.length?{week:wanted,points:weekHistory?.points??liveMatch?.points??null,lineup:liveRoster,starters:{}}:weekHistory||null;
  const data=sideLineup({...t,history:chosen?[chosen]:[]},wanted);
  const entries=[...data.items];
  if(wanted===activeWeek){
@@ -251,7 +252,7 @@ function weeklyLineupData(t,wanted){
  const projectionValues=starters.map(projFor).filter(v=>v!==null);
  const computedActual=actualValues.length?labSum(actualValues):null;
  const computedProjection=projectionValues.length?labSum(projectionValues):null;
- const official=labNum(weekHistory?.points??(wanted===activeWeek?t.currentMatchup?.points:null));
+ const official=labNum(weekHistory?.points??(wanted===activeWeek?liveMatch?.points:null));
  const origActual=originalStarters.map(scoreFor).filter(v=>v!==null);
  const completeOrig=originalStarters.length>0&&origActual.length===originalStarters.length;
  // Official ESPN total is authoritative. A complete original starter sum is a
@@ -1579,7 +1580,7 @@ function scatterSVG(rows,dimensions={}){
   const lx=Math.max(m.l+4,x+labelWidth+12>W-m.r?x-labelWidth-9:x+9),ly=y<30?y+22:y-10;
   const visible=XL.graph.showLabels&&!occupied.some(k=>lx<k.x+k.w+6&&lx+labelWidth>k.x-6&&ly>k.y-18&&ly<k.y+18);
   if(visible)occupied.push({x:lx,y:ly,w:labelWidth});
-  return `<g class="lab-dot ${visible?'label-visible':''}" tabindex="0" role="button" data-graph-point="${i}" aria-label="Open ${esc(name)} Player Terminal"><circle cx="${x}" cy="${y}" r="${XL.selectedPoint===d.p.id?8:6}" stroke="#fff" stroke-width="1.4" fill="${XL.graph.color==='pos'?playerColor(d.p):'#487ebb'}"/><text class="lab-label" x="${lx}" y="${ly}">${esc(name)}</text></g>`;
+  return `<g class="lab-dot ${visible?'label-visible':''}" tabindex="0" role="button" data-graph-point="${i}" data-graph-player="${esc(String(d.p.id))}" aria-label="Open ${esc(name)} Player Terminal"><circle cx="${x}" cy="${y}" r="${XL.selectedPoint===d.p.id?8:6}" stroke="#fff" stroke-width="1.4" fill="${XL.graph.color==='pos'?playerColor(d.p):'#487ebb'}"/><text class="lab-label" x="${lx}" y="${ly}">${esc(name)}</text></g>`;
  }).join('');
  return `<svg class="lab-scatter-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Scatter plot: ${esc(META[XL.graph.x].name)} against ${esc(META[XL.graph.y].name)}"><defs><clipPath id="graphclip"><rect x="${m.l}" y="${m.t}" width="${w}" height="${h}"/></clipPath></defs><rect x="${m.l}" y="${m.t}" width="${w}" height="${h}" fill="#fff" stroke="#a5aaa8"/>${ticks('x')}${ticks('y')}${regression}${circles}<text x="${m.l+w/2}" y="${H-5}" text-anchor="middle" class="lab-axis-title">${esc(META[XL.graph.x].name)}</text><text x="15" y="${m.t+h/2}" transform="rotate(-90 15 ${m.t+h/2})" text-anchor="middle" class="lab-axis-title">${esc(META[XL.graph.y].name)}</text></svg>`;
 }
@@ -1591,7 +1592,7 @@ function detailGraph(){
  setExplorer('<section class="graph-screen">'+heading('Variable Lab','')+
  `<div class="graph-control-deck"><div class="lab-controls graph-unified-toolbar" aria-label="Variable Lab filters and axes"><label class="graph-pool">POOL <select id="graph-scope">${[['ALL','All available'],['TEAM','Selected team'],['LEAGUE','League rosters'],['FREE','Free agents']].map(([v,n])=>`<option value="${v}" ${XL.graph.scope===v?'selected':''}>${n}</option>`).join('')}</select></label><label class="graph-position">POSITION <select id="graph-pos">${['ALL',...POS_ORDER].map(v=>`<option ${XL.graph.pos===v?'selected':''}>${v}</option>`).join('')}</select></label><label class="graph-x">X AXIS ${metricSelect('x',counts)}</label><button id="graph-swap" class="lab-action graph-swap" title="Swap graph axes">⇄</button><label class="graph-y">Y AXIS ${metricSelect('y',counts)}</label><label class="graph-games">MIN GAMES <select id="graph-minimum">${[0,1,2,3,5].map(n=>`<option ${XL.graph.minimum===n?'selected':''}>${n}</option>`).join('')}</select></label><label class="graph-search">SEARCH <input id="graph-search" placeholder="Player name" value="${esc(XL.graph.search)}"></label><label class="graph-toggle"><input id="graph-trend" type="checkbox" ${XL.graph.trend?'checked':''}><span>TREND</span></label><label class="graph-toggle"><input id="graph-labels" type="checkbox" ${XL.graph.showLabels?'checked':''}><span>LABELS</span></label></div>
  <div class="graph-preset-ribbon"><b>QUICK PLOTS</b>${presets.map(([x,y,n])=>`<button type="button" class="graph-preset ${XL.graph.x===x&&XL.graph.y===y?'active':''}" data-preset="${x},${y}" ${graphPresetAvailable(x,y)?'':`disabled title="Requires recorded ${esc(META[x].name)} and ${esc(META[y].name)}; load NFL data or choose another preset"`}>${n}</button>`).join('')}<span class="graph-preset-hint">Select axes above or use a preset.</span></div></div>`+
- `<div class="lab-graph-layout"><section class="lab-panel lab-graph-panel"><div class="lab-graph-top"><h4>${esc(META[XL.graph.y].name)} BY ${esc(META[XL.graph.x].name)}</h4><div class="lab-graph-legend">${POS_ORDER.map(pos=>`<span><i style="background:${COLORS[pos]}"></i>${pos}</span>`).join('')}</div><span>${rows.length} MATCHED PAIRS / ${cands.length} CANDIDATES</span></div><div class="graph-plot">${scatterSVG(rows)}</div></section>
+ `<div class="lab-graph-layout"><section class="lab-panel lab-graph-panel"><div class="lab-graph-top"><h4>${esc(META[XL.graph.y].name)} BY ${esc(META[XL.graph.x].name)}</h4><div class="lab-graph-legend">${POS_ORDER.map(pos=>`<span><i style="background:${COLORS[pos]}"></i>${pos}</span>`).join('')}</div><span>${rows.length} MATCHED PAIRS / ${cands.length} CANDIDATES</span></div><div class="graph-plot"></div></section>
  <aside class="lab-graph-aside"><div class="graph-stat-heading"><h4>GRAPH STATISTICS</h4></div><div class="graph-stat-grid">${graphStatButtons(stats)}</div><div id="lab-point-info" class="lab-point-info" hidden></div></aside></div>`+
  `</section><details class="graph-tools strategy-method"><summary>Data sources & export</summary><div class="lab-controls graph-enrichment-panel"><label>ENRICH WITH NFL DATA <input id="graph-import" type="file" accept=".csv,text/csv"></label><button class="lab-action" id="graph-load-nflverse">LOAD NFLverse ADVANCED METRICS ↻</button><button class="lab-action" id="graph-export">EXPORT PLOT DATA CSV ↓</button><button class="lab-action" id="graph-export-svg">SAVE SVG GRAPH ↓</button><button class="lab-action" id="graph-clear-import">CLEAR IMPORTED METRICS</button></div>`+
  `<div class="lab-panel"><h4>DATA DICTIONARY / PROVENANCE</h4><p class="lab-note">ESPN fantasy scores use the league's scoring system. NFL box-score fields and advanced CSVs are included only when supplied. Advanced measurements may use different time periods; compare only compatible periods. Imports are matched by player name, and unavailable fields remain blank.</p><div class="lab-dictionary">${METRICS.map(([k,n,u,source])=>`<div><span>${esc(n)}</span><b class="${counts[k]?'positive-text':''}">${counts[k]} players</b><small>${esc(source)}</small></div>`).join('')}</div></div></details>`);
@@ -1599,16 +1600,42 @@ function detailGraph(){
  if(plot){
   const choose=event=>{const dot=event.target.closest('[data-graph-point]');if(!dot)return;event.stopPropagation();const r=rows[Number(dot.dataset.graphPoint)];if(r){XL.selectedPoint=String(r.p.id);openExplorer('profile',String(r.p.id));}};
   plot.addEventListener('click',choose);
-  const foreground=event=>{const dot=event.target.closest('.lab-dot');if(dot&&dot!==dot.parentElement.lastElementChild)dot.parentElement.append(dot);};
-  plot.addEventListener('pointerover',foreground);plot.addEventListener('focusin',foreground);
+  // Paint a noninteractive copy above the chart without moving keyboard targets.
+  const foreground=dot=>{
+   plot.querySelector('.graph-point-highlight')?.remove();
+   if(!dot||!plot.contains(dot))return;
+   const overlay=document.createElementNS('http://www.w3.org/2000/svg','g');
+   overlay.setAttribute('class','graph-point-highlight');overlay.setAttribute('aria-hidden','true');
+   for(const child of dot.children)overlay.append(child.cloneNode(true));
+   dot.ownerSVGElement.append(overlay);
+  };
+  const focused=()=>document.activeElement?.closest('.lab-dot');
+  plot.addEventListener('pointerover',event=>foreground(event.target.closest('.lab-dot')||focused()));
+  plot.addEventListener('pointerout',event=>foreground(event.relatedTarget?.closest?.('.lab-dot')||focused()));
+  plot.addEventListener('focusin',event=>foreground(event.target.closest('.lab-dot')));
+  plot.addEventListener('focusout',event=>foreground(event.relatedTarget?.closest?.('.lab-dot')));
   plot.addEventListener('keydown',event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();choose(event);}});
-  const redraw=()=>{if(!plot.isConnected)return;const r=plot.getBoundingClientRect();plot.innerHTML=scatterSVG(rows,{width:r.width,height:r.height});};
-  requestAnimationFrame(()=>{fitGraphScreen();redraw();});
-  graphResizeObserver=new ResizeObserver(redraw);graphResizeObserver.observe(plot);
+  let measuredWidth=0,measuredHeight=0;
+  const redraw=()=>{
+   if(!plot.isConnected||!plot.getClientRects().length)return;
+   const r=plot.getBoundingClientRect(),width=Math.round(r.width),height=Math.round(r.height);
+   if(!width||!height||(width===measuredWidth&&height===measuredHeight))return;
+   measuredWidth=width;measuredHeight=height;
+   const active=plot.contains(document.activeElement)?document.activeElement.closest('[data-graph-point]'):null;
+   const point=active?.dataset.graphPoint;
+   plot.innerHTML=scatterSVG(rows,{width,height});
+   if(point!==undefined)plot.querySelector(`[data-graph-point="${point}"]`)?.focus({preventScroll:true});
+  };
+  const schedule=()=>{
+   if(graphPaintFrame!==null)return;
+   graphPaintFrame=requestAnimationFrame(()=>{graphPaintFrame=null;if(plot.isConnected){fitGraphScreen();redraw();}});
+  };
+  schedule();graphResizeObserver=new ResizeObserver(schedule);graphResizeObserver.observe(plot);
  }
 }
 function fitGraphScreen(){
  const screen=el('explore-content').querySelector('.graph-screen');if(!screen)return;
+ if(window.innerWidth<=730){screen.style.height='auto';return;}
  const content=el('explore-content'),tabbed=document.body.dataset.layout==='tabbed';
  const top=screen.getBoundingClientRect().top+(tabbed?window.scrollY:content.scrollTop);
  const footer=tabbed?0:el('explore-dialog').querySelector('.explore-footer').getBoundingClientRect().height;
@@ -1706,6 +1733,7 @@ function graphPreviewSvg(rows){
 }
 function renderGraphHome(){
  const host=el('graph-teaser');if(!host)return;
+ const active=document.activeElement,focusedMetric=host.contains(active)?active.closest('[data-home-stat]')?.dataset.homeStat:null;
  ensureGraphAxes();
  const x=el('home-graph-x'),y=el('home-graph-y');
  for(const [box,key] of [[x,'x'],[y,'y']]){
@@ -1717,8 +1745,9 @@ function renderGraphHome(){
  el('home-graph-labels').checked=XL.graph.showLabels;
  const rows=graphData(),stats=graphStatistics(rows);
  host.innerHTML=graphPreviewSvg(rows)+`<div class="graph-home-stats" aria-label="Graph statistics">${[['n','MATCHED',String(stats.n)],['r','PEARSON r',labFormat(stats.r,2)],['r2','R²',labFormat(stats.r2,2)],['slope','SLOPE',labFormat(stats.slope,2)]].map(([id,title,v])=>`${statHelpTile(title,v,GRAPH_STAT_EXPLAIN[id][1],'graph-stat-chip','up').replace('class="',`data-home-stat="${id}" class="`)}`).join('')}</div>`;
+ if(focusedMetric&&!active.isConnected&&document.activeElement===document.body)host.querySelector(`[data-home-stat="${CSS.escape(focusedMetric)}"]`)?.focus({preventScroll:true});
 }
-let graphResizeFrame=null;window.addEventListener('resize',()=>{if(graphResizeFrame)cancelAnimationFrame(graphResizeFrame);graphResizeFrame=requestAnimationFrame(()=>{graphResizeFrame=null;renderGraphHome();if(XL.open==='graph')fitGraphScreen()});});
+let graphResizeFrame=null;window.addEventListener('resize',()=>{if(graphResizeFrame)cancelAnimationFrame(graphResizeFrame);graphResizeFrame=requestAnimationFrame(()=>{graphResizeFrame=null;if(el('graph-teaser')?.getClientRects().length)renderGraphHome();if(XL.open==='graph')fitGraphScreen()});});
 function explorerUpdate(){const host=el('fa-summary');if(!host)return;
  if(model.source==='demo'&&!XL.demoSeeded)seedDemoStats();
  if(model.source!=='demo'&&XL.demoSeeded){XL.advanced.clear();XL.importedColumns=[];XL.demoSeeded=false;}
@@ -2139,7 +2168,30 @@ el('explore-content').addEventListener('change',async e=>{
  const fields={'graph-x':'x','graph-y':'y','graph-pos':'pos','graph-scope':'scope','graph-minimum':'minimum','graph-labels':'showLabels','graph-trend':'trend'};
  if(t.id in fields){XL.graph[fields[t.id]]=t.type==='checkbox'?t.checked:t.id==='graph-minimum'?Number(t.value):t.value;XL.graphUserSelected=true;XL.graphNotice='';renderExplorer();return;}
 });
-el('explore-content').addEventListener('input',e=>{const t=e.target;if(t.id==='agent-search'){XL.agent.search=t.value;deferRender('agent',()=>{const start=t.selectionStart;renderExplorer();const input=el('agent-search');input?.focus();input?.setSelectionRange(start,start)})}if(t.id==='graph-search'){XL.graph.search=t.value;deferRender('graph',()=>{const start=t.selectionStart;renderExplorer();const input=el('graph-search');input?.focus();input?.setSelectionRange(start,start)})}});
+function renderSearchResults(input,report){
+ if(XL.open!==report||!input.isConnected)return;
+ const active=document.activeElement,inside=el('explore-content').contains(active);
+ const selection=active===input?[input.selectionStart,input.selectionEnd,input.selectionDirection]:null;
+ const attribute=['data-graph-player','data-preset','data-open-player','data-graph-stat'].find(name=>active?.hasAttribute(name));
+ const selector=active?.id?'#'+CSS.escape(active.id):attribute?`[${attribute}="${CSS.escape(active.getAttribute(attribute))}"]`:null;
+ renderExplorer();
+ // Leave focus outside this replaced subtree alone; the user may have moved on.
+ if(!inside||active.isConnected)return;
+ const renderedInput=el(input.id),afterRender=document.activeElement;
+ const restore=()=>{
+  if(XL.open!==report||el(input.id)!==renderedInput||document.activeElement!==afterRender)return;
+  const target=(selector&&el('explore-content').querySelector(selector))||renderedInput;
+  target?.focus({preventScroll:true});
+  if(selection&&target===renderedInput)target.setSelectionRange(...selection);
+ };
+ // Graph points are mounted by the already scheduled graph paint frame.
+ if(attribute==='data-graph-player')requestAnimationFrame(restore);else restore();
+}
+el('explore-content').addEventListener('input',e=>{
+ const t=e.target;
+ if(t.id==='agent-search'){XL.agent.search=t.value;deferRender('agent',()=>renderSearchResults(t,'agents'));}
+ if(t.id==='graph-search'){XL.graph.search=t.value;deferRender('graph',()=>renderSearchResults(t,'graph'));}
+});
 // Initialization runs after the original dashboard script, preserving its primary UI.
 explorerUpdate();
 prepareDossierNews();

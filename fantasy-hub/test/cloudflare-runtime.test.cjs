@@ -7,7 +7,7 @@ test('Cloudflare runtime can import a cookie-authenticated league without follow
   const calls=[];
   let redirect=false;
   const mf=new Miniflare(convertV4MiniflareOptions({
-    modules:[{type:'ESModule',path:path.resolve(__dirname,'../src/worker.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/matchup-context.js')}],
+    modules:[{type:'ESModule',path:path.resolve(__dirname,'../src/worker.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/matchup-context.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/public-read-coalescer.js')}],
     compatibilityDate:'2026-10-01',
     durableObjects:{ESPN_SESSIONS:{className:'EspnSession',useSQLite:true}},
     outboundService:async request=>{
@@ -35,4 +35,48 @@ test('Cloudflare runtime can import a cookie-authenticated league without follow
     assert.equal(calls.length,1);
     assert.ok(!calls.some(c=>c.url.includes('untrusted.example')));
   }finally{await mf.dispose();}
+});
+
+test('Cloudflare runtime shares public cold reads without forwarding caller cookies',async()=>{
+  let calls=0,release,started;
+  const gate=new Promise(r=>release=r),ready=new Promise(r=>started=r);
+  const mf=new Miniflare(convertV4MiniflareOptions({
+    modules:[{type:'ESModule',path:path.resolve(__dirname,'../src/worker.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/matchup-context.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/public-read-coalescer.js')}],
+    compatibilityDate:'2026-10-01',
+    durableObjects:{ESPN_SESSIONS:{className:'EspnSession',useSQLite:true}},
+    outboundService:async request=>{
+      calls++;assert.equal(request.headers.get('Cookie'),null);assert.equal(request.headers.get('Authorization'),null);started();await gate;
+      return new Response(JSON.stringify({events:[]}),{headers:{'Content-Type':'application/json'}});
+    }
+  }));
+  try{
+    const pending=Array.from({length:12},(_,i)=>mf.dispatchFetch('https://hub.example/api/nfl/game-status?season=2031&week=7',{headers:{Cookie:'fixture-user='+i,Authorization:'Bearer fixture-'+i}}));
+    await ready;await new Promise(r=>setTimeout(r,30));assert.equal(calls,1);release();
+    const results=await Promise.all(pending);assert.ok(results.every(r=>r.status===200));
+    assert.notEqual(results[0],results[1]);
+    const first=await results[0].json();first.opponents.injected='caller-only';
+    assert.equal(results[1].bodyUsed,false);
+    const bodies=await Promise.all(results.slice(1).map(r=>r.json()));assert.ok(bodies.every(b=>b.season===2031&&b.week===7));
+    assert.ok(bodies.every(b=>b.opponents.injected===undefined));
+    const warm=await mf.dispatchFetch('https://hub.example/api/nfl/game-status?season=2031&week=7');
+    assert.equal((await warm.json()).opponents.injected,undefined);
+    assert.equal(calls,1);
+  }finally{release();await mf.dispose();}
+});
+
+test('a disconnected public-read caller does not poison a follower or a later retry',async()=>{
+  let calls=0,release,started;
+  const gate=new Promise(r=>release=r),ready=new Promise(r=>started=r),controller=new AbortController();
+  const mf=new Miniflare(convertV4MiniflareOptions({
+    modules:[{type:'ESModule',path:path.resolve(__dirname,'../src/worker.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/matchup-context.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/public-read-coalescer.js')}],
+    compatibilityDate:'2026-10-01',
+    durableObjects:{ESPN_SESSIONS:{className:'EspnSession',useSQLite:true}},
+    outboundService:async()=>{calls++;started();await gate;return new Response('{"events":[]}',{headers:{'Content-Type':'application/json'}})}
+  }));
+  try{
+    const url='https://hub.example/api/nfl/game-status?season=2032&week=7';
+    const owner=mf.dispatchFetch(url,{signal:controller.signal}).catch(()=>null);
+    await ready;const follower=mf.dispatchFetch(url);await new Promise(r=>setTimeout(r,30));controller.abort();release();
+    assert.equal(await owner,null);assert.equal((await follower).status,200);assert.equal((await mf.dispatchFetch(url)).status,200);assert.equal(calls,1);
+  }finally{controller.abort();release();await mf.dispose();}
 });

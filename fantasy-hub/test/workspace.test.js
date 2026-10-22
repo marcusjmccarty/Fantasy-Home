@@ -89,3 +89,12 @@ test('resizing a narrow viewport keeps the selected tab in the visible strip',()
  assert.ok(active.offsetLeft+active.offsetWidth<=strip.scrollLeft+strip.clientWidth);
  assert.equal(h.XL.open,'trade');
 });
+
+test('unchanged tab synchronization does not write storage; a changed tab persists once',()=>{
+ const h=setup({layout:'tabbed',tab:'summary'});
+ h.run('var writes=0;var save=localStorage.setItem;localStorage.setItem=(...args)=>{writes++;save(...args)}');
+ h.resize();h.resize();assert.equal(h.run('writes'),0);
+ h.run("activateWorkspace('graph')");assert.equal(h.run('writes'),1);
+ assert.equal(JSON.parse(h.storage.get('gridiron86-workspace-v2')).tab,'graph');
+ h.resize();assert.equal(h.run('writes'),1);
+});
