@@ -52,6 +52,12 @@ function opponentMetrics(p){
  return `<div class="opponent-table">${expandTable(['OPPONENT METRIC',isDefense?'OFFENSE':'DEFENSE','NFL UNIT AVG','DIFFERENCE'],rows.map(([label,value,mean,kind])=>{const fmt=n=>kind==='percent'?labPct(n):labFormat(n,kind==='epa'?2:1),delta=value!=null&&mean!=null?value-mean:null;return `<tr><th scope="row">${label}</th><td><b>${fmt(value)}</b></td><td>${fmt(mean)}</td><td>${kind==='points'?(rank?'#'+rank+' / '+data.rankedTeams:'—'):delta===null?'—':(delta>0?'+':'')+labFormat(delta,kind==='epa'?2:1)+(kind==='percent'?' pp':'')}</td></tr>`}))}</div>`;
 }
 function aiKey(p){return `${model.source}:${model.leagueId||model.league}:${model.season}:${strategyWeek()}:${p.id}:${JSON.stringify(p.scores)}:${currentProjection(p).center}`;}
+function homeOpponent(p){
+ const {opp,isDefense,rating,unit}=matchupContext(p);
+ if(!opp){const recent=FantasyMath.scoringHistory(p,strategyWeek()).slice(-3);return `<div class="home-outlook-context"><h4>RECENT SCORING</h4><table class="home-opponent-table"><thead><tr><th>WEEK</th><th>PROJ.</th><th>ACTUAL</th></tr></thead><tbody>${recent.map(r=>`<tr><th scope="row">W${r.week}</th><td>${labFormat(r.projection)}</td><td>${labFormat(r.actual)}</td></tr>`).join('')}</tbody></table>${matchupAI(p,true)}</div>`;}
+ const rows=[[isDefense?'Points / game':'Points allowed / game',labFormat(rating?.[isDefense?'offensePPG':'defenseAllowedPPG'])],['Yards / play',labFormat(unit?.yardsPerPlay)],[isDefense?'Sack rate conceded':'Sack rate generated',labPct(unit?.sackRate)],[isDefense?'Giveaways / game':'Takeaways / game',labFormat(unit?.turnoversPerGame)]];
+ return `<div class="home-outlook-context"><h4>${isDefense?'OPPOSING OFFENSE':'DEFENSIVE OUTLOOK'} · ${esc(opp)}</h4><table class="home-opponent-table"><tbody>${rows.map(([k,v])=>`<tr><th scope="row">${k}</th><td>${v}</td></tr>`).join('')}</tbody></table>${matchupAI(p,true)}</div>`;
+}
 function matchupAI(p,compact=false){
  const key=aiKey(p),result=STRATEGY.ai.get(key),busy=STRATEGY.aiBusy.has(key),error=STRATEGY.aiErrors.get(key);
  if(result)return `<div class="matchup-ai ${compact?'compact':''}"><span class="strategy-section-label">AI MATCHUP OVERVIEW · ${esc(result.provider)}</span>${result.outlook.split(/\n\s*\n/).filter(Boolean).map(t=>`<p>${esc(t)}</p>`).join('')}</div>`;
@@ -118,6 +124,7 @@ const USAGE_HELP={
  touches:'Carries plus receptions in the selected period. A quick measure of how often the player actually handled the ball.',
  opportunities:'Carries plus targets in the selected period. Includes incomplete passes, so it captures chances as well as completed touches.',
  redzone:'Carries and targets inside the opponent’s 20-yard line in the selected period.',
+ inside5Targets:'Targets inside the opponent’s 5-yard line in the selected period.',
  inside5:'Carries inside the opponent’s 5-yard line. These are close-range scoring opportunities, not touchdowns.',
  td:'Chance of at least one rushing or receiving TD in the upcoming week, estimated from prior TD frequency, position peers and recent workload. Passing TDs are excluded; this is a model estimate, not a betting probability.',
  recentTouches:'Average carries plus receptions across the last three recorded games before the upcoming week.',
@@ -137,7 +144,14 @@ function shareBar(label,value,color='blue',key='opportunity_share'){
  return `<button type="button" class="strategy-share share-${color} share-disclosure stat-help-trigger" data-stat-title="${esc(label)}" data-stat-help="${esc(USAGE_HELP[key])}" aria-expanded="false"><span class="share-bar-label"><span>${label}</span><b>${labPct(value)}</b></span><span class="strategy-share-track"><i style="width:${Math.max(0,Math.min(100,value||0))}%"></i></span></button>`;
 }
 const SHARE_METRICS=[['Target share','target_share','blue'],['Carry share','rush_share','green'],['Opportunity share','opportunity_share','purple'],['Touch share','touch_share','orange'],['Reception share','reception_share','cyan'],['Red-zone share','redzone_share','red'],['Inside-10 share','inside10_share','pink'],['Inside-5 share','inside5_share','indigo']];
-function shareBars(v){return SHARE_METRICS.map(([name,key,color])=>shareBar(name,v?.[key],color,key)).join('');}
+function usageApplicability(p,v){
+ const pos=p?.pos,skill=['QB','RB','WR','TE','FB'].includes(pos);
+ return {skill,rush:skill&&(['QB','RB','FB'].includes(pos)||v?.carries>0),receive:skill&&(pos!=='QB'||v?.targets>0)};
+}
+function shareBars(v,p){
+ const a=usageApplicability(p,v);if(!a.skill)return '<p class="lab-note">Touch shares apply to offensive skill players.</p>';
+ return SHARE_METRICS.filter(([,key])=>key==='rush_share'?a.rush:['target_share','reception_share'].includes(key)?a.receive:true).map(([name,key,color])=>shareBar(name,v?.[key],color,key)).join('');
+}
 function usagePeriodLabel(){return STRATEGY.period.startsWith('week:')?'WEEK '+Number(STRATEGY.period.slice(5)):STRATEGY.period==='recent'?'LATEST 3 WEEKS':'SEASON';}
 function usagePeriodOptions(data){
  const weeks=[...new Set((data?.players||[]).flatMap(r=>Object.keys(r.weeks||{}).map(Number)))].filter(w=>w>0&&w<strategyWeek()).sort((a,b)=>a-b);
@@ -150,11 +164,12 @@ function usageForecast(p,data){
  return {...estimate,recentTouches:avg(['carries','receptions']),recentRedzone:avg(['redzone_carries','redzone_targets']),chance:unavailable||noGame?null:estimate?.chance??null};
 }
 function usageStatCards(p,v,data){
- const f=usageForecast(p,data),o=FantasyMath.outlook(p,strategyWeek());
- return usageTile('Touches',labFormat(v?.touches,0),'touches')+usageTile('Opportunities',labFormat(v?.opportunities,0),'opportunities')+usageTile('Red-zone chances',labFormat(v?.redzone,0),'redzone')+usageTile('Inside-5 carries',labFormat(v?.inside5_carries,0),'inside5')+usageTile('Est. TD chance · W'+strategyWeek(),labPct(f.chance),'td')+usageTile((o.source==='Provider projection'?'Projection':'Scoring avg')+' · W'+strategyWeek(),labFormat(o.center),'projection')+usageTile('Recent touches / game',labFormat(f.recentTouches),'recentTouches')+usageTile('Recent RZ / game',labFormat(f.recentRedzone),'recentRedzone');
+ const f=usageForecast(p,data),o=FantasyMath.outlook(p,strategyWeek()),a=usageApplicability(p,v);
+ if(!a.skill)return usageTile((o.source==='Provider projection'?'Projection':'Scoring avg')+' · W'+strategyWeek(),labFormat(o.center),'projection');
+ return usageTile('Touches',labFormat(v?.touches,0),'touches')+usageTile('Opportunities',labFormat(v?.opportunities,0),'opportunities')+usageTile('Red-zone chances',labFormat(v?.redzone,0),'redzone')+(a.rush?usageTile('Inside-5 carries',labFormat(v?.inside5_carries,0),'inside5'):usageTile('Inside-5 targets',labFormat(v?.inside5_targets,0),'inside5Targets'))+usageTile('Est. TD chance · W'+strategyWeek(),labPct(f.chance),'td')+usageTile((o.source==='Provider projection'?'Projection':'Scoring avg')+' · W'+strategyWeek(),labFormat(o.center),'projection')+usageTile('Recent touches / game',labFormat(f.recentTouches),'recentTouches')+usageTile('Recent RZ / game',labFormat(f.recentRedzone),'recentRedzone');
 }
 function usageSnapshot(p,v){
- return `<section class="lab-panel usage-snapshot" id="usage-snapshot"><div class="strategy-section-title"><div><span class="strategy-section-label">PLAYER SNAPSHOT</span><h4>${esc(p.name)}</h4></div><span>${v?v.weeks+' recorded weeks':'No matched play-by-play record'}</span></div><div class="strategy-metrics usage-metrics">${usageStatCards(p,v,usageDataset())}</div><div class="strategy-share-grid">${shareBars(v)}</div></section>`;
+ return `<section class="lab-panel usage-snapshot" id="usage-snapshot"><div class="strategy-section-title"><div><span class="strategy-section-label">PLAYER SNAPSHOT</span><h4>${esc(p.name)}</h4></div><span>${v?v.weeks+' recorded weeks':'No matched play-by-play record'}</span></div><div class="strategy-metrics usage-metrics">${usageStatCards(p,v,usageDataset())}</div><div class="strategy-share-grid">${shareBars(v,p)}</div></section>`;
 }
 function opportunityRows(data){
  const active=STRATEGY.leaders==='active'?new Set(tradeRoster(getTeam()).map(p=>usageFor(p,data)?.gsis_id).filter(Boolean)):null;
@@ -189,7 +204,7 @@ function selectUsagePlayer(id,open=false){
 }
 function shareHistoryChart(p,home=false){
  const row=usageFor(p,usageDataset()),rows=FantasyMath.weeklyShares(row,strategyWeek()),scale=Math.max(10,Math.ceil(Math.max(0,...rows.map(r=>r.share||0))/10)*10);
- return `<section class="share-history-panel ${home?'home-share-history':''}" data-share-chart><div class="window-topline"><button class="share-history-link" type="button" data-share-all="${esc(p?.id||'')}">SHARE % / WEEK</button></div>${rows.length?`<div class="share-history-chart ${rows.length>12?'dense-weeks':''}" style="--week-count:${rows.length}" aria-label="Weekly opportunity share">${rows.map(r=>`<div class="share-week"><span class="share-week-value">${labFormat(r.share,0)}%</span><button type="button" class="share-week-bar" data-share-week="${r.week}" data-share-player="${esc(p.id)}" aria-label="Week ${r.week}: ${labPct(r.share)} opportunity share. Open week ${r.week} Touches and Share" title="Week ${r.week} · ${labPct(r.share)}" style="height:${r.share>0?Math.max(2,Math.min(100,r.share/scale*100)):2}%"></button><span class="share-week-label">W${r.week}</span></div>`).join('')}</div>`:'<p class="lab-note">No share history.</p>'}</section>`;
+ return `<section class="share-history-panel ${home?'home-share-history':''}" data-share-chart="${esc(p?.id||'')}" tabindex="0" role="group" aria-label="Open season share for ${esc(p?.name||'selected player')}"><div class="window-topline"><button class="share-history-link" type="button" data-share-all="${esc(p?.id||'')}">SHARE % / WEEK</button></div>${rows.length?`<div class="share-history-chart ${rows.length>12?'dense-weeks':''}" style="--week-count:${rows.length}" aria-label="Weekly opportunity share">${rows.map(r=>`<div class="share-week"><span class="share-week-value">${labFormat(r.share,0)}%</span><button type="button" class="share-week-bar" data-share-week="${r.week}" data-share-player="${esc(p.id)}" aria-label="Week ${r.week}: ${labPct(r.share)} opportunity share. Open week ${r.week} Touches and Share" title="Week ${r.week} · ${labPct(r.share)}" style="height:${r.share>0?Math.max(2,Math.min(100,r.share/scale*100)):2}%"></button><span class="share-week-label">W${r.week}</span></div>`).join('')}</div>`:'<p class="lab-note">No share history.</p>'}</section>`;
 }
 // These hosts are owned here; preserve unchanged controls and disclosure state.
 // The node itself is the key, so a newly mounted report always renders.
@@ -203,13 +218,14 @@ function renderPlayerShareCharts(){
  const expanded=el('player-share-history');if(expanded){const player=getPool().find(p=>String(p.id)===String(XL.player));setStrategyHTML(expanded,shareHistoryChart(player));}
 }
 function openShareHistory(event){
- const all=event.target.closest('[data-share-all]');if(all){event.stopPropagation();STRATEGY.period='season';STRATEGY.player=all.dataset.shareAll;openExplorer('opportunity',all.dataset.shareAll);return;}
- const week=event.target.closest('[data-share-week]');if(!week)return;
- event.stopPropagation();STRATEGY.period='week:'+week.dataset.shareWeek;STRATEGY.player=week.dataset.sharePlayer;
- openExplorer('opportunity',week.dataset.sharePlayer);
+ const week=event.target.closest('[data-share-week]'),all=event.target.closest('[data-share-all]'),chart=event.target.closest('[data-share-chart]');
+ const id=week?.dataset.sharePlayer||all?.dataset.shareAll||chart?.dataset.shareChart;if(!id)return;
+ event.stopPropagation();STRATEGY.period=week?'week:'+week.dataset.shareWeek:'season';STRATEGY.player=id;
+ openExplorer('opportunity',id);
 }
-// Only the visible bar is interactive; the surrounding column is inert.
+// Bars select a week; the remaining chart surface opens the season report.
 document.addEventListener('click',event=>{if(event.target.closest('[data-share-chart]')){event.stopPropagation();openShareHistory(event);}},true);
+document.addEventListener('keydown',event=>{const chart=event.target.closest('[data-share-chart]');if(chart&&event.target===chart&&['Enter',' '].includes(event.key)){event.preventDefault();openShareHistory(event);}});
 function tradeRoster(team){return (team?.playerIds||[]).map(id=>model.players[id]).filter(Boolean);}
 function tradeTeam(){return findTeam(STRATEGY.trade.team)||getTeam();}
 function tradeConfig(){return FantasyMath.leagueLineup(model);}
@@ -267,7 +283,7 @@ function requestTradeRecommendations(){
  tradeSearch.worker?.terminate();tradeSearch.key=key;tradeSearch.result=null;tradeSearch.visible=24;tradeSearch.error='';
  if(typeof Worker==='undefined'){tradeSearch.error='Automatic comparisons need browser worker support.';renderTradeRecommendations();return;}
  try{
-  const worker=new Worker('trade-search-worker.js?v=9.11.1');tradeSearch.worker=worker;
+  const worker=new Worker('trade-search-worker.js?v=9.12.0');tradeSearch.worker=worker;
   worker.onmessage=event=>{if(tradeSearch.key!==key)return;tradeSearch.result=event.data;worker.terminate();tradeSearch.worker=null;renderTradeRecommendations();};
   worker.onerror=()=>{if(tradeSearch.key!==key)return;worker.terminate();tradeSearch.worker=null;tradeSearch.error='Trade search could not finish. Change a team to retry.';renderTradeRecommendations();};
   worker.postMessage({own,their,slots,week,mode});
@@ -305,9 +321,9 @@ function ensureTrade(){
  t.give=t.give.filter(id=>tradeRoster(tradeTeam()).some(p=>String(p.id)===id));t.get=t.get.filter(id=>tradeRoster(findTeam(t.partner)).some(p=>String(p.id)===id));
  return others;
 }
-function homeTradeSide(team,side){
+function homeTradeSide(team,side,value){
  const selected=STRATEGY.trade[side],roster=tradeRoster(team);
- return `<div class="home-trade-side"><label>${side==='give'?'A SENDS':'B SENDS'}<select data-home-trade-add="${side}" aria-label="Add player to ${side==='give'?'send':'receive'}"><option value="">+ Add a player…</option>${roster.filter(p=>!selected.includes(String(p.id))).map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · ${esc(p.pos)} · ${labFormat(FantasyMath.value(p,strategyWeek(),STRATEGY.trade.mode))}</option>`).join('')}</select></label><div class="home-trade-picks">${selected.map(id=>{const p=roster.find(p=>String(p.id)===id);return p?`<button data-home-trade-remove="${side}" data-id="${esc(id)}" aria-label="Remove ${esc(p.name)} from ${side==='give'?'send':'receive'}">${esc(p.name)} <b>×</b></button>`:''}).join('')||'<span>No players selected</span>'}</div></div>`;
+ return `<div class="home-trade-side"><label><span>${side==='give'?'A SENDS':'B SENDS'}</span><b class="home-trade-total">${labFormat(value)}</b><select data-home-trade-add="${side}" aria-label="Add player to ${side==='give'?'send':'receive'}"><option value="">+ Add a player…</option>${roster.filter(p=>!selected.includes(String(p.id))).map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · ${esc(p.pos)} · ${labFormat(FantasyMath.value(p,strategyWeek(),STRATEGY.trade.mode))}</option>`).join('')}</select></label><div class="home-trade-picks">${selected.map(id=>{const p=roster.find(p=>String(p.id)===id);return p?`<button data-home-trade-remove="${side}" data-id="${esc(id)}" aria-label="Remove ${esc(p.name)} from ${side==='give'?'send':'receive'}">${esc(p.name)} <b>×</b></button>`:''}).join('')||'<span>No players selected</span>'}</div></div>`;
 }
 function homePlayer(){const pool=strategyPlayerPool(STRATEGY.homeScope);return pool.find(p=>String(p.id)===String(STRATEGY.homePlayer||currentPlayerId))||pool[0];}
 function renderStrategyHome(){
@@ -318,8 +334,8 @@ function renderStrategyHome(){
  for(const id of ['home-outlook-player','home-share-player']){const select=el(id);setStrategyHTML(select,options);if(select)select.disabled=!p;}
  for(const id of ['home-outlook-scope','home-share-scope'])setStrategyHTML(el(id),scopes);
  const o=p?currentProjection(p):{floor:null,center:null,ceiling:null,sample:0},key=`${model.season}:${strategyWeek()}`,data=usageDataset(),v=usageTotals(usageFor(p,data),data);
- setStrategyHTML(host,`<div class="window-topline"><span>WEEK ${strategyWeek()} / FANTASY PTS</span><span>${esc(model.scoring)}</span></div>${rangeMetrics(o,true)}${rangeBar(o)}${p?matchupAI(p,true):''}${p&&/^(OUT|IR|INJURED_RESERVE|SUSPENDED)$/i.test(p.status||'')?'<p class="tiny-caption">PLAYER UNAVAILABLE</p>':''}<span class="strategy-home-action">OPEN PLAYER OUTLOOK ▣</span>`);
- setStrategyHTML(el('share-preview'),`<div class="window-topline"><span>${usagePeriodLabel()} OPPORTUNITY</span><span>WEEK ${strategyWeek()}</span></div><div class="strategy-metrics home-usage-metrics">${p?usageStatCards(p,v,data):''}</div><div class="strategy-home-share-grid">${shareBars(v)}</div>${model.source==='demo'?'<p class="tiny-caption">SYNTHETIC EXHIBITION DATA</p>':''}<span class="strategy-home-action">OPEN TOUCHES & SHARE ▣</span>`);
+ setStrategyHTML(host,`<div class="window-topline"><span>WEEK ${strategyWeek()} / FANTASY PTS</span><span>${esc(model.scoring)}</span></div>${rangeMetrics(o,true)}${rangeBar(o)}${p?homeOpponent(p):''}${p&&/^(OUT|IR|INJURED_RESERVE|SUSPENDED)$/i.test(p.status||'')?'<p class="tiny-caption">PLAYER UNAVAILABLE</p>':''}`);
+ setStrategyHTML(el('share-preview'),`<div class="window-topline"><span>${usagePeriodLabel()} OPPORTUNITY</span><span>WEEK ${strategyWeek()}</span></div><div class="strategy-metrics home-usage-metrics">${p?usageStatCards(p,v,data):''}</div><div class="strategy-home-share-grid">${shareBars(v,p)}</div>${model.source==='demo'?'<p class="tiny-caption">SYNTHETIC EXHIBITION DATA</p>':''}`);
  renderPlayerShareCharts();
  renderHomeTrade();
  if(model.source!=='demo'){if(!STRATEGY.usage.has(Number(model.season))&&!STRATEGY.usageErrors.has(Number(model.season)))void loadUsage();if(!STRATEGY.defense.has(key))void loadStrategyDefense();}
@@ -327,7 +343,7 @@ function renderStrategyHome(){
 function renderHomeTrade(){
  const others=ensureTrade(),t=STRATEGY.trade,own=tradeRoster(tradeTeam()),partner=findTeam(t.partner),their=tradeRoster(partner),give=own.filter(x=>t.give.includes(String(x.id))),get=their.filter(x=>t.get.includes(String(x.id))),g=give.length?FantasyMath.packageValue(give,strategyWeek(),t.mode).total:null,r=get.length?FantasyMath.packageValue(get,strategyWeek(),t.mode).total:null;
  const ready=g!==null&&r!==null,a={ready,sent:{total:g},received:{total:r},balance:ready?100*(1-Math.min(1,Math.abs(r-g)/Math.max(Math.abs(g),Math.abs(r),1))):null};
- setStrategyHTML(el('trade-preview'),`<div class="home-trade-controls"><label>TEAM A<select id="home-trade-team">${tradeTeamOptions(t.team)}</select></label><label>TEAM B<select id="home-trade-partner">${tradeTeamOptions(t.partner,t.team)}</select></label><label>VALUE<select id="home-trade-mode">${[['balanced','Balanced'],['projection','Projection'],['history','History'],['floor','Floor'],['ceiling','Ceiling']].map(([id,label])=>`<option value="${id}" ${t.mode===id?'selected':''}>${label}</option>`).join('')}</select></label></div><div class="home-trade-dashboard">${tradeBalance(a)}${tradeFavorBar(a,true)}</div><div class="strategy-home-metrics" aria-live="polite"><div><span>A SENDS</span><b>${labFormat(g)}</b></div><div><span>B SENDS</span><b>${labFormat(r)}</b></div><div><span>DIFFERENCE</span><b>${tradeSigned(ready?r-g:null)}</b></div></div><div class="home-trade-builder">${homeTradeSide(tradeTeam(),'give')}${homeTradeSide(partner,'get')}</div><div class="home-trade-footer"><span>POINTS / WEEK</span><button class="lab-action" id="home-trade-clear">Reset</button></div>`);
+ setStrategyHTML(el('trade-preview'),`<div class="home-trade-controls"><label>TEAM A<select id="home-trade-team">${tradeTeamOptions(t.team)}</select></label><label>TEAM B<select id="home-trade-partner">${tradeTeamOptions(t.partner,t.team)}</select></label></div><div class="home-trade-dashboard">${tradeBalance(a)}${tradeFavorBar(a,true)}</div><div class="home-trade-builder" aria-live="polite">${homeTradeSide(tradeTeam(),'give',g)}<div class="home-trade-difference"><span>DIFFERENCE</span><b>${tradeSigned(ready?r-g:null)}</b></div>${homeTradeSide(partner,'get',r)}</div><div class="home-trade-footer"><span>POINTS / WEEK</span><button class="lab-action" id="home-trade-clear">Reset</button></div>`);
 }
 function updateTradeControl(target){
  const id=target.id?.replace(/^home-/,''),mapping={'trade-team':'team','trade-partner':'partner','trade-mode':'mode'},t=STRATEGY.trade;

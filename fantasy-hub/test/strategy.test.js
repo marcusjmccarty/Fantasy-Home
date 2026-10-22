@@ -32,7 +32,7 @@ test('home windows follow player selection and keep unavailable data blank',()=>
  assert.match(h.node('home-share-player').innerHTML,/value="cook" selected/);
  assert.match(h.node('share-preview').innerHTML,/SYNTHETIC EXHIBITION DATA/);
  h.run("currentPlayerId='dal';renderStrategyHome()");
- assert.match(h.node('share-preview').innerHTML,/Touches<\/span><strong>—/);
+ assert.ok(!h.node('share-preview').innerHTML.includes('Inside-5 carries'));assert.ok(!h.node('share-preview').innerHTML.includes('Est. TD chance'));assert.match(h.node('share-preview').innerHTML,/Scoring avg/);
  h.run("currentPlayerId='allen';model.players.allen.scores={};renderStrategyHome()");
  assert.match(h.node('outlook-preview').innerHTML,/Estimated floor.*?<strong>—<\/strong>/);
 });
@@ -59,7 +59,7 @@ test('D/ST report labels the opposing offense and Scouting File opens Player Out
 });
 
 test('eight share bars and actionable metrics render in both scopes',()=>{
- const h=setup();h.run("STRATEGY.player='cook';renderStrategy('opportunity')");
+ const h=setup();h.run("currentPlayerId='cook';STRATEGY.player='cook';renderStrategy('opportunity')");
  assert.match(h.html(),/Est. TD chance/);assert.match(h.html(),/Inside-10 share/);assert.match(h.html(),/Recent touches/);
  assert.equal((h.node('share-preview').innerHTML.match(/class="strategy-share share-/g)||[]).length,8);
  assert.match(h.run("shareHistoryChart(model.players.cook)"),/data-share-week="1"/);
@@ -109,16 +109,17 @@ test('weekly share periods aggregate only the selected week and keep future week
  h.run("renderStrategy('opportunity')");assert.match(h.html(),/value="week:2" selected/);assert.ok(!h.html().includes('value="week:7"'));
  h.run("STRATEGY.period='week:5'");assert.equal(h.run("usageTotals({weeks:{2:{carries:5}}},{through_week:6})"),null);
 });
-test('share bars open the selected player and week; chart whitespace does nothing',()=>{
+test('share bars open their week while the full chart opens the player season',()=>{
  const h=setup();h.run("var opened=null;var openExplorer=(...args)=>{opened=args};openShareHistory({target:{closest:()=>null},stopPropagation(){}})");assert.equal(h.run('opened'),null);
  h.run("openShareHistory({target:{closest:s=>s==='[data-share-week]'?{dataset:{shareWeek:'3',sharePlayer:'cook'}}:null},stopPropagation(){}})");
  assert.equal(h.run('STRATEGY.period'),'week:3');assert.equal(h.run('STRATEGY.player'),'cook');assert.equal(h.run('opened.join()'),'opportunity,cook');
  const chart=h.run('shareHistoryChart(model.players.cook)');assert.match(chart,/class="share-week-bar"/);assert.ok(!chart.includes('data-open-share'));assert.ok(!chart.includes('0–'));
  h.run("openShareHistory({target:{closest:s=>s==='[data-share-all]'?{dataset:{shareAll:'cook'}}:null},stopPropagation(){}})");
  assert.equal(h.run('STRATEGY.period'),'season');assert.equal(h.run('opened.join()'),'opportunity,cook');
+ h.run("STRATEGY.period='week:2';openShareHistory({target:{closest:s=>s==='[data-share-chart]'?{dataset:{shareChart:'cook'}}:null},stopPropagation(){}})");assert.equal(h.run('STRATEGY.period'),'season');assert.equal(h.run('opened.join()'),'opportunity,cook');
 });
 test('workload metrics and share bars reveal definitions without a yellow TD card',()=>{
- const h=setup();h.run("renderStrategy('opportunity')");assert.match(h.html(),/stat-help-trigger strategy-metric metric-disclosure/);assert.match(h.html(),/strategy-share share-blue share-disclosure stat-help-trigger/);assert.ok(!h.html().includes('td-estimate'));assert.ok(!h.html().includes('15+ pts'));
+ const h=setup();h.run("STRATEGY.player='cook';renderStrategy('opportunity')");assert.match(h.html(),/stat-help-trigger strategy-metric metric-disclosure/);assert.match(h.html(),/strategy-share share-blue share-disclosure stat-help-trigger/);assert.ok(!h.html().includes('td-estimate'));assert.ok(!h.html().includes('15+ pts'));
 });
 
 test('franchise filters retain the selected player when they remain in scope',()=>{
@@ -146,4 +147,19 @@ test('changing trade teams cancels stale searches while package edits reuse thei
  h.run("workers[0].onmessage({data:{results:[],checked:999}})");assert.equal(h.run('tradeSearch.result'),null);
  h.run("workers[1].onmessage({data:{results:[],checked:42,total:42,scope:'All 1–2 player packages'}})");
  assert.equal(h.run('tradeSearch.result.checked'),42);assert.equal(h.run('workers[1].stopped'),true);
+});
+
+test('receiver and quarterback share metrics follow recorded involvement',()=>{
+ const h=setup();
+ const receiver=h.run("shareBars({carries:0,targets:12,target_share:24},{pos:'WR'})");
+ assert.ok(receiver.includes('Target share'));assert.ok(!receiver.includes('Carry share'));
+ assert.ok(h.run("shareBars({carries:1,targets:12},{pos:'WR'})").includes('Carry share'));
+ const qb=h.run("shareBars({carries:5,targets:0},{pos:'QB'})");assert.ok(qb.includes('Carry share'));assert.ok(!qb.includes('Target share'));assert.ok(!qb.includes('Reception share'));
+ const cards=h.run("usageStatCards({id:'receiver',pos:'WR',scores:{}},{carries:0,targets:12,inside5_targets:3},usageDataset())");assert.match(cards,/Inside-5 targets/);assert.ok(!cards.includes('Inside-5 carries'));
+});
+test('metric popovers anchor to the right half, with the center opening from the left',()=>{
+ const h=setup(),row=Array.from({length:9},(_,i)=>({left:20+i*100,right:110+i*100}));
+ for(let i=0;i<9;i++)assert.equal(h.run(`metricPopupLeft(${JSON.stringify(row[i])},${JSON.stringify(row)},260,1400)`),i<5?row[i].left:row[i].right-260);
+ assert.equal(h.run('metricPopupLeft({left:900,right:990},[{left:900,right:990}],260,1000)'),728);
+ assert.equal(h.run('metricPopupLeft({left:2,right:90},[{left:2,right:90}],260,1000)'),12);
 });

@@ -1,4 +1,4 @@
-# Fantasy Hub — GRIDIRON/86 v9.11.1, Cloudflare edition
+# Fantasy Hub — GRIDIRON/86 v9.12.0, Cloudflare edition
 
 Live site: https://fantasy-home.fantasy-hub.workers.dev/
 
@@ -233,3 +233,11 @@ The reproducible 19-counteroffer benchmark fell from 163.81ms to 91.87ms (44% lo
 - Either trade franchise can be selected. ESPN starting slots and player eligibility drive the optimizer; roster lists and comparison sections stay visible without nested scrolling or dropdown menus.
 - Balancing pieces appear automatically. A background worker searches all one- and two-player packages for ordinary 17-player rosters (23,409 combinations), showing every modeled improvement for both teams in batches of 24. Required bench drops are included. Larger searches explicitly show their bounded scope.
 - Replaced exponential lineup enumeration with an exact polynomial assignment solver, checked against exhaustive lineup and trade fixtures. No real trades or roster changes are submitted.
+
+## v9.12 — homepage navigation and shared legibility
+
+- Restore the original square title controls; anchor metric explanations to their side of the row, including wrapped layouts.
+- Keep Variable Lab metric explanations on the homepage. Chart backgrounds open full player scoring/share reports; individual bars retain week-specific links.
+- Show every matchup starter without a scroll box, with larger scores, a black title ribbon, and alternating paper rows. Move Position Allocation's period into its title ribbon.
+- Give Points and Share matching plot geometry, expand Outlook's useful content, and show workload metrics only when applicable to the player.
+- Combine trade package selectors and totals around a centered difference. Enlarge the matchup and starting-lineup tables and align the Club Overview's ledger with its stat grid.

@@ -19,3 +19,11 @@ test('expanded graph limits overlapping labels and scales to measured plot dimen
  assert.match(html,/viewBox="0 0 1500 550"/);assert.equal((html.match(/class="lab-dot label-visible"/g)||[]).length,1);assert.equal((html.match(/class="lab-label"/g)||[]).length,20);
  assert.ok(!html.includes('NaN'));
 });
+
+test('home matchup retains all starters, excludes bench and preserves missing scores',()=>{
+ const players={a:{name:'Starter A',pos:'RB',scores:{}},b:{name:'Bench B',pos:'WR',scores:{}},c:{name:'Starter C',pos:'QB',scores:{}}};
+ const c=vm.createContext({model:{players,currentWeek:6},currentWeek:6,esc:String,teamName:t=>t.name,number:n=>typeof n==='number'?n:null,nfmt:n=>n==null?'—':String(n)});
+ vm.runInContext(section(read('script.js'),'function homeMatchupRoster(',"el('matchup-panel').addEventListener"),c);
+ c.team={name:'Test',wins:3,losses:2,history:[{week:1,lineup:[{id:'b',starter:false,points:20},{id:'a',starter:true,points:0},{id:'c',starter:true,points:null}]}]};
+ const html=vm.runInContext('homeMatchupRoster(team,1)',c);assert.match(html,/Starter A/);assert.match(html,/Starter C/);assert.ok(!html.includes('Bench B'));assert.match(html,/<strong>0<\/strong>/);assert.match(html,/<strong>—<\/strong>/);
+});

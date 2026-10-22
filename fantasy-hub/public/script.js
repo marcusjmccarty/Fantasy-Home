@@ -208,15 +208,16 @@ function drawPositions(team){
  el('position-chart').innerHTML=known?Object.entries(totals).map(([pos,value])=>`<div class="position-row"><strong>${pos}</strong><div class="meter-track"><button type="button" class="meter-fill" data-home-position="${pos}" style="width:${Math.max(1,Math.min(100,100*Math.max(0,value)/max)).toFixed(1)}%;background:${colors[pos]}" aria-label="Open ${pos} position allocation${period==='all'?' for the season':' for week '+period}"></button></div><b>${nfmt(value,1)}<small>${total>0&&value>=0?nfmt(value/total*100,0)+'%':''}</small></b></div>`).join(''):'<div class="empty-chart">NO POSITION DATA</div>';
 }
 el('home-position-week').addEventListener('change',()=>drawPositions(getTeam()));
-el('position-chart').addEventListener('click',event=>{event.stopPropagation();if(!event.target.closest('[data-home-position]'))return;const period=el('home-position-week').value;openExplorer('positions',null,period==='all'?{}:{week:Number(period)});});
+el('position-chart').addEventListener('click',event=>{if(!event.target.closest('[data-home-position]'))return;event.stopPropagation();const period=el('home-position-week').value;openExplorer('positions',null,period==='all'?{}:{week:Number(period)});});
 function homeMatchupRoster(team,week){
  if(!team)return '<p class="lab-note">No opponent.</p>';
  const h=team.history.find(h=>Number(h.week)===week),active=week===Number(model.currentWeek||model.liveWeek||currentWeek);
  let rows=(h?.lineup?.length?h.lineup:active?team.currentLineup||[]:[]).map(r=>({...r,p:model.players[r.id]})).filter(r=>r.p);
  if(!rows.length)rows=Object.entries(h?.starters||{}).map(([id,points])=>({id,p:model.players[id],points,starter:true})).filter(r=>r.p);
- return `<div class="matchup-roster-scroll" tabindex="0" aria-label="${esc(teamName(team))} week ${week} roster">${rows.length?rows.map(r=>`<button type="button" class="matchup-roster-player ${r.starter===false?'is-bench':''}" data-matchup-player="${esc(r.id)}"><span>${r.starter===false?'BN':esc(r.p.pos)}</span><b>${esc(r.p.name)}</b><strong>${nfmt(number(r.points)??number(r.p.scores?.[week]),1)}</strong></button>`).join(''):'<p class="lab-note">Roster scores unavailable.</p>'}</div>`;
+ rows=rows.filter(r=>r.starter!==false);
+ return `<section class="home-matchup-team"><header><b title="${esc(teamName(team))}">${esc(teamName(team))}</b><span>${team.wins}–${team.losses}${team.ties?'–'+team.ties:''}</span></header><div class="matchup-roster-scroll" aria-label="${esc(teamName(team))} week ${week} starters">${rows.length?rows.map(r=>`<button type="button" class="matchup-roster-player" data-matchup-player="${esc(r.id)}"><span>${esc(r.p.pos)}</span><b title="${esc(r.p.name)}">${esc(r.p.name)}</b><strong>${nfmt(number(r.points)??number(r.p.scores?.[week]),1)}</strong></button>`).join(''):'<p class="lab-note">Starter scores unavailable.</p>'}</div></section>`;
 }
-el('matchup-panel').addEventListener('click',event=>{event.stopPropagation();const player=event.target.closest('[data-matchup-player]');if(player)openExplorer('profile',player.dataset.matchupPlayer);});
+el('matchup-panel').addEventListener('click',event=>{const player=event.target.closest('[data-matchup-player]');if(player){event.stopPropagation();openExplorer('profile',player.dataset.matchupPlayer);}});
 
 function updateWeekMenu(team){
   const previous=String(currentWeek);
@@ -242,7 +243,7 @@ function drawMatchup(team){
   const other=opposite?.officialDisplay??otherOfficial??opposite?.computedActual??null;
   const result=own===null?'NOT STARTED':other===null?'NO OPPONENT':own===other?'TIE':own>other?'VICTORY':'DEFEAT';
   const provisional=Number(model.currentWeek||model.liveWeek)===Number(current.week);
-  el('matchup-panel').innerHTML=`<div class="matchup-original-score"><div class="matchup-competitors"><div class="matchup-side"><span title="${esc(teamName(team))}">${esc(teamName(team))}</span><span class="matchup-team-record">${team.wins}–${team.losses}${team.ties?'–'+team.ties:''}</span><strong>${nfmt(own,1)}</strong></div><div class="matchup-divider"><b>VS</b><small>${provisional?'LIVE':result}</small></div><div class="matchup-side right"><span title="${esc(opponent?teamName(opponent):'BYE')}">${esc(opponent?teamName(opponent):'BYE')}</span><span class="matchup-team-record">${opponent?opponent.wins+'–'+opponent.losses+(opponent.ties?'–'+opponent.ties:''):'—'}</span><strong>${nfmt(other,1)}</strong></div></div></div><div class="matchup-roster-pair">${homeMatchupRoster(team,week)}${homeMatchupRoster(opponent,week)}</div>`;
+  el('matchup-panel').innerHTML=`<div class="matchup-original-score"><div class="matchup-competitors"><div class="matchup-side"><strong>${nfmt(own,1)}</strong></div><div class="matchup-divider"><b>VS</b><small>${provisional?'LIVE':result}</small></div><div class="matchup-side right"><strong>${nfmt(other,1)}</strong></div></div></div><div class="matchup-roster-pair">${homeMatchupRoster(team,week)}${homeMatchupRoster(opponent,week)}</div>`;
   el('matchup-comment').textContent='';
 
 }
