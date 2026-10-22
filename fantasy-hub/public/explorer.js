@@ -2165,7 +2165,7 @@ el('explore-content').addEventListener('change',async e=>{
  const fields={'graph-x':'x','graph-y':'y','graph-pos':'pos','graph-scope':'scope','graph-minimum':'minimum','graph-labels':'showLabels','graph-trend':'trend'};
  if(t.id in fields){XL.graph[fields[t.id]]=t.type==='checkbox'?t.checked:t.id==='graph-minimum'?Number(t.value):t.value;XL.graphUserSelected=true;XL.graphNotice='';renderExplorer();return;}
 });
-el('explore-content').addEventListener('input',e=>{const t=e.target;if(t.id==='agent-search'){XL.agent.search=t.value;deferRender('agent',()=>{const start=t.selectionStart;renderExplorer();const input=el('agent-search');input?.focus();input?.setSelectionRange(start,start)})}if(t.id==='graph-search'){XL.graph.search=t.value;deferRender('graph',()=>{const start=t.selectionStart;renderExplorer();const input=el('graph-search');input?.focus();input?.setSelectionRange(start,start)})}});
+el('explore-content').addEventListener('input',e=>{const t=e.target;if(t.id==='agent-search'){XL.agent.search=t.value;deferRender('agent',()=>{const start=t.selectionStart;renderExplorer();const input=el('agent-search');input?.focus();input?.setSelectionRange(start,start)})}if(t.id==='graph-search'){XL.graph.search=t.value;deferRender('graph',()=>{if(XL.open!=='graph'||!t.isConnected)return;const start=t.selectionStart;renderExplorer();const input=el('graph-search');input?.focus();input?.setSelectionRange(start,start)})}});
 // Initialization runs after the original dashboard script, preserving its primary UI.
 explorerUpdate();
 prepareDossierNews();

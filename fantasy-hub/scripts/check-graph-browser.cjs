@@ -77,3 +77,61 @@ test('filters, empty data and rapid navigation do not leave a stale graph',async
  await page.evaluate(()=>{openExplorer('graph');openExplorer('weekly');openExplorer('summary')});await settle();
  assert.equal(await page.locator('.lab-scatter-svg').count(),0);
 });
+test('twelve modal open/history/close cycles retain the correct report',async()=>{
+ for(let i=0;i<12;i++){
+  await open();await page.evaluate(()=>openExplorer('roster'));await page.locator('#explore-back').click();await settle();
+  assert.equal(await page.evaluate(()=>XL.open),'graph');assert.equal(await page.locator('.lab-scatter-svg').count(),1);
+  await page.locator('#explore-forward').click();assert.equal(await page.evaluate(()=>XL.open),'roster');
+  await page.locator('#explore-close').click();await settle();assert.equal(await page.evaluate(()=>XL.open),null);
+ }
+});
+test('filtering out a focused point leaves focus on the live filter/search control',async()=>{
+ await open();await page.locator('.lab-dot').first().focus();
+ const old=await page.evaluate(()=>graphData()[0].p.pos);const filter=old==='WR'?'RB':'WR';
+ await page.locator('#graph-pos').focus();await page.selectOption('#graph-pos',filter);await settle();
+ assert.equal(await page.evaluate(()=>document.activeElement.id),'graph-pos');
+ assert.ok(await page.evaluate(old=>graphData().every(r=>r.p.pos!==old),old));
+ await page.locator('.lab-dot').first().focus();await page.locator('#graph-search').fill('ZZZ NO MATCH');await page.waitForTimeout(300);
+ assert.equal(await page.evaluate(()=>document.activeElement.id),'graph-search');assert.equal(await page.locator('.lab-dot').count(),0);
+ assert.equal(await page.locator('#graph-search').evaluate(n=>n.selectionStart),12);
+});
+test('same-size resize storms do not rebuild; real resizes preserve focus and final dimensions',async()=>{
+ await open();await page.locator('.lab-dot').first().focus();
+ await page.evaluate(()=>{window.builds=0;const f=scatterSVG;window.scatterSVG=(...args)=>{builds++;return f(...args)};for(let i=0;i<120;i++)window.dispatchEvent(new Event('resize'))});await settle();
+ assert.equal(await page.evaluate(()=>builds),0);
+ for(let i=0;i<20;i++)await page.setViewportSize({width:1000+i*13,height:800+i*3});await settle();
+ assert.equal(await page.evaluate(()=>document.activeElement.dataset.graphPoint),'0');
+ const d=await page.evaluate(()=>{const p=document.querySelector('.graph-plot').getBoundingClientRect(),v=document.querySelector('.lab-scatter-svg').viewBox.baseVal;return {w:Math.round(p.width),h:Math.round(p.height),sw:v.width,sh:v.height,builds}});
+ assert.equal(d.w,d.sw);assert.equal(d.h,d.sh);assert.ok(d.builds<=20);
+});
+test('hidden/visible transitions and table/graph switches keep one live chart',async()=>{
+ for(let i=0;i<8;i++){
+  await page.evaluate(()=>{setWorkspaceLayout('tabbed');activateWorkspace('graph')});await settle();
+  await page.evaluate(()=>activateWorkspace('roster'));assert.equal(await page.locator('.lab-scatter-svg').count(),0);
+  await page.evaluate(()=>activateWorkspace('graph'));await settle();assert.equal(await page.locator('.lab-scatter-svg').count(),1);
+  await page.evaluate(()=>setWorkspaceLayout('dashboard'));await settle();assert.ok(await page.locator('.graph-home-svg').isVisible());
+ }
+});
+test('workspace layout and selected report survive reload',async()=>{
+ await page.evaluate(()=>{setWorkspaceLayout('tabbed');activateWorkspace('graph')});await settle();await page.reload();await settle();
+ assert.equal(await page.evaluate(()=>document.body.dataset.layout),'tabbed');assert.equal(await page.evaluate(()=>XL.open),'graph');
+ assert.equal(await page.locator('.lab-scatter-svg').count(),1);
+ await page.evaluate(()=>setWorkspaceLayout('dashboard'));await page.reload();await settle();
+ assert.equal(await page.evaluate(()=>document.body.dataset.layout),'dashboard');assert.equal(await page.evaluate(()=>XL.open),null);
+ await page.evaluate(()=>setWorkspaceLayout('tabbed'));await settle();assert.equal(await page.evaluate(()=>XL.open),'graph');
+});
+test('pending graph search cannot replace a destination table or lose its focus',async()=>{
+ await open();await page.locator('#graph-search').fill('Jordan');
+ await page.evaluate(()=>{openExplorer('roster');window.destination=document.querySelector('#explore-content table');destination.tabIndex=-1;destination.focus()});
+ await page.waitForTimeout(350);
+ assert.equal(await page.evaluate(()=>destination.isConnected),true);
+ assert.equal(await page.evaluate(()=>document.activeElement===destination),true);
+});
+test('pending search from a closed graph cannot replace or focus the reopened graph',async()=>{
+ await open();await page.locator('#graph-search').fill('Jordan');
+ await page.evaluate(()=>{document.getElementById('explore-dialog').close();openExplorer('graph')});
+ await page.locator('.lab-dot').first().waitFor();await page.locator('.lab-dot').first().focus();
+ await page.evaluate(()=>window.reopenedPoint=document.activeElement);await page.waitForTimeout(350);
+ assert.equal(await page.evaluate(()=>reopenedPoint.isConnected),true);
+ assert.equal(await page.evaluate(()=>document.activeElement===reopenedPoint),true);
+});
