@@ -41,3 +41,11 @@ test('tabbed resize does not persist an unchanged preference',async()=>{
  await page.evaluate(()=>{window.writes=0;const f=Storage.prototype.setItem;Storage.prototype.setItem=function(...args){writes++;return f.apply(this,args)}});
  await page.setViewportSize({width:1400,height:980});await settle();assert.equal(await page.evaluate(()=>writes),0);
 });
+test('tabbed resize does not redraw hidden home graph',async()=>{
+ await page.evaluate(()=>setWorkspaceLayout('tabbed'));await open();
+ await page.evaluate(()=>{window.homeRenders=0;const f=renderGraphHome;window.renderGraphHome=function(...args){homeRenders++;return f(...args)}});
+ await page.setViewportSize({width:1400,height:980});await settle();assert.equal(await page.evaluate(()=>homeRenders),0);
+ await page.evaluate(()=>setWorkspaceLayout('dashboard'));await settle();
+ assert.equal(await page.evaluate(()=>homeRenders),1);
+ assert.ok(await page.locator('.graph-home-svg').isVisible());
+});

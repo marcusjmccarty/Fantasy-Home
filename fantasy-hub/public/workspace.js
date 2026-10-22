@@ -48,7 +48,7 @@ function activateWorkspace(type){
   openExplorer(type,player);
 }
 function setWorkspaceLayout(layout){
-  const tabbed=layout==='tabbed',report=el('explore-dialog');
+  const tabbed=layout==='tabbed',report=el('explore-dialog'),wasTabbed=document.body.dataset.layout==='tabbed';
   const previous=XL.open||workspacePreference.tab;
   // close() removes a modal from the top layer before reopening it inline.
   if(report.open)report.close();
@@ -66,6 +66,7 @@ function setWorkspaceLayout(layout){
     report.removeAttribute('role');
     el('explore-content').removeAttribute('role');el('explore-content').removeAttribute('aria-labelledby');el('explore-content').removeAttribute('tabindex');
     XL.open=null;
+    if(wasTabbed&&typeof renderGraphHome==='function')renderGraphHome();
   }
   saveWorkspacePreference();
 }

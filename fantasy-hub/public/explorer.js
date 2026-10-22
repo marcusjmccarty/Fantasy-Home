@@ -1744,7 +1744,7 @@ function renderGraphHome(){
  const rows=graphData(),stats=graphStatistics(rows);
  host.innerHTML=graphPreviewSvg(rows)+`<div class="graph-home-stats" aria-label="Graph statistics">${[['n','MATCHED',String(stats.n)],['r','PEARSON r',labFormat(stats.r,2)],['r2','R²',labFormat(stats.r2,2)],['slope','SLOPE',labFormat(stats.slope,2)]].map(([id,title,v])=>`${statHelpTile(title,v,GRAPH_STAT_EXPLAIN[id][1],'graph-stat-chip','up').replace('class="',`data-home-stat="${id}" class="`)}`).join('')}</div>`;
 }
-let graphResizeFrame=null;window.addEventListener('resize',()=>{if(graphResizeFrame)cancelAnimationFrame(graphResizeFrame);graphResizeFrame=requestAnimationFrame(()=>{graphResizeFrame=null;renderGraphHome();if(XL.open==='graph')fitGraphScreen()});});
+let graphResizeFrame=null;window.addEventListener('resize',()=>{if(graphResizeFrame)cancelAnimationFrame(graphResizeFrame);graphResizeFrame=requestAnimationFrame(()=>{graphResizeFrame=null;if(el('graph-teaser')?.getClientRects().length)renderGraphHome();if(XL.open==='graph')fitGraphScreen()});});
 function explorerUpdate(){const host=el('fa-summary');if(!host)return;
  if(model.source==='demo'&&!XL.demoSeeded)seedDemoStats();
  if(model.source!=='demo'&&XL.demoSeeded){XL.advanced.clear();XL.importedColumns=[];XL.demoSeeded=false;}
