@@ -20,7 +20,7 @@ Tested the deployed application using its synthetic exhibition league; no privat
 - Clicking an entire leader row updated the snapshot; double-clicking opened that player’s terminal.
 - Weekly share bar W3 opened the W3 starter-scoring contribution view. Clicking the share panel heading opened Touches & Share.
 - Restored scouting facts appear beside the compact range summary; the duplicated prior-history table is absent from the Scouting File.
-- Variable Lab: the complete graph fit a 1280 × 720 laptop viewport; the gap between graph statistics and enrichment controls was 7px in both windowed and tabbed views, with no artificial top margin.
+- Variable Lab: the complete graph and its statistics fit a 1280 × 720 laptop viewport; the gap between graph statistics and enrichment controls was 7px in both windowed and tabbed views, with no artificial top margin.
 - Trade: selected packages produced the same -1.7 point package and lineup differences; a simulated QB drop correctly made a complete lineup unavailable. The counteroffer workbench reported when no single-player addition improved balance. A follow-up regression checks that additions that can fill both starting lineups are prioritized over balance alone.
 - 390 × 844 phone: document width remained 390px without horizontal page overflow; expanded window retained 14px outer margins and its content scrolled internally.
 - No browser JavaScript errors during these flows.
@@ -32,3 +32,11 @@ The TD metric is a conditional Poisson scenario using observed rushing/receiving
 The trade workbench compares weekly scoring and real eligible starting lineups from loaded rosters. It does not invent dynasty, keeper, draft-pick, market-consensus or rest-of-season feeds, and never submits a trade. Format and optional drops are explicit user-controlled assumptions.
 
 The AI receives role-relevant efficiency comparisons and workload evidence, with directions to explain mechanisms, downside/upside paths and uncertainty. A live qualitative review prompted a second refinement to reduce numerical recitation and eliminate duplicated stat tables from its input.
+
+
+## Visual records
+
+- [Expanded Touches & Share](screenshots/readable-share-9.9.jpg)
+- [Player Terminal with weekly share and restored scouting facts](screenshots/player-terminal-9.9.jpg)
+
+Final laptop check: 13px plot-control text, a 248px plot, and the full statistics strip inside the 564px report viewport. Desktop and phone screenshots were taken from the live application, using labeled exhibition data.
