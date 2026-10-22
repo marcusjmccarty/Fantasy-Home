@@ -117,8 +117,8 @@ function trendBars(items,colorFn=()=>COLORS.QB,maximum=null){
  const max=maximum||Math.max(1,...items.map(v=>Math.max(0,labNum(v.v)||0)));
  return `<div class="lab-histogram ${items.length>12?'dense-weeks':''}" style="--week-count:${items.length}">${items.map((v,i)=>`<div class="lab-hist-col" title="${esc(v.label)} · ${labFormat(v.v)}"><strong>${labFormat(v.v,0)}</strong><button type="button" class="lab-hist-bar ${v.week?'player-week-bar':''}" ${v.week?`data-player-week="${v.week}" aria-label="Open Week ${v.week} starter contributions"`: 'disabled'} style="height:${Math.max(2,(labNum(v.v)||0)/max*100)}%;background:${colorFn(v,i)}"></button><small>${esc(v.short??v.label)}</small></div>`).join('')}</div>`;
 }
-var graphResizeObserver=null;
-function setExplorer(html){if(typeof closeStatHelp==='function')closeStatHelp();graphResizeObserver?.disconnect();el('explore-content').innerHTML=html;el('explore-source').textContent=sourceName();}
+var graphResizeObserver=null,graphPaintFrame=null;
+function setExplorer(html){if(graphPaintFrame!==null){cancelAnimationFrame(graphPaintFrame);graphPaintFrame=null;}if(typeof closeStatHelp==='function')closeStatHelp();graphResizeObserver?.disconnect();el('explore-content').innerHTML=html;el('explore-source').textContent=sourceName();}
 function explorerClubHeader(type,playerId=null){
  const host=el('explore-club');if(!host)return;
  const id=String(explorerTeam().id);
@@ -1591,7 +1591,7 @@ function detailGraph(){
  setExplorer('<section class="graph-screen">'+heading('Variable Lab','')+
  `<div class="graph-control-deck"><div class="lab-controls graph-unified-toolbar" aria-label="Variable Lab filters and axes"><label class="graph-pool">POOL <select id="graph-scope">${[['ALL','All available'],['TEAM','Selected team'],['LEAGUE','League rosters'],['FREE','Free agents']].map(([v,n])=>`<option value="${v}" ${XL.graph.scope===v?'selected':''}>${n}</option>`).join('')}</select></label><label class="graph-position">POSITION <select id="graph-pos">${['ALL',...POS_ORDER].map(v=>`<option ${XL.graph.pos===v?'selected':''}>${v}</option>`).join('')}</select></label><label class="graph-x">X AXIS ${metricSelect('x',counts)}</label><button id="graph-swap" class="lab-action graph-swap" title="Swap graph axes">⇄</button><label class="graph-y">Y AXIS ${metricSelect('y',counts)}</label><label class="graph-games">MIN GAMES <select id="graph-minimum">${[0,1,2,3,5].map(n=>`<option ${XL.graph.minimum===n?'selected':''}>${n}</option>`).join('')}</select></label><label class="graph-search">SEARCH <input id="graph-search" placeholder="Player name" value="${esc(XL.graph.search)}"></label><label class="graph-toggle"><input id="graph-trend" type="checkbox" ${XL.graph.trend?'checked':''}><span>TREND</span></label><label class="graph-toggle"><input id="graph-labels" type="checkbox" ${XL.graph.showLabels?'checked':''}><span>LABELS</span></label></div>
  <div class="graph-preset-ribbon"><b>QUICK PLOTS</b>${presets.map(([x,y,n])=>`<button type="button" class="graph-preset ${XL.graph.x===x&&XL.graph.y===y?'active':''}" data-preset="${x},${y}" ${graphPresetAvailable(x,y)?'':`disabled title="Requires recorded ${esc(META[x].name)} and ${esc(META[y].name)}; load NFL data or choose another preset"`}>${n}</button>`).join('')}<span class="graph-preset-hint">Select axes above or use a preset.</span></div></div>`+
- `<div class="lab-graph-layout"><section class="lab-panel lab-graph-panel"><div class="lab-graph-top"><h4>${esc(META[XL.graph.y].name)} BY ${esc(META[XL.graph.x].name)}</h4><div class="lab-graph-legend">${POS_ORDER.map(pos=>`<span><i style="background:${COLORS[pos]}"></i>${pos}</span>`).join('')}</div><span>${rows.length} MATCHED PAIRS / ${cands.length} CANDIDATES</span></div><div class="graph-plot">${scatterSVG(rows)}</div></section>
+ `<div class="lab-graph-layout"><section class="lab-panel lab-graph-panel"><div class="lab-graph-top"><h4>${esc(META[XL.graph.y].name)} BY ${esc(META[XL.graph.x].name)}</h4><div class="lab-graph-legend">${POS_ORDER.map(pos=>`<span><i style="background:${COLORS[pos]}"></i>${pos}</span>`).join('')}</div><span>${rows.length} MATCHED PAIRS / ${cands.length} CANDIDATES</span></div><div class="graph-plot"></div></section>
  <aside class="lab-graph-aside"><div class="graph-stat-heading"><h4>GRAPH STATISTICS</h4></div><div class="graph-stat-grid">${graphStatButtons(stats)}</div><div id="lab-point-info" class="lab-point-info" hidden></div></aside></div>`+
  `</section><details class="graph-tools strategy-method"><summary>Data sources & export</summary><div class="lab-controls graph-enrichment-panel"><label>ENRICH WITH NFL DATA <input id="graph-import" type="file" accept=".csv,text/csv"></label><button class="lab-action" id="graph-load-nflverse">LOAD NFLverse ADVANCED METRICS ↻</button><button class="lab-action" id="graph-export">EXPORT PLOT DATA CSV ↓</button><button class="lab-action" id="graph-export-svg">SAVE SVG GRAPH ↓</button><button class="lab-action" id="graph-clear-import">CLEAR IMPORTED METRICS</button></div>`+
  `<div class="lab-panel"><h4>DATA DICTIONARY / PROVENANCE</h4><p class="lab-note">ESPN fantasy scores use the league's scoring system. NFL box-score fields and advanced CSVs are included only when supplied. Advanced measurements may use different time periods; compare only compatible periods. Imports are matched by player name, and unavailable fields remain blank.</p><div class="lab-dictionary">${METRICS.map(([k,n,u,source])=>`<div><span>${esc(n)}</span><b class="${counts[k]?'positive-text':''}">${counts[k]} players</b><small>${esc(source)}</small></div>`).join('')}</div></div></details>`);
@@ -1614,15 +1614,22 @@ function detailGraph(){
   plot.addEventListener('focusin',event=>foreground(event.target.closest('.lab-dot')));
   plot.addEventListener('focusout',event=>foreground(event.relatedTarget?.closest?.('.lab-dot')));
   plot.addEventListener('keydown',event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();choose(event);}});
+  let measuredWidth=0,measuredHeight=0;
   const redraw=()=>{
-   if(!plot.isConnected)return;
+   if(!plot.isConnected||!plot.getClientRects().length)return;
+   const r=plot.getBoundingClientRect(),width=Math.round(r.width),height=Math.round(r.height);
+   if(!width||!height||(width===measuredWidth&&height===measuredHeight))return;
+   measuredWidth=width;measuredHeight=height;
    const active=plot.contains(document.activeElement)?document.activeElement.closest('[data-graph-point]'):null;
-   const point=active?.dataset.graphPoint,r=plot.getBoundingClientRect();
-   plot.innerHTML=scatterSVG(rows,{width:r.width,height:r.height});
+   const point=active?.dataset.graphPoint;
+   plot.innerHTML=scatterSVG(rows,{width,height});
    if(point!==undefined)plot.querySelector(`[data-graph-point="${point}"]`)?.focus({preventScroll:true});
   };
-  requestAnimationFrame(()=>{fitGraphScreen();redraw();});
-  graphResizeObserver=new ResizeObserver(redraw);graphResizeObserver.observe(plot);
+  const schedule=()=>{
+   if(graphPaintFrame!==null)return;
+   graphPaintFrame=requestAnimationFrame(()=>{graphPaintFrame=null;if(plot.isConnected){fitGraphScreen();redraw();}});
+  };
+  schedule();graphResizeObserver=new ResizeObserver(schedule);graphResizeObserver.observe(plot);
  }
 }
 function fitGraphScreen(){

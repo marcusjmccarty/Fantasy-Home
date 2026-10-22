@@ -32,3 +32,7 @@ test('mobile graph labels retain at least 12 rendered CSS pixels',async()=>{
  const px=await page.locator('.lab-label').first().evaluate(n=>parseFloat(getComputedStyle(n).fontSize)*n.closest('svg').getScreenCTM().a);
  assert.ok(px>=12,`Rendered label size ${px}px`);
 });
+test('graph opening builds SVG once after measurement settles',async()=>{
+ await page.evaluate(()=>{window.svgBuilds=0;const f=scatterSVG;window.scatterSVG=function(...args){svgBuilds++;return f(...args)}});
+ await open();assert.equal(await page.evaluate(()=>svgBuilds),1);
+});
