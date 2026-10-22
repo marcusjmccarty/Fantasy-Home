@@ -13,8 +13,8 @@
   return {center,floor:low===null||center===null?null:Math.min(center,center+low-mean),ceiling:high===null||center===null?null:Math.max(center,center+high-mean),sample:values.length,observations,source:projection!==null?'Provider projection':'Historical mean',mean};
  }
  function value(player,week,mode='balanced'){
-  const o=outlook(player,week),v=o.observations.map(x=>x.points),recent=v.slice(-3),form=recent.length?recent.reduce((a,b)=>a+b,0)/recent.length:null;
   if(mode==='projection')return numeric(player.projections?.[week])??numeric(player.espnProj);
+  const o=outlook(player,week),v=o.observations.map(x=>x.points),recent=v.slice(-3),form=recent.length?recent.reduce((a,b)=>a+b,0)/recent.length:null;
   if(mode==='history')return o.mean;
   if(mode==='floor'||mode==='ceiling')return o[mode];
   if(o.center===null)return null;
@@ -23,17 +23,38 @@
  function packageValue(players,week,mode){const values=players.map(p=>value(p,week,mode));return {total:values.some(v=>v===null)?null:values.reduce((a,b)=>a+b,0),missing:values.filter(v=>v===null).length};}
  const eligible={QB:['QB'],RB:['RB'],WR:['WR'],TE:['TE'],FLEX:['RB','WR','TE'],SUPERFLEX:['QB','RB','WR','TE'],K:['K'],DEF:['DEF','D/ST']};
  function bestLineup(players,slots,week,mode){
+  return scoredLineup(players,slots,p=>value(p,week,mode));
+ }
+ function scoredLineup(players,slots,score){
   if(slots.length>12)return null;
   const unique=[...new Map(players.map(p=>[String(p.id),p])).values()];
-  const scores=unique.map(p=>value(p,week,mode));
-  // Bitmask assignment gives the highest scoring lineup, including flex slots,
-  // without assigning one player twice. Missing scores are not replaced by zero.
-  let dp=new Map([[0,{total:0,players:[]}]]);
-  unique.forEach((p,i)=>{if(scores[i]===null)return;const next=new Map(dp);for(const [mask,state] of dp)slots.forEach((slot,j)=>{
-   if((mask&(1<<j))||!eligible[slot]?.includes(p.pos))return;const key=mask|(1<<j),total=state.total+scores[i];
-   if(!next.has(key)||total>next.get(key).total)next.set(key,{total,players:[...state.players,{slot,index:j,player:p.id,points:scores[i]}]});
-  });dp=next;});
-  const result=dp.get((1<<slots.length)-1);return result?{...result,missing:unique.filter((p,i)=>scores[i]===null).length}:null;
+  const scores=unique.map(score),size=1<<slots.length,full=size-1;
+  // Descending masks cannot reuse the current player. Immutable path links
+  // preserve earlier assignments without copying a lineup at every transition.
+  const totals=new Float64Array(size).fill(-Infinity),paths=new Array(size),positionMasks=new Map(),slotIndexes=[],previousSlots=[];
+  slots.forEach((slot,j)=>{slotIndexes[1<<j]=j;const previous=j?slots.lastIndexOf(slot,j-1):-1;previousSlots[j]=previous>=0?1<<previous:0;});
+  totals[0]=0;
+  for(let i=0;i<unique.length;i++){
+   const p=unique[i],points=scores[i];if(points===null)continue;
+   if(!positionMasks.has(p.pos))positionMasks.set(p.pos,slots.reduce((mask,slot,j)=>mask|(eligible[slot]?.includes(p.pos)?1<<j:0),0));
+   const positions=positionMasks.get(p.pos);if(!positions)continue;
+   for(let mask=full;mask>=0;mask--){
+    if(totals[mask]===-Infinity)continue;
+    let available=positions&~mask;
+    while(available){
+     const bit=available&-available,index=slotIndexes[bit];available^=bit;
+     // Identical slots are interchangeable: fill them in order instead of
+     // exploring every permutation of the same RB/WR assignment.
+     if(previousSlots[index]&&!(mask&previousSlots[index]))continue;
+     const key=mask|bit,total=totals[mask]+points;
+     if(total>totals[key]){totals[key]=total;paths[key]={previous:paths[mask],index,player:p.id,points};}
+    }
+   }
+  }
+  if(totals[full]===-Infinity)return null;
+  const playersInLineup=[];
+  for(let path=paths[full];path;path=path.previous)playersInLineup.push({slot:slots[path.index],index:path.index,player:path.player,points:path.points});
+  return {total:totals[full],players:playersInLineup.reverse(),missing:scores.filter(v=>v===null).length};
  }
  function scoringHistory(player,week){
   return Object.entries(player.scores||{}).map(([w,v])=>({week:Number(w),actual:numeric(v)})).filter(r=>r.week>0&&r.week<week&&r.actual!==null).sort((a,b)=>a.week-b.week).map(r=>({...r,...outlook(player,r.week,{historical:true}),projection:numeric(player.projections?.[r.week])}));
@@ -59,15 +80,25 @@
   const lambda=(tds(weeks)+4*tds(peers)/peers.length)/(weeks.length+4)*workload;
   return {chance:100*(1-Math.exp(-lambda)),lambda,sample:weeks.length,tds:tds(weeks),recentTouches:weeks.slice(-3).reduce((s,r)=>s+Number(r.carries||0)+Number(r.receptions||0),0)/Math.min(3,weeks.length),recentOpportunities:opportunities(weeks.slice(-3)),recentRedzone:weeks.slice(-3).reduce((s,r)=>s+Number(r.redzone_carries||0)+Number(r.redzone_targets||0),0)/Math.min(3,weeks.length)};
  }
- function tradeAnalysis(own,their,giveIds,getIds,slots,week,mode='balanced',drops={give:[],get:[]}){
-  const picked=(roster,ids)=>roster.filter(p=>ids.includes(String(p.id)));
-  const give=picked(own,giveIds),get=picked(their,getIds),sent=packageValue(give,week,mode),received=packageValue(get,week,mode);
-  const afterOwn=[...own.filter(p=>!giveIds.includes(String(p.id))&&!drops.give?.includes(String(p.id))),...get];
-  const afterTheir=[...their.filter(p=>!getIds.includes(String(p.id))&&!drops.get?.includes(String(p.id))),...give];
-  const before=bestLineup(own,slots,week,mode),after=bestLineup(afterOwn,slots,week,mode),theirBefore=bestLineup(their,slots,week,mode),theirAfter=bestLineup(afterTheir,slots,week,mode);
-  const ready=!!give.length&&!!get.length&&sent.total!==null&&received.total!==null;
-  const delta=ready?received.total-sent.total:null;
-  return {give,get,sent,received,before,after,theirBefore,theirAfter,afterOwn,afterTheir,ready,delta,balance:ready?100*(1-Math.min(1,Math.abs(delta)/Math.max(Math.abs(sent.total),Math.abs(received.total),1))):null,impact:ready&&before&&after?after.total-before.total:null,theirImpact:ready&&theirBefore&&theirAfter?theirAfter.total-theirBefore.total:null};
+ // One synchronous comparison batch owns this snapshot. Nothing is cached
+ // across roster, week, projection or valuation changes.
+ function createTradeEvaluator(own,their,slots,week,mode='balanced'){
+  const scores=new Map([...own,...their].map(p=>[p,value(p,week,mode)])),score=p=>scores.get(p);
+  const before=scoredLineup(own,slots,score),theirBefore=scoredLineup(their,slots,score);
+  const packageScore=players=>{const values=players.map(score);return {total:values.some(v=>v===null)?null:values.reduce((a,b)=>a+b,0),missing:values.filter(v=>v===null).length};};
+  return (giveIds,getIds,drops={give:[],get:[]})=>{
+   const giveSet=new Set(giveIds),getSet=new Set(getIds),ownDrops=new Set(drops.give),theirDrops=new Set(drops.get);
+   const give=own.filter(p=>giveSet.has(String(p.id))),get=their.filter(p=>getSet.has(String(p.id))),sent=packageScore(give),received=packageScore(get);
+   const afterOwn=[...own.filter(p=>!giveSet.has(String(p.id))&&!ownDrops.has(String(p.id))),...get];
+   const afterTheir=[...their.filter(p=>!getSet.has(String(p.id))&&!theirDrops.has(String(p.id))),...give];
+   const unchanged=!give.length&&!get.length;
+   const after=unchanged&&!ownDrops.size?before:scoredLineup(afterOwn,slots,score),theirAfter=unchanged&&!theirDrops.size?theirBefore:scoredLineup(afterTheir,slots,score);
+   const ready=!!give.length&&!!get.length&&sent.total!==null&&received.total!==null,delta=ready?received.total-sent.total:null;
+   return {give,get,sent,received,before,after,theirBefore,theirAfter,afterOwn,afterTheir,ready,delta,balance:ready?100*(1-Math.min(1,Math.abs(delta)/Math.max(Math.abs(sent.total),Math.abs(received.total),1))):null,impact:ready&&before&&after?after.total-before.total:null,theirImpact:ready&&theirBefore&&theirAfter?theirAfter.total-theirBefore.total:null};
+  };
  }
- root.FantasyMath={numeric,quantile,outlook,scoringHistory,value,packageValue,bestLineup,weeklyShares,touchdownEstimate,tradeAnalysis};
+ function tradeAnalysis(own,their,giveIds,getIds,slots,week,mode='balanced',drops={give:[],get:[]}){
+  return createTradeEvaluator(own,their,slots,week,mode)(giveIds,getIds,drops);
+ }
+ root.FantasyMath={numeric,quantile,outlook,scoringHistory,value,packageValue,bestLineup,weeklyShares,touchdownEstimate,tradeAnalysis,createTradeEvaluator};
 })(globalThis);

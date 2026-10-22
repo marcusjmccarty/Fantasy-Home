@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 const read=name=>readFileSync(new URL('../public/'+name,import.meta.url),'utf8');
 function setup(){
- let html='';const nodes=new Map();const el=id=>{if(!nodes.has(id))nodes.set(id,{innerHTML:'',addEventListener(){},add(){}});return nodes.get(id)};
+ let html='';const nodes=new Map();const el=id=>{if(!nodes.has(id))nodes.set(id,{markup:'',writes:0,get innerHTML(){return this.markup},set innerHTML(value){this.markup=value;this.writes++},addEventListener(){},add(){}});return nodes.get(id)};
  const c=vm.createContext({document:{addEventListener(){}},sourceName:()=>"Exhibition",el,Option:class{},setExplorer:s=>{html=s},heading:(title,copy)=>`<div><h3>${title}</h3><p>${copy}</p></div>`,currentWeek:6,currentPlayerId:'allen',XL:{player:null},normalizeNFLAbbr:x=>x,esc:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;'),labFormat:(v,d=1)=>v==null?'—':Number(v).toFixed(d),labPct:v=>v==null?'—':Number(v).toFixed(1)+'%',nameKey:v=>String(v).toLowerCase().replace(/[^a-z0-9]/g,''),expandTable:(headers,rows)=>`<table>${headers.join('|')}${rows.join('')}</table>`});
  const script=read('script.js');vm.runInContext(script.slice(script.indexOf('function makeDemo()'),script.indexOf('function updateUI()')),c);
  vm.runInContext("var model=makeDemo();var currentTeamId='1';var getTeam=()=>model.teams.find(t=>t.id===currentTeamId);var findTeam=id=>model.teams.find(t=>t.id===id);var getPool=()=>Object.values(model.players);var rowsFor=t=>t.playerIds.map(id=>model.players[id]);var teamName=t=>t?.name||'No team';",c);
@@ -84,4 +84,20 @@ test('trade workbench compares lineups and counteroffers without changing league
 test('counteroffers prioritize filling the starting lineup over package balance alone',()=>{
  const h=setup();h.run("renderStrategy('trade');STRATEGY.trade.give=['cook',Object.values(model.players).find(p=>p.name==='Christian McCaffrey').id];STRATEGY.trade.get=['demo-1-1'];findTradeAlternatives()");
  assert.ok(h.run('STRATEGY.trade.alternatives.length')>0);assert.notEqual(h.run('STRATEGY.trade.alternatives[0].impact'),null);
+});
+
+test('unchanged home panels retain their DOM; changed player data still refreshes',()=>{
+ const h=setup(),ids=['outlook-preview','share-preview','player-share-spark','home-outlook-player','home-share-player','trade-preview'];
+ const writes=ids.map(id=>h.node(id).writes);h.run('renderStrategyHome();renderStrategyHome()');
+ assert.deepEqual(ids.map(id=>h.node(id).writes),writes);
+ h.run('model.players.allen.projections={7:99};renderStrategyHome()');
+ assert.ok(h.node('outlook-preview').writes>writes[0]);assert.match(h.node('outlook-preview').innerHTML,/99.0/);
+ assert.equal(h.node('home-outlook-player').writes,writes[3]);
+});
+test('trade edits preserve unrelated home panels and counteroffers share one evaluator',()=>{
+ const h=setup(),ids=['outlook-preview','share-preview','player-share-spark','home-outlook-player','home-share-player'],writes=ids.map(id=>h.node(id).writes);
+ h.run("updateTradeControl({id:'',dataset:{homeTradeAdd:'give'},value:'cook'});updateTradeControl({id:'',dataset:{homeTradeAdd:'get'},value:'demo-1-1'});renderTrade()");
+ assert.deepEqual(ids.map(id=>h.node(id).writes),writes);
+ h.run('var batches=0;var makeEvaluator=FantasyMath.createTradeEvaluator;FantasyMath.createTradeEvaluator=(...args)=>{batches++;return makeEvaluator(...args)};findTradeAlternatives()');
+ assert.equal(h.run('batches'),1);assert.deepEqual(ids.map(id=>h.node(id).writes),writes);
 });

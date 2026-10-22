@@ -67,3 +67,36 @@ test('trade analysis exposes consolidation benefit, both teams and optional drop
  assert.equal(M.tradeAnalysis(own,their,['r2','r3'],['q1'],['RB','FLEX'],5,'projection',{give:['r1'],get:[]}).after,null);
  assert.equal(M.tradeAnalysis(own,their,[],[],['RB'],5).ready,false);
 });
+
+test('optimized lineups match exhaustive slot assignments across mixed and incomplete rosters',()=>{
+ const allows={QB:['QB'],RB:['RB'],WR:['WR'],TE:['TE'],FLEX:['RB','WR','TE'],SUPERFLEX:['QB','RB','WR','TE'],K:['K'],DEF:['DEF','D/ST']};
+ const exhaustive=(roster,slots,mode)=>{
+  const unique=[...new Map(roster.map(p=>[String(p.id),p])).values()];let best=-Infinity;
+  const visit=(slot,used,total)=>{if(slot===slots.length){best=Math.max(best,total);return;}for(let i=0;i<unique.length;i++){const p=unique[i],score=M.value(p,5,mode);if(!used.has(i)&&score!==null&&allows[slots[slot]].includes(p.pos))visit(slot+1,new Set([...used,i]),total+score);}};
+  visit(0,new Set(),0);return best===-Infinity?null:best;
+ };
+ let seed=29;const next=n=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed%n;};
+ const formats=[['RB','RB','WR','FLEX'],['QB','SUPERFLEX','FLEX','TE'],['WR','WR','WR','FLEX'],['K','DEF','FLEX']];
+ for(let n=0;n<80;n++){
+  const roster=Array.from({length:8},(_,i)=>{const p=player(String(i),['QB','RB','WR','TE','K','D/ST'][next(6)],next(31)-10);if(next(7)===0){p.scores={};p.projections={};}return p;});
+  roster.push({...roster[0],projections:{5:next(20)}});
+  const slots=formats[n%formats.length],mode=['balanced','projection','history','floor','ceiling'][n%5],expected=exhaustive(roster,slots,mode),actual=M.bestLineup(roster,slots,5,mode);
+  if(expected===null){assert.equal(actual,null);continue;}
+  assert.ok(Math.abs(actual.total-expected)<1e-9,`case ${n}`);
+  assert.equal(new Set(actual.players.map(p=>p.player)).size,slots.length);
+  assert.equal(new Set(actual.players.map(p=>p.index)).size,slots.length);
+  for(const chosen of actual.players){const p=roster.findLast(p=>p.id===chosen.player);assert.ok(allows[slots[chosen.index]].includes(p.pos));assert.equal(chosen.points,M.value(p,5,mode));}
+  assert.ok(Math.abs(actual.players.reduce((sum,p)=>sum+p.points,0)-actual.total)<1e-9);
+ }
+});
+test('trade batches reuse baseline work and fresh batches pick up changed scores, mode and week',()=>{
+ const own=[player('a','RB',10),player('b','RB',5)],their=[player('c','RB',15),player('d','RB',8)];
+ let reads=0;own[0].projections=new Proxy({5:10,6:30},{get:(target,key)=>{reads++;return target[key];}});
+ const evaluate=M.createTradeEvaluator(own,their,['RB'],5,'projection'),initialReads=reads;
+ assert.equal(evaluate(['b'],['c']).impact,5);assert.equal(evaluate(['a'],['d']).impact,-2);assert.equal(reads,initialReads);
+ assert.equal(evaluate(['b'],['c'],{give:['a']}).afterOwn.length,1);
+ own[0].projections[5]=20;
+ assert.equal(M.createTradeEvaluator(own,their,['RB'],5,'projection')(['b'],['c']).before.total,20);
+ assert.equal(M.createTradeEvaluator(own,their,['RB'],6,'projection')(['b'],['c']).before.total,30);
+ assert.equal(M.createTradeEvaluator(own,their,['RB'],5,'history')(['b'],['c']).before.total,10);
+});

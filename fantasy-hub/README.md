@@ -1,4 +1,4 @@
-# Fantasy Hub — GRIDIRON/86 v9.9, Cloudflare edition
+# Fantasy Hub — GRIDIRON/86 v9.9.1, Cloudflare edition
 
 Live site: https://fantasy-home.fantasy-hub.workers.dev/
 
@@ -205,3 +205,12 @@ Outlook and opportunity reports have franchise/all-player selectors. Opportunity
 - Stable roster-filter controls with indexed player matching and in-place result updates. Variable Lab uses a viewport-bounded canvas without the forced enrichment gap.
 - Original scouting facts restored alongside a compact Outlook. Home Player Terminal gains a share chart.
 - Trade scenarios now compare both optimized starting lineups, optional roster drops, projection/form/floor/ceiling valuations, package balance, and balancing counteroffers. No trade is submitted; dynasty/keeper/draft-pick and rest-of-season values are not supplied.
+
+
+## v9.9.1 — interaction and analytics optimization
+
+Trade counteroffers share player valuations and the two starting-lineup baselines within a synchronous comparison batch. The exact lineup solver avoids interchangeable-slot permutations and repeated lineup-array copies. New batches always use current projections, rosters, week and valuation settings.
+
+Home trade edits update only the trade tile. Unchanged strategy markup retains its existing controls, focus and open explanations. Opportunity reports no longer calculate the leader table twice, and player matching reuses the dataset index.
+
+The reproducible 19-counteroffer benchmark fell from 163.81ms to 91.87ms (44% lower median computation time on the same host). This measures analytics, not network or full-page load speed. See [optimization verification](docs/verification-9.9.1.md).

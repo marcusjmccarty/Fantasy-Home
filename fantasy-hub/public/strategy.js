@@ -3,7 +3,7 @@
 const STRATEGY={identity:'',player:null,scope:'all',homeScope:'active',homePlayer:null,lastCurrent:null,leaders:'active',period:'season',position:'ALL',search:'',sort:'opportunities',usage:new Map(),usageBusy:new Set(),usageErrors:new Map(),defense:new Map(),defenseBusy:new Set(),ai:new Map(),aiBusy:new Set(),aiErrors:new Map(),trade:{partner:null,give:[],get:[],mode:'balanced',format:'standard',drops:{give:[],get:[]},alternatives:[]}};
 const STRATEGY_FORMATS={standard:['QB','RB','RB','WR','WR','TE','FLEX','K','DEF'],threewr:['QB','RB','RB','WR','WR','WR','TE','FLEX','K','DEF'],superflex:['QB','RB','RB','WR','WR','TE','FLEX','SUPERFLEX','K','DEF']};
 const strategyWeek=()=>Math.max(1,Math.min(18,Number(model.currentWeek||model.liveWeek||(model.source==='demo'?7:currentWeek)||1)));
-function usagePlayer(r){return getPool().find(p=>usageFor(p,{players:[r]})===r)||{id:'usage:'+r.gsis_id,name:r.name,pos:r.position,nfl:Object.values(r.weeks).at(-1)?.team,scores:{},status:'Availability not supplied'};}
+function usagePlayer(r){const data=usageDataset();return getPool().find(p=>usageFor(p,data)===r)||{id:'usage:'+r.gsis_id,name:r.name,pos:r.position,nfl:Object.values(r.weeks).at(-1)?.team,scores:{},status:'Availability not supplied'};}
 function strategyPlayerPool(scope='all'){
  const pool=scope==='all'?getPool():tradeRoster(scope==='active'?getTeam():findTeam(scope));
  return [...pool].sort((a,b)=>a.name.localeCompare(b.name));
@@ -144,7 +144,7 @@ function updateOpportunityResults(){
  const p=strategyPlayer(),host=el('usage-snapshot');if(host&&p)host.outerHTML=usageSnapshot(p,usageTotals(usageFor(p,data),data));
 }
 function renderOpportunity(){
- const data=usageDataset(),p=strategyPlayer(),row=usageFor(p,data),v=usageTotals(row,data),season=Number(model.season),rows=opportunityRows(data);
+ const data=usageDataset(),p=strategyPlayer(),row=usageFor(p,data),v=usageTotals(row,data),season=Number(model.season);
  const filters=`<label>PERIOD<select id="usage-period"><option value="season" ${STRATEGY.period==='season'?'selected':''}>Season</option><option value="recent" ${STRATEGY.period==='recent'?'selected':''}>Latest 3 weeks</option></select></label><label>POSITION<select id="usage-position">${['ALL','QB','RB','WR','TE'].map(pos=>`<option ${STRATEGY.position===pos?'selected':''}>${pos}</option>`).join('')}</select></label><label>FIND<input id="usage-search" type="search" placeholder="Name or NFL team" value="${esc(STRATEGY.search)}"></label><label>SORT<select id="usage-sort">${[['opportunities','Opportunities'],['redzone','Red-zone chances'],['target_share','Target share'],['rush_share','Rush share'],['touches','Touches']].map(([id,label])=>`<option value="${id}" ${STRATEGY.sort===id?'selected':''}>${label}</option>`).join('')}</select></label>${model.source!=='demo'?`<button id="strategy-refresh-usage" class="lab-action" ${STRATEGY.usageBusy.has(season)?'disabled':''}>Refresh</button>`:''}`;
  setExplorer(strategyHeading('OPPORTUNITY','Touches & Share','Recorded workload / Touches, scoring-area chances and a share of the offense.')+strategyPlayerPicker(p,filters)+
  `${!data?`<section class="strategy-empty"><h4>${STRATEGY.usageErrors.has(season)?'Waiting for the season dataset.':'Loading recorded NFL plays…'}</h4><p>${esc(STRATEGY.usageErrors.get(season)||'Team shares and red-zone counts will appear when published data is available.')}</p></section>`:''}`+
@@ -166,9 +166,16 @@ function shareHistoryChart(p,home=false){
  const row=usageFor(p,usageDataset()),rows=FantasyMath.weeklyShares(row,strategyWeek()),scale=Math.max(10,Math.ceil(Math.max(0,...rows.map(r=>r.share||0))/10)*10);
  return `<section class="share-history-panel ${home?'home-share-history':''}" data-open-share="${esc(p?.id||'')}" tabindex="0" role="link" aria-label="Open Touches and Share${p?' for '+esc(p.name):''}"><div class="window-topline"><b>SHARE % / WEEK</b><span class="share-scale">0–${scale}% · TEAM OPPORTUNITIES ↗</span></div>${rows.length?`<div class="share-history-chart ${rows.length>12?'dense-weeks':''}" style="--week-count:${rows.length}">${rows.map(r=>`<button type="button" class="share-week" data-share-week="${r.week}" data-share-player="${esc(p.id)}" aria-label="Week ${r.week}: ${labPct(r.share)} opportunity share. Open week scoring table" title="Week ${r.week} · ${labPct(r.share)} team opportunity share"><span class="share-week-value">${labFormat(r.share,0)}%</span><i style="height:${r.share>0?Math.max(2,Math.min(100,r.share/scale*100)):0}%"></i><span class="share-week-label">${r.week}</span></button>`).join('')}</div>`:'<p class="lab-note">Share history unavailable for this player.</p>'}${home?'':'<p class="lab-note">Week → scoring table · panel → Touches & Share</p>'}</section>`;
 }
+// These hosts are owned here; preserve unchanged controls and disclosure state.
+// The node itself is the key, so a newly mounted report always renders.
+const strategyMarkup=new WeakMap();
+function setStrategyHTML(node,html){
+ if(!node||strategyMarkup.get(node)===html)return;
+ node.innerHTML=html;strategyMarkup.set(node,html);
+}
 function renderPlayerShareCharts(){
- const p=getPool().find(p=>String(p.id)===String(currentPlayerId)),home=el('player-share-spark');if(home)home.innerHTML=shareHistoryChart(p,true);
- const expanded=el('player-share-history');if(expanded){const player=getPool().find(p=>String(p.id)===String(XL.player));expanded.innerHTML=shareHistoryChart(player);}
+ const p=getPool().find(p=>String(p.id)===String(currentPlayerId)),home=el('player-share-spark');if(home)setStrategyHTML(home,shareHistoryChart(p,true));
+ const expanded=el('player-share-history');if(expanded){const player=getPool().find(p=>String(p.id)===String(XL.player));setStrategyHTML(expanded,shareHistoryChart(player));}
 }
 function openShareHistory(event){
  const week=event.target.closest('[data-share-week]'),panel=event.target.closest('[data-open-share]');if(!panel)return;
@@ -181,11 +188,12 @@ document.addEventListener('click',event=>{if(event.target.closest('[data-open-sh
 document.addEventListener('keydown',event=>{if(event.target.matches('[data-open-share]')&&['Enter',' '].includes(event.key)){event.preventDefault();openShareHistory(event);}},true);
 function tradeRoster(team){return (team?.playerIds||[]).map(id=>model.players[id]).filter(Boolean);}
 function tradeSide(team,side){const selected=STRATEGY.trade[side],players=tradeRoster(team);return `<section class="lab-panel trade-side"><div class="trade-side-heading"><span>${side==='give'?'YOU SEND':'YOU RECEIVE'}</span><strong>${esc(teamName(team))}</strong><small>${selected.length} selected</small></div><div class="trade-player-list">${players.length?players.map(p=>{const points=FantasyMath.value(p,strategyWeek(),STRATEGY.trade.mode),on=selected.includes(String(p.id));return `<label class="trade-player ${on?'selected':''}"><input type="checkbox" data-trade-side="${side}" value="${esc(p.id)}" ${on?'checked':''}><span class="trade-position">${esc(p.pos)}</span><span><b>${esc(p.name)}</b><small>${esc(p.nfl)} · ${esc(p.status||'Status unavailable')}</small></span><strong>${labFormat(points)}</strong></label>`}).join(''):'<p class="lab-note">This team has no loaded roster. Select another team or refresh your league.</p>'}</div></section>`;}
-function tradeModel(){
+function tradeEvaluator(){
  ensureTrade();const t=STRATEGY.trade,own=tradeRoster(getTeam()),their=tradeRoster(findTeam(t.partner));
  t.drops??={give:[],get:[]};for(const [side,roster] of [['give',own],['get',their]])t.drops[side]=t.drops[side].filter(id=>!t[side].includes(id)&&roster.some(p=>String(p.id)===id));
- return FantasyMath.tradeAnalysis(own,their,t.give,t.get,STRATEGY_FORMATS[t.format],strategyWeek(),t.mode,t.drops);
+ return FantasyMath.createTradeEvaluator(own,their,STRATEGY_FORMATS[t.format],strategyWeek(),t.mode);
 }
+function tradeModel(){const evaluate=tradeEvaluator(),t=STRATEGY.trade;return evaluate(t.give,t.get,t.drops);}
 const tradeSigned=n=>n===null?'—':(n>0?'+':'')+labFormat(n);
 function tradeLineupTable(title,before,after,roster){
  const names=new Map(roster.map(p=>[String(p.id),p.name]));
@@ -201,14 +209,14 @@ function tradePlayerEvidence(a){
  return expandTable(['SIDE / PLAYER','POS','VALUE / WK','PROJECTION','LAST 3 AVG','FLOOR','CEILING','STATUS'],[['SEND',a.give],['RECEIVE',a.get]].flatMap(([side,players])=>players.map(p=>{const o=currentProjection(p),recent=o.observations.slice(-3);return `<tr><td><small>${side}</small><b>${esc(p.name)}</b></td><td>${esc(p.pos)}</td><td><b>${labFormat(FantasyMath.value(p,strategyWeek(),STRATEGY.trade.mode))}</b></td><td>${o.source==='Provider projection'?labFormat(o.center):'—'}</td><td>${labFormat(recent.length?recent.reduce((s,r)=>s+r.points,0)/recent.length:null)}</td><td>${labFormat(o.floor)}</td><td>${labFormat(o.ceiling)}</td><td>${esc(p.status||'Not supplied')}</td></tr>`})));
 }
 function findTradeAlternatives(){
- const t=STRATEGY.trade,a=tradeModel();if(!a.ready)return;
+ const t=STRATEGY.trade,evaluate=tradeEvaluator(),a=evaluate(t.give,t.get,t.drops);if(!a.ready)return;
  const side=a.delta>0?'give':'get',roster=tradeRoster(side==='give'?getTeam():findTeam(t.partner));
  const candidates=roster.filter(p=>!t[side].includes(String(p.id))&&!t.drops[side].includes(String(p.id))&&FantasyMath.value(p,strategyWeek(),t.mode)!==null).map(p=>({p,gap:Math.abs(Math.abs(a.delta)-FantasyMath.value(p,strategyWeek(),t.mode))})).sort((a,b)=>a.gap-b.gap);
- t.alternatives=candidates.map(({p})=>{const give=side==='give'?[...t.give,String(p.id)]:t.give,get=side==='get'?[...t.get,String(p.id)]:t.get,result=FantasyMath.tradeAnalysis(tradeRoster(getTeam()),tradeRoster(findTeam(t.partner)),give,get,STRATEGY_FORMATS[t.format],strategyWeek(),t.mode,t.drops);return {id:String(p.id),name:p.name,side,balance:result.balance,impact:result.impact,theirImpact:result.theirImpact,delta:result.delta};}).filter(r=>r.balance>a.balance).sort((a,b)=>Number(b.impact!==null&&b.theirImpact!==null)-Number(a.impact!==null&&a.theirImpact!==null)||b.balance-a.balance).slice(0,3);
- t.searched=true;renderTrade();
+ t.alternatives=candidates.map(({p})=>{const give=side==='give'?[...t.give,String(p.id)]:t.give,get=side==='get'?[...t.get,String(p.id)]:t.get,result=evaluate(give,get,t.drops);return {id:String(p.id),name:p.name,side,balance:result.balance,impact:result.impact,theirImpact:result.theirImpact,delta:result.delta};}).filter(r=>r.balance>a.balance).sort((a,b)=>Number(b.impact!==null&&b.theirImpact!==null)-Number(a.impact!==null&&a.theirImpact!==null)||b.balance-a.balance).slice(0,3);
+ t.searched=true;renderTrade(a);
 }
-function renderTrade(){
- const t=STRATEGY.trade,mine=getTeam(),others=ensureTrade(),partner=findTeam(t.partner),own=tradeRoster(mine),their=tradeRoster(partner),a=tradeModel();
+function renderTrade(analysis=null){
+ const t=STRATEGY.trade,mine=getTeam(),others=ensureTrade(),partner=findTeam(t.partner),own=tradeRoster(mine),their=tradeRoster(partner),a=analysis||tradeModel();
  const {ready,delta,impact,theirImpact,give,get}=a;
  const verdict=!give.length||!get.length?'Build both sides of the deal.':!ready?'Some selected players are missing scores.':impact!==null&&theirImpact!==null&&impact>0&&theirImpact>0?'Both starting lineups improve.':impact!==null&&impact>0?'Your starting lineup improves.':impact!==null&&impact<0?'Your starting lineup loses points.':a.balance>=95?'Close on modeled scoring.':delta>0?'More package scoring coming your way.':'More package scoring going the other way.';
  const alerts=[...give,...get].filter(p=>p.status&&!/^(ACTIVE|HEALTHY|A)$/i.test(p.status));
@@ -222,7 +230,7 @@ function renderTrade(){
  `<section class="lab-panel trade-counteroffers"><div class="strategy-section-title"><h4>COUNTEROFFER WORKBENCH</h4><button class="lab-action" id="trade-counteroffers" ${ready?'':'disabled'}>Compare balancing additions ↗</button></div><p class="lab-note">Compare one-player additions to the lower-valued package. Complete starting lineups are prioritized, then scoring balance. Review both teams and any required drops.</p><div class="trade-alternatives">${(t.alternatives||[]).map(r=>`<article><b>${r.side==='give'?'Send':'Receive'} + ${esc(r.name)}</b><div><span>Balance <strong>${labFormat(r.balance,0)}%</strong></span><span>You <strong>${tradeSigned(r.impact)}</strong></span><span>Partner <strong>${tradeSigned(r.theirImpact)}</strong></span></div><button class="lab-action" data-trade-alternative="${esc(r.id)}" data-side="${r.side}">Try this package</button></article>`).join('')}${t.searched&&!t.alternatives.length?'<p>No single-player addition improves the current package balance. Try exchanging a player or changing the partner.</p>':''}</div></section>`+
  `${give.length||get.length?`<details class="strategy-method trade-evidence"><summary>Selected player evidence / projections, form & range</summary>${tradePlayerEvidence(a)}</details>`:''}`+
  `<details class="strategy-method"><summary>Valuation, roster assumptions & coverage ⓘ</summary><p>Values are fantasy points per week in the loaded scoring system. Balanced mode uses 60% current provider projection (or prior mean) and 40% last-three recorded scoring average. History uses up to eight earlier weeks. Floor and ceiling use the Player Outlook scenarios, not calibrated probabilities. Missing estimates stay blank.</p><p>Package balance is 100 × (1 − absolute package difference / the larger absolute package value). Starting lineups are optimized exactly with each player assigned once, including FLEX and SUPERFLEX. The selected format is an explicit assumption; verify it against your league. Roster size shows after / before. Optional drops are included in lineup comparisons, but no automatic roster limit is assumed.</p><p>This is a weekly scoring and lineup simulator. It has no dynasty, draft-pick, keeper, contract, rest-of-season, schedule or market-consensus feed. Counteroffers compare modeled scores, not the chance another manager accepts. No trade is submitted and no roster is changed.</p></details>`);
- renderStrategyHome();
+ renderHomeTrade();
 }
 function ensureTrade(){
  const t=STRATEGY.trade,others=model.teams.filter(x=>String(x.id)!==String(getTeam()?.id));
@@ -238,17 +246,21 @@ function homePlayer(){const pool=strategyPlayerPool(STRATEGY.homeScope);return p
 function renderStrategyHome(){
  const host=el('outlook-preview');if(!host)return;strategyContext();
  if(STRATEGY.lastCurrent!==currentPlayerId){STRATEGY.lastCurrent=currentPlayerId;STRATEGY.homePlayer=null;}
- const pool=strategyPlayerPool(STRATEGY.homeScope),p=homePlayer();
- for(const id of ['home-outlook-player','home-share-player']){const select=el(id);select.innerHTML=pool.map(x=>`<option value="${esc(x.id)}" ${String(x.id)===String(p?.id)?'selected':''}>${esc(x.name)} · ${esc(x.pos)}</option>`).join('')||'<option value="">No roster loaded</option>';select.disabled=!p;}
- for(const id of ['home-outlook-scope','home-share-scope']){const select=el(id);if(select)select.innerHTML=scopeOptions(STRATEGY.homeScope);}
+ const pool=strategyPlayerPool(STRATEGY.homeScope),p=pool.find(x=>String(x.id)===String(STRATEGY.homePlayer||currentPlayerId))||pool[0];
+ const options=pool.map(x=>`<option value="${esc(x.id)}" ${String(x.id)===String(p?.id)?'selected':''}>${esc(x.name)} · ${esc(x.pos)}</option>`).join('')||'<option value="">No roster loaded</option>',scopes=scopeOptions(STRATEGY.homeScope);
+ for(const id of ['home-outlook-player','home-share-player']){const select=el(id);setStrategyHTML(select,options);if(select)select.disabled=!p;}
+ for(const id of ['home-outlook-scope','home-share-scope'])setStrategyHTML(el(id),scopes);
  const o=p?currentProjection(p):{floor:null,center:null,ceiling:null,sample:0},key=`${model.season}:${strategyWeek()}`,data=usageDataset(),v=usageTotals(usageFor(p,data),data);
- const metric=(label,value,cls='')=>`<div class="${cls}"><span>${label}</span><b>${value}</b></div>`;
- host.innerHTML=`<div class="window-topline"><span>WEEK ${strategyWeek()} / FANTASY PTS</span><span>${esc(model.scoring)}</span></div>${rangeMetrics(o,true)}${rangeBar(o)}${p?matchupAI(p,true):''}<p class="tiny-caption">${model.source==='demo'?'EXHIBITION VALUES · ':''}${o.sample} prior weeks · scenario estimates${p&&/^(OUT|IR|INJURED_RESERVE|SUSPENDED)$/i.test(p.status||'')?' · PLAYER UNAVAILABLE':''}</p><span class="strategy-home-action">OPEN PLAYER OUTLOOK ▣</span>`;
- el('share-preview').innerHTML=`<div class="window-topline"><span>${STRATEGY.period==='recent'?'LATEST 3 NFL WEEKS':'SEASON OPPORTUNITY'}</span><span>WEEK ${strategyWeek()}</span></div><div class="strategy-metrics home-usage-metrics">${p?usageStatCards(p,v,data):''}</div><div class="strategy-home-share-grid">${shareBars(v)}</div>${model.source==='demo'?'<p class="tiny-caption">SYNTHETIC EXHIBITION DATA</p>':''}<span class="strategy-home-action">OPEN WORKLOAD, TD METHOD & LEADERS ▣</span>`;
+ setStrategyHTML(host,`<div class="window-topline"><span>WEEK ${strategyWeek()} / FANTASY PTS</span><span>${esc(model.scoring)}</span></div>${rangeMetrics(o,true)}${rangeBar(o)}${p?matchupAI(p,true):''}<p class="tiny-caption">${model.source==='demo'?'EXHIBITION VALUES · ':''}${o.sample} prior weeks · scenario estimates${p&&/^(OUT|IR|INJURED_RESERVE|SUSPENDED)$/i.test(p.status||'')?' · PLAYER UNAVAILABLE':''}</p><span class="strategy-home-action">OPEN PLAYER OUTLOOK ▣</span>`);
+ setStrategyHTML(el('share-preview'),`<div class="window-topline"><span>${STRATEGY.period==='recent'?'LATEST 3 NFL WEEKS':'SEASON OPPORTUNITY'}</span><span>WEEK ${strategyWeek()}</span></div><div class="strategy-metrics home-usage-metrics">${p?usageStatCards(p,v,data):''}</div><div class="strategy-home-share-grid">${shareBars(v)}</div>${model.source==='demo'?'<p class="tiny-caption">SYNTHETIC EXHIBITION DATA</p>':''}<span class="strategy-home-action">OPEN WORKLOAD, TD METHOD & LEADERS ▣</span>`);
  renderPlayerShareCharts();
- const others=ensureTrade(),t=STRATEGY.trade,own=tradeRoster(getTeam()),partner=findTeam(t.partner),their=tradeRoster(partner),give=own.filter(x=>t.give.includes(String(x.id))),get=their.filter(x=>t.get.includes(String(x.id))),g=give.length?FantasyMath.packageValue(give,strategyWeek(),t.mode).total:null,r=get.length?FantasyMath.packageValue(get,strategyWeek(),t.mode).total:null;
- el('trade-preview').innerHTML=`<div class="home-trade-controls"><label>PARTNER<select id="home-trade-partner">${others.map(team=>`<option value="${esc(team.id)}" ${String(team.id)===t.partner?'selected':''}>${esc(teamName(team))}</option>`).join('')}</select></label><label>VALUE<select id="home-trade-mode">${[['balanced','Balanced'],['projection','Projection'],['history','History'],['floor','Floor'],['ceiling','Ceiling']].map(([id,label])=>`<option value="${id}" ${t.mode===id?'selected':''}>${label}</option>`).join('')}</select></label></div><div class="strategy-home-metrics" aria-live="polite">${metric('YOU SEND',labFormat(g))}${metric('YOU RECEIVE',labFormat(r))}${metric('DIFFERENCE',g!==null&&r!==null?(r-g>0?'+':'')+labFormat(r-g):'—','estimate-center')}</div><div class="home-trade-builder">${homeTradeSide(getTeam(),'give')}${homeTradeSide(partner,'get')}</div><div class="home-trade-footer"><span>MODELED PTS / WEEK</span><button class="lab-action" id="home-trade-clear">Clear</button></div><p class="tiny-caption">Add players to both packages. Expand for starting-lineup impact.${model.source==='demo'?' EXHIBITION DATA.':''}</p><span class="strategy-home-action">OPEN FULL TRADE SIMULATOR ▣</span>`;
+ renderHomeTrade();
  if(model.source!=='demo'){if(!STRATEGY.usage.has(Number(model.season))&&!STRATEGY.usageErrors.has(Number(model.season)))void loadUsage();if(!STRATEGY.defense.has(key))void loadStrategyDefense();}
+}
+function renderHomeTrade(){
+ const metric=(label,value,cls='')=>`<div class="${cls}"><span>${label}</span><b>${value}</b></div>`;
+ const others=ensureTrade(),t=STRATEGY.trade,own=tradeRoster(getTeam()),partner=findTeam(t.partner),their=tradeRoster(partner),give=own.filter(x=>t.give.includes(String(x.id))),get=their.filter(x=>t.get.includes(String(x.id))),g=give.length?FantasyMath.packageValue(give,strategyWeek(),t.mode).total:null,r=get.length?FantasyMath.packageValue(get,strategyWeek(),t.mode).total:null;
+ setStrategyHTML(el('trade-preview'),`<div class="home-trade-controls"><label>PARTNER<select id="home-trade-partner">${others.map(team=>`<option value="${esc(team.id)}" ${String(team.id)===t.partner?'selected':''}>${esc(teamName(team))}</option>`).join('')}</select></label><label>VALUE<select id="home-trade-mode">${[['balanced','Balanced'],['projection','Projection'],['history','History'],['floor','Floor'],['ceiling','Ceiling']].map(([id,label])=>`<option value="${id}" ${t.mode===id?'selected':''}>${label}</option>`).join('')}</select></label></div><div class="strategy-home-metrics" aria-live="polite">${metric('YOU SEND',labFormat(g))}${metric('YOU RECEIVE',labFormat(r))}${metric('DIFFERENCE',g!==null&&r!==null?(r-g>0?'+':'')+labFormat(r-g):'—','estimate-center')}</div><div class="home-trade-builder">${homeTradeSide(getTeam(),'give')}${homeTradeSide(partner,'get')}</div><div class="home-trade-footer"><span>MODELED PTS / WEEK</span><button class="lab-action" id="home-trade-clear">Clear</button></div><p class="tiny-caption">Add players to both packages. Expand for starting-lineup impact.${model.source==='demo'?' EXHIBITION DATA.':''}</p><span class="strategy-home-action">OPEN FULL TRADE SIMULATOR ▣</span>`);
 }
 function updateTradeControl(target){
  const id=target.id?.replace(/^home-/,''),mapping={'trade-partner':'partner','trade-mode':'mode','trade-format':'format'},t=STRATEGY.trade;
@@ -257,7 +269,7 @@ function updateTradeControl(target){
  else if(target.dataset.tradeSide){const side=target.dataset.tradeSide;t[side]=target.checked?[...new Set([...t[side],target.value])]:t[side].filter(id=>id!==target.value);}
  else if(target.dataset.homeTradeAdd){if(target.value)t[target.dataset.homeTradeAdd]=[...new Set([...t[target.dataset.homeTradeAdd],target.value])];}
  else return false;
- t.alternatives=[];t.searched=false;if(XL.open==='trade'){renderTrade();if(target.dataset.tradeDrop){const input=el('explore-content').querySelector?.(`input[data-trade-drop="${target.dataset.tradeDrop}"][value="${CSS.escape(target.value)}"]`);const details=input?.closest('details');if(details)details.open=true;}}else renderStrategyHome();return true;
+ t.alternatives=[];t.searched=false;if(XL.open==='trade'){renderTrade();if(target.dataset.tradeDrop){const input=el('explore-content').querySelector?.(`input[data-trade-drop="${target.dataset.tradeDrop}"][value="${CSS.escape(target.value)}"]`);const details=input?.closest('details');if(details)details.open=true;}}else renderHomeTrade();return true;
 }
 document.addEventListener('click',event=>{
  if(event.target.closest('.range-help,a'))return;
@@ -267,10 +279,10 @@ document.addEventListener('click',event=>{
  const ai=event.target.closest('[data-matchup-ai]');if(ai){void generateMatchupAI(strategyPlayer());return;}
  if(event.target.id==='trade-counteroffers'){findTradeAlternatives();return;}
  const alternative=event.target.closest('[data-trade-alternative]');if(alternative){STRATEGY.trade[alternative.dataset.side].push(alternative.dataset.tradeAlternative);STRATEGY.trade.alternatives=[];STRATEGY.trade.searched=false;renderTrade();return;}
- const remove=event.target.closest('[data-home-trade-remove]');if(remove){const side=remove.dataset.homeTradeRemove;STRATEGY.trade[side]=STRATEGY.trade[side].filter(id=>id!==remove.dataset.id);renderStrategyHome();return;}
+ const remove=event.target.closest('[data-home-trade-remove]');if(remove){const side=remove.dataset.homeTradeRemove;STRATEGY.trade[side]=STRATEGY.trade[side].filter(id=>id!==remove.dataset.id);STRATEGY.trade.alternatives=[];STRATEGY.trade.searched=false;renderHomeTrade();return;}
  if(event.target.id==='strategy-refresh-defense')void loadStrategyDefense(true);
  if(event.target.id==='strategy-refresh-usage')void loadUsage(true);
- if(['trade-clear','home-trade-clear'].includes(event.target.id)){STRATEGY.trade.give=[];STRATEGY.trade.get=[];STRATEGY.trade.drops={give:[],get:[]};STRATEGY.trade.alternatives=[];STRATEGY.trade.searched=false;if(XL.open==='trade')renderTrade();else renderStrategyHome();}
+ if(['trade-clear','home-trade-clear'].includes(event.target.id)){STRATEGY.trade.give=[];STRATEGY.trade.get=[];STRATEGY.trade.drops={give:[],get:[]};STRATEGY.trade.alternatives=[];STRATEGY.trade.searched=false;if(XL.open==='trade')renderTrade();else renderHomeTrade();}
 });
 document.addEventListener('dblclick',event=>{const row=event.target.closest('[data-usage-player]');if(row)selectUsagePlayer(row.dataset.usagePlayer,true);});
 document.addEventListener('keydown',event=>{
