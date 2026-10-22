@@ -9,9 +9,11 @@
   <link rel="stylesheet" href="workspace.css">
   <link rel="stylesheet" href="readability.css">
   <link rel="stylesheet" href="refinements.css">
+  <link rel="stylesheet" href="polish.css">
   <script src="script.js" defer></script>
   <script src="explorer.js" defer></script>
   <script src="analytics-math.js" defer></script>
+  <script src="interactions.js" defer></script>
   <script src="strategy.js" defer></script>
   <script src="workspace.js" defer></script>
 </head>
@@ -88,8 +90,8 @@
       </section>
 
       <section class="win matchup-window expandable" data-explore="matchup" tabindex="0" aria-label="Open Matchup Center" aria-labelledby="title-matchup">
-        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-matchup">MATCHUP CENTER</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
-        <div class="win-inner"><div class="window-topline"><span>WEEKLY MATCHUP</span><label class="week-label">WEEK <select id="week-select" aria-label="Select matchup week"></select></label></div><div id="matchup-panel" class="matchup-panel"></div><div class="tiny-caption" id="matchup-comment">Scores reflect selected week.</div></div>
+        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-matchup">MATCHUP CENTER</h2><label class="week-label matchup-banner-week">WEEK <select id="week-select" aria-label="Select matchup week"></select></label><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
+        <div class="win-inner"><div id="matchup-panel" class="matchup-panel"></div><div class="tiny-caption" id="matchup-comment">Scores reflect selected week.</div></div>
       </section>
 
       <section class="win profile-window expandable" data-explore="profile" tabindex="0" aria-label="Open expanded profile statistics" aria-labelledby="title-profile">
@@ -144,7 +146,7 @@
       <div class="explore-content" id="explore-content"></div>
       <footer class="explore-footer"><span id="explore-source">Data source: demo</span><span>ESC TO CLOSE · CLICK A PLAYER TO INSPECT</span></footer>
     </dialog>
-    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.10</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
+    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.11</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
   </div>
 
   <dialog id="data-dialog" aria-labelledby="dialog-title">

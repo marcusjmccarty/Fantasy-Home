@@ -242,7 +242,7 @@ function drawMatchup(team){
   const other=opposite?.officialDisplay??otherOfficial??opposite?.computedActual??null;
   const result=own===null?'NOT STARTED':other===null?'NO OPPONENT':own===other?'TIE':own>other?'VICTORY':'DEFEAT';
   const provisional=Number(model.currentWeek||model.liveWeek)===Number(current.week);
-  el('matchup-panel').innerHTML=`<div class="matchup-score-strip"><div><b title="${esc(teamName(team))}">${esc(teamName(team))}</b><small>${team.wins}–${team.losses}${team.ties?'–'+team.ties:''}</small><strong>${nfmt(own,1)}</strong></div><span class="matchup-result">${provisional?'LIVE':result}</span><div><b title="${esc(opponent?teamName(opponent):'BYE')}">${esc(opponent?teamName(opponent):'BYE')}</b><small>${opponent?opponent.wins+'–'+opponent.losses+(opponent.ties?'–'+opponent.ties:''):'—'}</small><strong>${nfmt(other,1)}</strong></div></div><div class="matchup-roster-pair">${homeMatchupRoster(team,week)}${homeMatchupRoster(opponent,week)}</div>`;
+  el('matchup-panel').innerHTML=`<div class="matchup-original-score"><div class="matchup-competitors"><div class="matchup-side"><span title="${esc(teamName(team))}">${esc(teamName(team))}</span><span class="matchup-team-record">${team.wins}–${team.losses}${team.ties?'–'+team.ties:''}</span><strong>${nfmt(own,1)}</strong></div><div class="matchup-divider"><b>VS</b><small>${provisional?'LIVE':result}</small></div><div class="matchup-side right"><span title="${esc(opponent?teamName(opponent):'BYE')}">${esc(opponent?teamName(opponent):'BYE')}</span><span class="matchup-team-record">${opponent?opponent.wins+'–'+opponent.losses+(opponent.ties?'–'+opponent.ties:''):'—'}</span><strong>${nfmt(other,1)}</strong></div></div></div><div class="matchup-roster-pair">${homeMatchupRoster(team,week)}${homeMatchupRoster(opponent,week)}</div>`;
   el('matchup-comment').textContent='';
 
 }
@@ -294,7 +294,7 @@ function drawProfile(team){
   if(!p||!model.weeks.length){el('player-spark').innerHTML='<div class="empty-chart">NO PLAYER HISTORY</div>';return;}
   const values=model.weeks.map(w=>number(p.scores?.[w])),max=Math.max(1,...values.map(v=>v??0));
   el('player-spark').classList.toggle('dense-weeks',values.length>12);
-  el('player-spark').innerHTML=values.map((v,i)=>`<div class="home-player-week" title="Week ${model.weeks[i]}: ${nfmt(v)}"><span class="home-player-value">${v===null?'—':nfmt(v,1)}</span><button type="button" class="mini-bar ${v===null?'is-blank':''}" data-home-player-week="${model.weeks[i]}" ${v===null?'disabled':''} aria-label="Week ${model.weeks[i]}: ${nfmt(v)}. View starter contributions" style="height:${v===null?'8':Math.max(2,100*v/max)}%"></button><small class="home-point-week">${model.weeks[i]}</small></div>`).join('');
+  el('player-spark').innerHTML=values.map((v,i)=>`<div class="home-player-week" title="Week ${model.weeks[i]}: ${nfmt(v)}"><span class="home-player-value">${v===null?'—':nfmt(v,1)}</span><button type="button" class="mini-bar ${v===null?'is-blank':''}" data-home-player-week="${model.weeks[i]}" ${v===null?'disabled':''} aria-label="Week ${model.weeks[i]}: ${nfmt(v)}. View starter contributions" style="height:${v===null?'8':Math.max(2,100*v/max)}%"></button><small class="home-point-week">W${model.weeks[i]}</small></div>`).join('');
   el('player-caption').textContent='';
 }
 
@@ -385,7 +385,7 @@ async function loadSleeper(leagueId, requestedRoster=null, preferredUserId=null)
         playerIds:(roster.players||[]).map(String),history};
     });
     const activeWeek=seasonMatches && Number(nflState?.week)>0?Number(nflState.week):null;
-    model={source:'sleeper',leagueId:id,league:league.name||'Sleeper League',season:year,scoring:scoringType(league.scoring_settings),
+    model={source:'sleeper',rosterPositions:league.roster_positions,leagueId:id,league:league.name||'Sleeper League',season:year,scoring:scoringType(league.scoring_settings),
       weeks:playedWeeks,teams,players,liveWeek:activeWeek&&playedWeeks.includes(activeWeek)?activeWeek:null,
       description:`SLEEPER / LEAGUE ${id} / READ-ONLY DATA`};
     const owned=teams.find(t=>preferredUserId && String(t.ownerId)===String(preferredUserId));
@@ -508,7 +508,7 @@ function makeEspnPlayer(entry,current){
  const actualSeason=stats.find(s=>Number(s.statTypeId ?? s.statSourceId)===0&&Number(s.scoringPeriodId)===0&&espnN(s.appliedTotal)!==null);
  const projection=stats.find(s=>(Number(s.statTypeId ?? s.statSourceId)===1||Number(s.statTypeId ?? s.statSourceId)===2)&&Number(s.scoringPeriodId)===Number(current)&&espnN(s.appliedTotal)!==null);
  const availability=p.injuryStatus|| (p.injured?'INJURED':null) || entry?.status || 'ACTIVE';
- return espnPlayer({id:pid,espnId:pid,name:p.fullName||[p.firstName,p.lastName].filter(Boolean).join(' ')||`ESPN PLAYER ${pid}`,pos:POS[p.defaultPositionId]||POS[entry.lineupSlotId]||'?',nfl:NFL[p.proTeamId]||'FA',status:availability,starter:![20,21].includes(Number(entry.lineupSlotId)),scores:{},statlines:{},projections:{},seasonTotal:espnN(actualSeason?.appliedTotal),gamesPlayed:espnN(p.gamesPlayed??p.statistics?.gamesPlayed),espnProj:espnN(projection?.appliedTotal),owned:espnN(p.ownership?.percentOwned??pool.percentOwned),started:espnN(p.ownership?.percentStarted??pool.percentStarted)});
+ return espnPlayer({id:pid,espnId:pid,name:p.fullName||[p.firstName,p.lastName].filter(Boolean).join(' ')||`ESPN PLAYER ${pid}`,pos:POS[p.defaultPositionId]||POS[entry.lineupSlotId]||'?',nfl:NFL[p.proTeamId]||'FA',status:availability,eligibleSlots:Array.isArray(p.eligibleSlots)?p.eligibleSlots.map(Number):[],starter:![20,21].includes(Number(entry.lineupSlotId)),scores:{},statlines:{},projections:{},seasonTotal:espnN(actualSeason?.appliedTotal),gamesPlayed:espnN(p.gamesPlayed??p.statistics?.gamesPlayed),espnProj:espnN(projection?.appliedTotal),owned:espnN(p.ownership?.percentOwned??pool.percentOwned),started:espnN(p.ownership?.percentStarted??pool.percentStarted)});
 }
 function rosterStatsFromEntry(entry,week){const pool=entry?.playerPoolEntry||{},p=pool.player||{};
  const groups=[...(pool.stats||[]),...(p.stats||[])];

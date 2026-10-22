@@ -25,36 +25,51 @@
  function bestLineup(players,slots,week,mode){
   return scoredLineup(players,slots,p=>value(p,week,mode));
  }
+ function slotLabel(slot){return typeof slot==='string'?slot:slot.label||'Slot '+slot.id;}
+ function canFill(player,slot){
+  if(typeof slot==='object'&&Array.isArray(player.eligibleSlots)&&player.eligibleSlots.length)return player.eligibleSlots.map(Number).includes(Number(slot.id));
+  return (typeof slot==='object'?slot.positions:eligible[slot])?.includes(player.pos)||false;
+ }
+ // Rectangular Hungarian assignment: exact maximum scoring, one player per slot.
+ // Polynomial work keeps exhaustive small-package trade searches responsive.
  function scoredLineup(players,slots,score){
-  if(slots.length>12)return null;
-  const unique=[...new Map(players.map(p=>[String(p.id),p])).values()];
-  const scores=unique.map(score),size=1<<slots.length,full=size-1;
-  // Descending masks cannot reuse the current player. Immutable path links
-  // preserve earlier assignments without copying a lineup at every transition.
-  const totals=new Float64Array(size).fill(-Infinity),paths=new Array(size),positionMasks=new Map(),slotIndexes=[],previousSlots=[];
-  slots.forEach((slot,j)=>{slotIndexes[1<<j]=j;const previous=j?slots.lastIndexOf(slot,j-1):-1;previousSlots[j]=previous>=0?1<<previous:0;});
-  totals[0]=0;
-  for(let i=0;i<unique.length;i++){
-   const p=unique[i],points=scores[i];if(points===null)continue;
-   if(!positionMasks.has(p.pos))positionMasks.set(p.pos,slots.reduce((mask,slot,j)=>mask|(eligible[slot]?.includes(p.pos)?1<<j:0),0));
-   const positions=positionMasks.get(p.pos);if(!positions)continue;
-   for(let mask=full;mask>=0;mask--){
-    if(totals[mask]===-Infinity)continue;
-    let available=positions&~mask;
-    while(available){
-     const bit=available&-available,index=slotIndexes[bit];available^=bit;
-     // Identical slots are interchangeable: fill them in order instead of
-     // exploring every permutation of the same RB/WR assignment.
-     if(previousSlots[index]&&!(mask&previousSlots[index]))continue;
-     const key=mask|bit,total=totals[mask]+points;
-     if(total>totals[key]){totals[key]=total;paths[key]={previous:paths[mask],index,player:p.id,points};}
+  if(!Array.isArray(slots)||!slots.length)return null;
+  const all=[...new Map(players.map(p=>[String(p.id),p])).values()],scored=all.map(p=>({p,points:score(p)})),known=scored.filter(r=>r.points!==null&&Number.isFinite(r.points));
+  const m=slots.length,n=known.length;if(n<m)return null;
+  const allowed=slots.map(slot=>known.map(({p})=>canFill(p,slot))),u=new Float64Array(m+1),v=new Float64Array(n+1),assignment=new Int32Array(n+1),way=new Int32Array(n+1);
+  for(let i=1;i<=m;i++){
+   assignment[0]=i;let j0=0;const minimum=new Float64Array(n+1).fill(Infinity),used=new Uint8Array(n+1);
+   do{
+    used[j0]=1;const i0=assignment[j0];let delta=Infinity,j1=0;
+    for(let j=1;j<=n;j++)if(!used[j]){
+     const cost=allowed[i0-1][j-1]?-known[j-1].points-u[i0]-v[j]:Infinity;
+     if(cost<minimum[j]){minimum[j]=cost;way[j]=j0;}
+     if(minimum[j]<delta){delta=minimum[j];j1=j;}
     }
-   }
+    if(!Number.isFinite(delta))return null;
+    for(let j=0;j<=n;j++)if(used[j]){u[assignment[j]]+=delta;v[j]-=delta;}else minimum[j]-=delta;
+    j0=j1;
+   }while(assignment[j0]);
+   do{const j1=way[j0];assignment[j0]=assignment[j1];j0=j1;}while(j0);
   }
-  if(totals[full]===-Infinity)return null;
-  const playersInLineup=[];
-  for(let path=paths[full];path;path=path.previous)playersInLineup.push({slot:slots[path.index],index:path.index,player:path.player,points:path.points});
-  return {total:totals[full],players:playersInLineup.reverse(),missing:scores.filter(v=>v===null).length};
+  const lineup=[];for(let j=1;j<=n;j++)if(assignment[j]){const index=assignment[j]-1;lineup.push({slot:slotLabel(slots[index]),index,player:known[j-1].p.id,points:known[j-1].points});}
+  lineup.sort((a,b)=>a.index-b.index);
+  return {total:lineup.reduce((sum,p)=>sum+p.points,0),players:lineup,missing:scored.length-known.length};
+ }
+ function leagueLineup(model){
+  const labels={0:['QB',['QB']],1:['TEAM QB',['QB']],2:['RB',['RB']],3:['RB / WR',['RB','WR']],4:['WR',['WR']],5:['WR / TE',['WR','TE']],6:['TE',['TE']],7:['SUPERFLEX',['QB','RB','WR','TE']],16:['D/ST',['DEF','D/ST']],17:['K',['K']],23:['FLEX',['RB','WR','TE']],24:['FLEX',['RB','WR','TE']]};
+  const counts=model.settings?.rosterSettings?.lineupSlotCounts;
+  if(counts&&typeof counts==='object'){
+   const slots=[];for(const [id,count] of Object.entries(counts).sort((a,b)=>Number(a[0])-Number(b[0]))){
+    if([20,21].includes(Number(id))||!Number.isInteger(Number(count))||count<0||count>30)continue;
+    const [label,positions]=labels[id]||['SLOT '+id,[]];for(let i=0;i<Number(count);i++)slots.push({id:Number(id),label,positions});
+   }
+   return {slots,source:'ESPN league settings'};
+  }
+  if(model.source==='demo')return {slots:['QB','RB','RB','WR','WR','TE','FLEX','K','DEF'],source:'Exhibition lineup'};
+  if(Array.isArray(model.rosterPositions))return {slots:model.rosterPositions.filter(s=>!['BN','BE','IR','RESERVE'].includes(s)).map(s=>s==='SUPER_FLEX'?'SUPERFLEX':s==='DEF'?'DEF':s),source:'League roster settings'};
+  const recorded=model.teams?.map(t=>(t.currentLineup||[]).filter(e=>e.starter!==false&&![20,21].includes(Number(e.slot)))).find(rows=>rows.length&&rows.every(e=>Number.isInteger(e.slot)));
+  return {slots:recorded?.map(e=>({id:e.slot,label:labels[e.slot]?.[0]||'SLOT '+e.slot,positions:labels[e.slot]?.[1]||[]}))||[],source:recorded?'Recorded starting slots':'Lineup settings unavailable'};
  }
  function scoringHistory(player,week){
   return Object.entries(player.scores||{}).map(([w,v])=>({week:Number(w),actual:numeric(v)})).filter(r=>r.week>0&&r.week<week&&r.actual!==null).sort((a,b)=>a.week-b.week).map(r=>({...r,...outlook(player,r.week,{historical:true}),projection:numeric(player.projections?.[r.week])}));
@@ -100,10 +115,35 @@
  function tradeAnalysis(own,their,giveIds,getIds,slots,week,mode='balanced',drops={give:[],get:[]}){
   return createTradeEvaluator(own,their,slots,week,mode)(giveIds,getIds,drops);
  }
+ function searchTrades(own,their,slots,week,mode='balanced',{limit=50000}={}){
+  const evaluate=createTradeEvaluator(own,their,slots,week,mode),baseline=evaluate([],[]);
+  if(!baseline.before||!baseline.theirBefore)return {results:[],checked:0,total:0,scope:'1–2 players per side',unavailable:true};
+  const packages=roster=>{const ids=[...new Set(roster.filter(p=>value(p,week,mode)!==null).map(p=>String(p.id)))];return [...ids.map(id=>[id]),...ids.flatMap((id,i)=>ids.slice(i+1).map(next=>[id,next]))];};
+  const left=packages(own),right=packages(their),all=left.length*right.length,limited=all>limit;
+  const results=[];let checked=0,total=0;
+  const dropFor=(after,lineup,incoming,originalCount)=>{
+   const count=after.length-originalCount;if(count<=0)return [];
+   const starters=new Set(lineup.players.map(p=>String(p.player)));
+   return after.filter(p=>!starters.has(String(p.id))&&!incoming.includes(String(p.id))).sort((a,b)=>(value(a,week,mode)??-Infinity)-(value(b,week,mode)??-Infinity)).slice(0,count).map(p=>String(p.id));
+  };
+  for(const give of left)for(const get of right){
+   if(limited&&give.length===2&&get.length===2)continue;total++;if(checked>=limit)continue;checked++;
+   let a=evaluate(give,get);
+   if(a.impact===null||a.theirImpact===null||a.impact<.05||a.theirImpact<.05)continue;
+   const drops={give:dropFor(a.afterOwn,a.after,get,own.length),get:dropFor(a.afterTheir,a.theirAfter,give,their.length)};
+   if(drops.give.length||drops.get.length)a=evaluate(give,get,drops);
+   if(a.afterOwn.length>own.length||a.afterTheir.length>their.length)continue;
+   if(a.impact===null||a.theirImpact===null||a.impact<.05||a.theirImpact<.05)continue;
+   const signals=tradeSignals(a);
+   results.push({give,get,drops,impact:a.impact,theirImpact:a.theirImpact,balance:a.balance,yourChange:signals.yourChange,theirChange:signals.theirChange});
+  }
+  results.sort((a,b)=>Math.min(b.yourChange??0,b.theirChange??0)-Math.min(a.yourChange??0,a.theirChange??0)||(b.impact+b.theirImpact)-(a.impact+a.theirImpact)||b.balance-a.balance);
+  return {results,checked,total,scope:limited?'1-for-1, 1-for-2 & 2-for-1':'All 1–2 player packages',limited:checked<all};
+ }
  function tradeSignals(a){
   const sent=a.sent?.total,received=a.received?.total,valid=a.ready&&sent>=0&&received>=0&&sent+received>0;
   const change=(before,impact)=>before&&Math.abs(before.total)>0&&impact!==null?impact/Math.abs(before.total)*100:null;
   return {yourShare:valid?received/(sent+received)*100:null,theirShare:valid?sent/(sent+received)*100:null,yourChange:a.ready?change(a.before,a.impact):null,theirChange:a.ready?change(a.theirBefore,a.theirImpact):null};
  }
- root.FantasyMath={numeric,quantile,outlook,scoringHistory,value,packageValue,bestLineup,weeklyShares,touchdownEstimate,tradeAnalysis,createTradeEvaluator,tradeSignals};
+ root.FantasyMath={numeric,quantile,outlook,scoringHistory,value,packageValue,bestLineup,weeklyShares,touchdownEstimate,tradeAnalysis,createTradeEvaluator,tradeSignals,leagueLineup,slotLabel,searchTrades};
 })(globalThis);

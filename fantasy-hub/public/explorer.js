@@ -108,7 +108,7 @@ function togglePlayerRanking(index){
   const sorted=[...byId.values()].map(z=>({p:z,v:playerRankValue(z,index)})).sort((a,b)=>a.v===null?1:b.v===null?-1:index===5?a.v-b.v:b.v-a.v);
   host.innerHTML=`<div class="summary-rank-head">${esc(selected.pos)} / ${esc(PLAYER_RANK_TITLES[index])}</div><div class="summary-rank-scroll"><table class="lab-table"><thead><tr><th>#</th><th>PLAYER</th><th>${esc(PLAYER_RANK_TITLES[index])}</th></tr></thead><tbody>${sorted.map(({p,v},i)=>`<tr data-ranking-player="${esc(String(p.id))}" tabindex="0" role="button" title="Open ${esc(p.name)} player terminal" class="${String(p.id)===String(selected.id)?'is-current':''}"><td>${String(i+1).padStart(2,'0')}</td><td title="${esc(p.name)}${String(p.id)===String(selected.id)&&!peers.some(z=>String(z.id)===String(selected.id))?' · selected player, not a starter':''}">${esc(p.name)}${String(p.id)===String(selected.id)&&!peers.some(z=>String(z.id)===String(selected.id))?' *':''}</td><td><b>${index===4?`${labFormat(summarize(p).best,1)} / ${labFormat(summarize(p).low,1)}`:labFormat(v,1)}</b></td></tr>`).join('')}</tbody></table></div>${!peers.length?'<div class="player-rank-note">No starters available for the current period. Showing selected player only.</div>':!peers.some(z=>String(z.id)===String(selected.id))?'<div class="player-rank-note">* Selected player compared with current starters.</div>':''}`;
   host.hidden=false;host.dataset.rank=String(index);host.dataset.side=index<3?'left':'right';
-  const anchor=host.closest('.player-rank-anchor');if(trigger&&anchor){const r=trigger.getBoundingClientRect(),a=anchor.getBoundingClientRect();host.style.top=`${r.top-a.top}px`;if(index<3){host.style.left=`${r.left-a.left}px`;host.style.right='auto';}else{host.style.right=`${a.right-r.right}px`;host.style.left='auto';}}
+  const anchor=host.closest('.player-rank-anchor');if(trigger&&anchor){const r=trigger.getBoundingClientRect(),a=anchor.getBoundingClientRect();host.style.top=`${r.top-a.top}px`;host.style.minWidth=`${r.width}px`;if(index<3){host.style.left=`${r.left-a.left}px`;host.style.right='auto';}else{host.style.right=`${a.right-r.right}px`;host.style.left='auto';}}
  }
  el('explore-content').querySelectorAll('.player-rank-trigger').forEach(b=>b.setAttribute('aria-expanded',String(!host.hidden&&b.dataset.playerRank===host.dataset.rank)));
 }
@@ -118,7 +118,7 @@ function trendBars(items,colorFn=()=>COLORS.QB,maximum=null){
  return `<div class="lab-histogram">${items.map((v,i)=>`<div class="lab-hist-col" title="${esc(v.label)} · ${labFormat(v.v)}"><strong>${labFormat(v.v,0)}</strong><button type="button" class="lab-hist-bar ${v.week?'player-week-bar':''}" ${v.week?`data-player-week="${v.week}" aria-label="Open Week ${v.week} starter contributions"`: 'disabled'} style="height:${Math.max(2,(labNum(v.v)||0)/max*135)}px;background:${colorFn(v,i)}"></button><small>${esc(v.short??v.label)}</small></div>`).join('')}</div>`;
 }
 var graphResizeObserver=null;
-function setExplorer(html){graphResizeObserver?.disconnect();el('explore-content').innerHTML=html;el('explore-source').textContent=sourceName();}
+function setExplorer(html){if(typeof closeStatHelp==='function')closeStatHelp();graphResizeObserver?.disconnect();el('explore-content').innerHTML=html;el('explore-source').textContent=sourceName();}
 function explorerClubHeader(type,playerId=null){
  const host=el('explore-club');if(!host)return;
  const id=String(explorerTeam().id);
@@ -173,7 +173,7 @@ function focusPositionContributions(){requestAnimationFrame(()=>focusExplorerSec
 function openPlayerPositionContributions(playerId,week){
  const p=model.players[String(playerId)]||XL.free.find(z=>String(z.id)===String(playerId));
  const t=p?teamForPlayer(p):null;
- openExplorer('positions',null,{teamId:String(t?.id??XL.viewTeamId??currentTeamId),week:Number(week),playerId:String(playerId),focus:'position-contributions'});
+ openExplorer('summary',null,{teamId:String(t?.id??XL.viewTeamId??currentTeamId),week:Number(week),focus:'franchise-lineup'});
 }
 
 function exploreBack(){
@@ -429,7 +429,7 @@ function toggleSummaryRanking(index){
   const anchor=document.querySelector('.summary-rank-anchor');
   if(trigger&&anchor){
     const r=trigger.getBoundingClientRect(), a=anchor.getBoundingClientRect();
-    host.style.top=`${r.top-a.top}px`;
+    host.style.top=`${r.top-a.top}px`;host.style.minWidth=`${r.width}px`;
     if(index<3){host.style.left=`${r.left-a.left}px`;host.style.right='auto';}
     else {host.style.right=`${a.right-r.right}px`;host.style.left='auto';}
   }
@@ -501,7 +501,7 @@ function weeklyComparativeChart(){
  const plotH=190,left=53,top=26,right=25,bottom=state.showNames&&barTeams.length?100:40;
  const containerWidth=el('explore-content')?.clientWidth||1000;
  // Fill the entire tile on desktop. Scroll only when too many weeks/bars make it unreadable.
- const available=Math.max(305,containerWidth-30);
+ const available=Math.max(305,el('weekly-comparison-host')?.clientWidth||containerWidth-30);
  const required=left+right+weeks.length*Math.max(48,barTeams.length*(state.showNames?19:14)+22);
  const width=Math.ceil(Math.max(available,required));
  const chartW=width-left-right,step=chartW/weeks.length,chartBottom=top+plotH;
@@ -595,8 +595,13 @@ function detailWeekly(){
    <label class="weekly-toggle"><input type="checkbox" id="weekly-show-mean" ${state.showMean?'checked':''}> Season avg</label>
    <button type="button" class="weekly-reset" id="weekly-clear" title="Reset bar and line selections">RESET</button>
  </div>
- ${weeklyComparativeChart()}<p class="lab-note">Each line uses its franchise color and meets the top of that team's corresponding bar. When a team's bars are hidden, its line is centered on the week. Hover for exact fantasy scores.</p></section>`+
+ <div id="weekly-comparison-host">${weeklyComparativeChart()}</div><p class="lab-note">Each line uses its franchise color and meets the top of that team's corresponding bar. When a team's bars are hidden, its line is centered on the week. Hover for exact fantasy scores.</p></section>`+
  `<section class="lab-panel weekly-register-panel" id="weekly-full-ledger" tabindex="-1"><div class="weekly-register-heading"><h4><button type="button" class="weekly-register-focus" data-weekly-focus-table>WEEK-BY-WEEK SCORING / FULL REGISTER ↗</button></h4><span>SELECT A ROW TO OPEN ITS MATCHUP BOX SCORE</span></div><div class="weekly-register-summary"><span>TEAM SEASON AVG <b>${labFormat(avg,2)}</b></span><span>LEAGUE GAME AVG <b>${labFormat(leagueSeasonAvg,2)}</b></span><span>WEEKS <b>${String(hist.length).padStart(2,'0')}</b></span></div>${expandTable(['WEEK','OPPONENT','RESULT','POINTS FOR','POINTS ALLOWED','MARGIN','LEAGUE WK AVG','VS LEAGUE AVG','VS YOUR AVG','CUMULATIVE PTS','RUNNING AVG','WEEK HIGH','WEEK LOW',"WEEK’S SCORING RANK"],rows,'weekly-full-register')}<div class="weekly-register-footnote"><strong>READING THE REPORT</strong><p>Weekly average: mean of all league franchises reporting that week. Week rank: selected team's weekly score ranked against those same franchises. Cumulative points and running average include only recorded weeks. Unreported scores remain blank.</p></div></section>`);
+ const host=el('weekly-comparison-host');if(host&&typeof ResizeObserver!=='undefined'){
+  let measured=0;const resize=()=>{if(!host.isConnected)return;const width=host.clientWidth;if(width&&width!==measured){measured=width;host.innerHTML=weeklyComparativeChart();}};
+  requestAnimationFrame(resize);graphResizeObserver=new ResizeObserver(resize);graphResizeObserver.observe(host);
+ }
+
 }
 function detailStandings(){
  const base=ranked();
@@ -702,7 +707,7 @@ function togglePositionRanking(index){
   host.innerHTML=`<div class="summary-rank-head">${esc(index===2?'POSITION SHARE':POSITION_RANK_TITLES[index])} / ${wk==='all'?'SEASON':'WEEK '+wk}${index===2?`<label class="share-banner-picker"><select id="position-share-select" aria-label="Select position for share ranking">${['LEADING',...POS_ORDER].map(pos=>`<option value="${pos}" ${sharePos===pos?'selected':''}>${pos==='LEADING'?'LEADER':pos==='DEF'?'D/ST':pos}</option>`).join('')}</select></label>`:''}</div><div class="summary-rank-scroll"><table class="lab-table"><thead><tr><th>#</th><th>FRANCHISE</th><th>${esc(index===2?'LEADER / SHARE':POSITION_RANK_TITLES[index])}</th></tr></thead><tbody>${ranks.map((r,i)=>`<tr data-ranking-team="${esc(String(r.team.id))}" tabindex="0" role="button" class="${String(r.team.id)===String(active.id)?'is-current':''}" title="Open ${esc(teamName(r.team))} Club Overview"><td>${rankMetric(r)===null?'—':String(ranks.slice(0,i+1).filter(z=>rankMetric(z)!==null).length).padStart(2,'0')}</td><td title="${esc(teamName(r.team))}">${esc(teamName(r.team))}</td><td><b>${format(r)}</b></td></tr>`).join('')}</tbody></table></div>`;
   host.hidden=false;host.dataset.rank=String(index);
   const anchor=host.closest('.position-rank-anchor'),r=trigger.getBoundingClientRect(),a=anchor.getBoundingClientRect();
-  host.style.top=`${r.top-a.top}px`;
+  host.style.top=`${r.top-a.top}px`;host.style.minWidth=`${r.width}px`;
   if(index<3){host.style.left=`${r.left-a.left}px`;host.style.right='auto';}
   else{host.style.right=`${a.right-r.right}px`;host.style.left='auto';}
  }
@@ -1552,7 +1557,7 @@ function graphStatExplanation(key){
 }
 function graphStatButtons(stats){
  const defs=[['n','MATCHED',String(stats.n)],['r','PEARSON r',labFormat(stats.r,3)],['r2','R²',labFormat(stats.r2,3)],['spearman','SPEARMAN ρ',labFormat(stats.spearman,3)],['slope','SLOPE',labFormat(stats.slope,3)],['intercept','INTERCEPT',labFormat(stats.intercept,2)],['rmse','RMSE',labFormat(stats.rmse,2)],['meanX','MEAN X',labFormat(stats.meanX,2)],['meanY','MEAN Y',labFormat(stats.meanY,2)]];
- return defs.map(([key,name,value])=>`<button type="button" class="graph-stat-chip ${XL.graphStatFocus===key?'selected':''}" data-graph-stat="${key}" aria-pressed="${XL.graphStatFocus===key}" aria-label="Explain ${name}"><small>${name}</small><b>${value}</b></button>`).join('');
+ return defs.map(([key,name,value])=>statHelpTile(name,value,GRAPH_STAT_EXPLAIN[key][1],'graph-stat-chip','up').replace('data-stat-title=',`data-graph-stat="${key}" data-stat-title=`)).join('');
 }
 function scatterSVG(rows,dimensions={}){
  const mobile=window.innerWidth<=650;
@@ -1587,7 +1592,7 @@ function detailGraph(){
  `<div class="graph-control-deck"><div class="lab-controls graph-unified-toolbar" aria-label="Variable Lab filters and axes"><label class="graph-pool">POOL <select id="graph-scope">${[['ALL','All available'],['TEAM','Selected team'],['LEAGUE','League rosters'],['FREE','Free agents']].map(([v,n])=>`<option value="${v}" ${XL.graph.scope===v?'selected':''}>${n}</option>`).join('')}</select></label><label class="graph-position">POSITION <select id="graph-pos">${['ALL',...POS_ORDER].map(v=>`<option ${XL.graph.pos===v?'selected':''}>${v}</option>`).join('')}</select></label><label class="graph-x">X AXIS ${metricSelect('x',counts)}</label><button id="graph-swap" class="lab-action graph-swap" title="Swap graph axes">⇄</button><label class="graph-y">Y AXIS ${metricSelect('y',counts)}</label><label class="graph-games">MIN GAMES <select id="graph-minimum">${[0,1,2,3,5].map(n=>`<option ${XL.graph.minimum===n?'selected':''}>${n}</option>`).join('')}</select></label><label class="graph-search">SEARCH <input id="graph-search" placeholder="Player name" value="${esc(XL.graph.search)}"></label><label class="graph-toggle"><input id="graph-trend" type="checkbox" ${XL.graph.trend?'checked':''}><span>TREND</span></label><label class="graph-toggle"><input id="graph-labels" type="checkbox" ${XL.graph.showLabels?'checked':''}><span>LABELS</span></label></div>
  <div class="graph-preset-ribbon"><b>QUICK PLOTS</b>${presets.map(([x,y,n])=>`<button type="button" class="graph-preset ${XL.graph.x===x&&XL.graph.y===y?'active':''}" data-preset="${x},${y}" ${graphPresetAvailable(x,y)?'':`disabled title="Requires recorded ${esc(META[x].name)} and ${esc(META[y].name)}; load NFL data or choose another preset"`}>${n}</button>`).join('')}<span class="graph-preset-hint">Select axes above or use a preset.</span></div></div>`+
  `<div class="lab-graph-layout"><section class="lab-panel lab-graph-panel"><div class="lab-graph-top"><h4>${esc(META[XL.graph.y].name)} BY ${esc(META[XL.graph.x].name)}</h4><div class="lab-graph-legend">${POS_ORDER.map(pos=>`<span><i style="background:${COLORS[pos]}"></i>${pos}</span>`).join('')}</div><span>${rows.length} MATCHED PAIRS / ${cands.length} CANDIDATES</span></div><div class="graph-plot">${scatterSVG(rows)}</div></section>
- <aside class="lab-graph-aside"><div class="graph-stat-heading"><h4>GRAPH STATISTICS</h4></div><div class="graph-stat-grid">${graphStatButtons(stats)}</div><div id="graph-stat-detail" class="graph-stat-detail" aria-live="polite" ${XL.graphStatFocus?'':'hidden'}>${XL.graphStatFocus?graphStatExplanation(XL.graphStatFocus):''}</div><div id="lab-point-info" class="lab-point-info" hidden></div></aside></div>`+
+ <aside class="lab-graph-aside"><div class="graph-stat-heading"><h4>GRAPH STATISTICS</h4></div><div class="graph-stat-grid">${graphStatButtons(stats)}</div><div id="lab-point-info" class="lab-point-info" hidden></div></aside></div>`+
  `</section><details class="graph-tools strategy-method"><summary>Data sources & export</summary><div class="lab-controls graph-enrichment-panel"><label>ENRICH WITH NFL DATA <input id="graph-import" type="file" accept=".csv,text/csv"></label><button class="lab-action" id="graph-load-nflverse">LOAD NFLverse ADVANCED METRICS ↻</button><button class="lab-action" id="graph-export">EXPORT PLOT DATA CSV ↓</button><button class="lab-action" id="graph-export-svg">SAVE SVG GRAPH ↓</button><button class="lab-action" id="graph-clear-import">CLEAR IMPORTED METRICS</button></div>`+
  `<div class="lab-panel"><h4>DATA DICTIONARY / PROVENANCE</h4><p class="lab-note">ESPN fantasy scores use the league's scoring system. NFL box-score fields and advanced CSVs are included only when supplied. Advanced measurements may use different time periods; compare only compatible periods. Imports are matched by player name, and unavailable fields remain blank.</p><div class="lab-dictionary">${METRICS.map(([k,n,u,source])=>`<div><span>${esc(n)}</span><b class="${counts[k]?'positive-text':''}">${counts[k]} players</b><small>${esc(source)}</small></div>`).join('')}</div></div></details>`);
  const plot=el('explore-content').querySelector('.graph-plot');
@@ -1607,7 +1612,7 @@ function fitGraphScreen(){
  const content=el('explore-content'),tabbed=document.body.dataset.layout==='tabbed';
  const top=screen.getBoundingClientRect().top+(tabbed?window.scrollY:content.scrollTop);
  const footer=tabbed?0:el('explore-dialog').querySelector('.explore-footer').getBoundingClientRect().height;
- const gutter=tabbed?12:Math.min(38,Math.max(16,window.innerWidth*.022));
+ const gutter=tabbed?12:parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--window-gutter'))||14;
  screen.style.height=Math.max(window.innerWidth<730?680:390,window.innerHeight-top-footer-gutter-12)+'px';
 }
 
@@ -1744,7 +1749,7 @@ for(const [id,key] of [['home-graph-pos','pos'],['home-graph-x','x'],['home-grap
 el('home-graph-trend').addEventListener('change',event=>{XL.graph.trend=event.target.checked;renderGraphHome();});
 el('home-graph-labels').addEventListener('change',event=>{XL.graph.showLabels=event.target.checked;renderGraphHome();});
 el('graph-teaser').addEventListener('click',event=>{
- const stat=event.target.closest('[data-home-stat]');if(stat){event.stopPropagation();XL.graphStatFocus=stat.dataset.homeStat;openExplorer('graph',null,{keepGraphStat:true});requestAnimationFrame(()=>{const d=el('graph-stat-detail');const c=el('explore-content');if(d&&c){d.hidden=false;const extra=d.getBoundingClientRect().bottom-c.getBoundingClientRect().bottom+12;if(extra>0)c.scrollBy({top:extra,behavior:'instant'});}});return;}
+ const stat=event.target.closest('[data-home-stat]');if(stat){event.stopPropagation();XL.graphStatFocus=stat.dataset.homeStat;openExplorer('graph',null,{keepGraphStat:true});requestAnimationFrame(()=>{const trigger=el('explore-content').querySelector(`[data-graph-stat="${XL.graphStatFocus}"]`);if(trigger)showStatHelp(trigger);});return;}
  const dot=event.target.closest('[data-home-graph-player]');if(!dot)return;
  event.stopPropagation();openExplorer('profile',dot.dataset.homeGraphPlayer);
 });
@@ -2014,12 +2019,7 @@ el('explore-content').addEventListener('click',async e=>{
  if(button.id==='weekly-clear'){XL.weekly.compare=[];XL.weekly.lines=['active'];XL.weekly.showBars=true;XL.weekly.showLines=true;XL.weekly.showNames=false;XL.weekly.showPoints=true;renderExplorer();return;}
  if(button.dataset.setTeam){openExplorer('summary',null,{teamId:button.dataset.setTeam});return;}
  if(button.dataset.graphStat){
-  XL.graphStatFocus=XL.graphStatFocus===button.dataset.graphStat?null:button.dataset.graphStat;
-  const host=el('graph-stat-detail');
-  if(host){host.hidden=!XL.graphStatFocus;host.innerHTML=XL.graphStatFocus?graphStatExplanation(XL.graphStatFocus):'';}
-  el('explore-content').querySelectorAll('[data-graph-stat]').forEach(node=>{const selected=node.dataset.graphStat===XL.graphStatFocus;node.classList.toggle('selected',selected);node.setAttribute('aria-pressed',String(selected));});
-  if(host&&!host.hidden){requestAnimationFrame(()=>{const sc=el('explore-content');if(!sc)return;const extra=host.getBoundingClientRect().bottom-sc.getBoundingClientRect().bottom+12;if(extra>0)sc.scrollBy({top:extra,behavior:'instant'});});}
-  return;}
+  showStatHelp(button);return;}
  if(button.dataset.preset){const [x,y]=button.dataset.preset.split(',');if(!graphPresetAvailable(x,y))return;XL.graph.x=x;XL.graph.y=y;XL.graphUserSelected=true;XL.graphNotice='';renderExplorer();return;}
  if(button.id==='graph-swap'){const {x,y}=XL.graph;XL.graph.x=y;XL.graph.y=x;renderExplorer();return;}
  if(button.id==='graph-export'){exportGraph();return;}

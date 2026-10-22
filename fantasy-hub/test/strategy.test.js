@@ -5,17 +5,17 @@ import {readFileSync} from 'node:fs';
 const read=name=>readFileSync(new URL('../public/'+name,import.meta.url),'utf8');
 function setup(){
  let html='';const handlers=new Map(),nodes=new Map();const el=id=>{if(!nodes.has(id))nodes.set(id,{markup:'',writes:0,get innerHTML(){return this.markup},set innerHTML(value){this.markup=value;this.writes++},addEventListener(){},add(){}});return nodes.get(id)};
- const c=vm.createContext({document:{addEventListener(type,fn){handlers.set(type,[...(handlers.get(type)||[]),fn])}},sourceName:()=>"Exhibition",el,Option:class{},setExplorer:s=>{html=s},heading:(title,copy)=>`<div><h3>${title}</h3><p>${copy}</p></div>`,currentWeek:6,currentPlayerId:'allen',XL:{player:null},normalizeNFLAbbr:x=>x,esc:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;'),labFormat:(v,d=1)=>v==null?'—':Number(v).toFixed(d),labPct:v=>v==null?'—':Number(v).toFixed(1)+'%',nameKey:v=>String(v).toLowerCase().replace(/[^a-z0-9]/g,''),expandTable:(headers,rows)=>`<table>${headers.join('|')}${rows.join('')}</table>`});
+ const c=vm.createContext({window:{addEventListener(){}},document:{addEventListener(type,fn){handlers.set(type,[...(handlers.get(type)||[]),fn])}},sourceName:()=>"Exhibition",el,Option:class{},setExplorer:s=>{html=s},heading:(title,copy)=>`<div><h3>${title}</h3><p>${copy}</p></div>`,currentWeek:6,currentPlayerId:'allen',XL:{player:null},normalizeNFLAbbr:x=>x,esc:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;'),labFormat:(v,d=1)=>v==null?'—':Number(v).toFixed(d),labPct:v=>v==null?'—':Number(v).toFixed(1)+'%',nameKey:v=>String(v).toLowerCase().replace(/[^a-z0-9]/g,''),expandTable:(headers,rows)=>`<table>${headers.join('|')}${rows.join('')}</table>`});
  const script=read('script.js');vm.runInContext(script.slice(script.indexOf('function makeDemo()'),script.indexOf('function updateUI()')),c);
  vm.runInContext("var model=makeDemo();var currentTeamId='1';var getTeam=()=>model.teams.find(t=>t.id===currentTeamId);var findTeam=id=>model.teams.find(t=>t.id===id);var getPool=()=>Object.values(model.players);var rowsFor=t=>t.playerIds.map(id=>model.players[id]);var teamName=t=>t?.name||'No team';",c);
- vm.runInContext(read('analytics-math.js'),c);vm.runInContext(read('strategy.js'),c);
+ vm.runInContext(read('analytics-math.js'),c);vm.runInContext(read('interactions.js'),c);vm.runInContext(read('strategy.js'),c);
  return {run:code=>vm.runInContext(code,c),html:()=>html,node:el,change:(id,value)=>{for(const fn of handlers.get('change')||[])fn({target:{id,value,dataset:{}}})}};
 }
 test('all strategy reports render with the real exhibition model',()=>{
  const h=setup();for(const route of ['outlook','opportunity','trade']){h.run(`renderStrategy('${route}')`);assert.ok(h.html().length>500);assert.ok(!h.html().includes('NaN'));assert.ok(!h.html().includes('undefined'));}
 });
 test('trade picks produce modeled comparisons and survive rendering',()=>{
- const h=setup();h.run("renderStrategy('trade');STRATEGY.trade.give=['cook'];STRATEGY.trade.get=['demo-1-1'];renderTrade()");assert.ok(!h.html().includes('Build both sides'));assert.match(h.html(),/YOUR LINEUP CHANGE/);assert.match(h.html(),/checked/);
+ const h=setup();h.run("renderStrategy('trade');STRATEGY.trade.give=['cook'];STRATEGY.trade.get=['demo-1-1'];renderTrade()");assert.ok(!h.html().includes('Build both sides'));assert.match(h.html(),/TEAM A \/ LINEUP CHANGE/);assert.match(h.html(),/checked/);
 });
 test('opportunity filters and external player selection render safely',()=>{
  const h=setup();h.run("renderStrategy('opportunity');STRATEGY.player='usage:allen';STRATEGY.period='recent';STRATEGY.position='QB';STRATEGY.search='Josh';renderOpportunity()");assert.match(h.html(),/Josh Allen/);assert.match(h.html(),/3 recorded weeks/);assert.ok(!h.html().includes('NaN'));
@@ -111,12 +111,14 @@ test('weekly share periods aggregate only the selected week and keep future week
 });
 test('share bars open the selected player and week; chart whitespace does nothing',()=>{
  const h=setup();h.run("var opened=null;var openExplorer=(...args)=>{opened=args};openShareHistory({target:{closest:()=>null},stopPropagation(){}})");assert.equal(h.run('opened'),null);
- h.run("openShareHistory({target:{closest:()=>({dataset:{shareWeek:'3',sharePlayer:'cook'}})},stopPropagation(){}})");
+ h.run("openShareHistory({target:{closest:s=>s==='[data-share-week]'?{dataset:{shareWeek:'3',sharePlayer:'cook'}}:null},stopPropagation(){}})");
  assert.equal(h.run('STRATEGY.period'),'week:3');assert.equal(h.run('STRATEGY.player'),'cook');assert.equal(h.run('opened.join()'),'opportunity,cook');
  const chart=h.run('shareHistoryChart(model.players.cook)');assert.match(chart,/class="share-week-bar"/);assert.ok(!chart.includes('data-open-share'));assert.ok(!chart.includes('0–'));
+ h.run("openShareHistory({target:{closest:s=>s==='[data-share-all]'?{dataset:{shareAll:'cook'}}:null},stopPropagation(){}})");
+ assert.equal(h.run('STRATEGY.period'),'season');assert.equal(h.run('opened.join()'),'opportunity,cook');
 });
 test('workload metrics and share bars reveal definitions without a yellow TD card',()=>{
- const h=setup();h.run("renderStrategy('opportunity')");assert.match(h.html(),/<details class="strategy-metric metric-disclosure"/);assert.match(h.html(),/<details class="strategy-share share-blue share-disclosure"/);assert.ok(!h.html().includes('td-estimate'));assert.ok(!h.html().includes('15+ pts'));
+ const h=setup();h.run("renderStrategy('opportunity')");assert.match(h.html(),/stat-help-trigger strategy-metric metric-disclosure/);assert.match(h.html(),/strategy-share share-blue share-disclosure stat-help-trigger/);assert.ok(!h.html().includes('td-estimate'));assert.ok(!h.html().includes('15+ pts'));
 });
 
 test('franchise filters retain the selected player when they remain in scope',()=>{
@@ -124,4 +126,24 @@ test('franchise filters retain the selected player when they remain in scope',()
  h.change('strategy-scope','active');assert.equal(h.run('STRATEGY.player'),'cook');
  h.change('strategy-scope','all');assert.equal(h.run('STRATEGY.player'),'cook');assert.equal(h.run('STRATEGY.period'),'week:3');
  h.change('strategy-scope','2');assert.equal(h.run("strategyPlayerPool('2').some(p=>p.id===STRATEGY.player)"),true);
+});
+
+test('either trade franchise can change independently without changing the active franchise',()=>{
+ const h=setup();h.run("renderStrategy('trade');STRATEGY.trade.give=['cook'];STRATEGY.trade.get=['demo-1-1']");
+ h.change('trade-team','3');h.change('trade-partner','4');
+ assert.equal(h.run('currentTeamId'),'1');assert.equal(h.run('tradeTeam().id'),'3');assert.equal(h.run('STRATEGY.trade.partner'),'4');
+ assert.equal(h.run('STRATEGY.trade.give.length'),0);assert.equal(h.run('STRATEGY.trade.get.length'),0);
+ assert.match(h.node('trade-preview').innerHTML,/id="home-trade-team"/);
+ h.change('home-trade-team','4');assert.notEqual(h.run('STRATEGY.trade.team'),h.run('STRATEGY.trade.partner'));
+ assert.equal(h.run('currentTeamId'),'1');
+});
+
+test('changing trade teams cancels stale searches while package edits reuse their results',()=>{
+ const h=setup();h.run("var workers=[];var Worker=class{constructor(){workers.push(this)}postMessage(data){this.data=data}terminate(){this.stopped=true}};XL.open='trade';renderTrade()");
+ assert.equal(h.run('workers.length'),1);
+ h.run("STRATEGY.trade.give=['cook'];renderTrade()");assert.equal(h.run('workers.length'),1);
+ h.change('trade-partner','3');assert.equal(h.run('workers.length'),2);assert.equal(h.run('workers[0].stopped'),true);
+ h.run("workers[0].onmessage({data:{results:[],checked:999}})");assert.equal(h.run('tradeSearch.result'),null);
+ h.run("workers[1].onmessage({data:{results:[],checked:42,total:42,scope:'All 1–2 player packages'}})");
+ assert.equal(h.run('tradeSearch.result.checked'),42);assert.equal(h.run('workers[1].stopped'),true);
 });
