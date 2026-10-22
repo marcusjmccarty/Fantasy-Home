@@ -198,3 +198,42 @@ The archive's MANIFEST.json records its exact base/head and per-file checksums;
 SHA256SUMS includes the manifest. It contains the verified git bundle, this doc,
 the three browser scripts, and four test logs. Library identity is retained when
 refreshing the archive, so earlier verified candidates remain version history.
+
+
+## Discoverability and accessibility review
+
+Installed-runtime check found system Chromium only. Playwright Firefox/WebKit
+executables and axe-core are absent; none were installed. Chromium accessibility
+snapshots are evidence about the exposed tree, not physical screen-reader testing.
+
+Verified and corrected:
+
+- Disabled character shortcuts still advertised `?` in the help button and tooltip.
+  Buttons now read KEYS while off, retain their enabled click/tap behavior, and
+  expose the accessible name “Keyboard shortcuts (single-key shortcuts off)”.
+  Enabled buttons retain KEYS ?. Both identify their controlled help dialog.
+- The Tabbed footer exposed the old “ESC TO CLOSE” to accessibility APIs despite
+  the visual CSS replacement. Its source text now accurately describes dismissal
+  of cards/windows, alongside existing tab navigation guidance.
+- Help's text-field exclusion is explicitly scoped to G, /, and ?, avoiding the
+  implication that native Tab/Escape stop working in inputs.
+
+No new shortcuts were added. Optional aria-keyshortcuts metadata was considered
+but not added: shortcut availability is conditional on focus, modal, layout and
+opt-out state, and no assistive-technology runtime is available to validate such
+announcements. Explicit accessible button names and aria-controls are verified.
+
+The gate script now checks accessible button names/control relationships,
+continued help availability while disabled, restored off-state after reload, and
+absence of contradictory close guidance in the Tabbed accessibility tree. All
+three browser scripts and 75 Node tests pass after these changes.
+
+User keymap: **G** → GO TO/current tab; **/** → available report search;
+**?** → help; **Escape** → top card/window. Native Tab and report-tab arrows stay
+unchanged. Character shortcuts can be disabled persistently in help.
+
+Remaining release gate: run all three keyboard scripts against the performance
+owner's exact combined candidate, especially shared debounce and Escape ordering,
+and record that candidate's full SHA. No more independent keyboard changes are
+planned until that feedback arrives. Native Safari/Firefox, physical IME and
+screen-reader verification remain explicitly unperformed environmental checks.

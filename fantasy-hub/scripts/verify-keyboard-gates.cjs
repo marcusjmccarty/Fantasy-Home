@@ -8,6 +8,8 @@ const base=process.env.SHORTCUTS_BASE_URL||'http://127.0.0.1:8765';
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',r=>!r.request().url().startsWith(base+'/')?r.abort():r.request().url().includes('/api/')?r.fulfill({json:{active:false,enabled:false}}):r.continue());
  await page.goto(base);
+ assert.equal(await page.locator('[data-shortcuts-help]').first().getAttribute('aria-controls'),'shortcuts-dialog');
+ assert.equal(await page.locator('[data-shortcuts-help]').first().getAttribute('aria-label'),'Keyboard shortcuts');
  for(const mode of ['dashboard','tabbed']){
   await page.locator('#mode-'+mode).click();
   for(const [route,trigger,host] of [['summary','.summary-rank-trigger','#summary-ranking-host'],['profile','.player-rank-trigger','#player-ranking-host'],['positions','.position-rank-trigger','#position-ranking-host']]){
@@ -51,6 +53,7 @@ const base=process.env.SHORTCUTS_BASE_URL||'http://127.0.0.1:8765';
  await page.locator('#explore-close').click();
  await page.evaluate(()=>{for(let i=0;i<10;i++){setWorkspaceLayout('dashboard');setWorkspaceLayout('tabbed')}});
  await page.waitForFunction(()=>document.body.dataset.layout==='tabbed'&&document.getElementById('explore-dialog').open&&XL.open==='opportunity');
+ const footerAX=await page.locator('.explore-footer').ariaSnapshot();assert.equal(footerAX.includes('ESC TO CLOSE'),false);assert.equal(footerAX.includes('SELECT A TAB TO CHANGE REPORTS'),true);
  await page.locator('#mode-dashboard').click();
  await page.evaluate(()=>{window.openEvents=0;document.addEventListener('workspace:opened',()=>window.openEvents++)});
  for(const key of ['Enter','Space']){
@@ -62,6 +65,8 @@ const base=process.env.SHORTCUTS_BASE_URL||'http://127.0.0.1:8765';
  await page.locator('#about-button').focus();await page.keyboard.press('g');await page.locator('[data-shortcuts-help]').first().click();
  await page.locator('#shortcuts-enabled').uncheck();await page.keyboard.press('Escape');await page.locator('#about-button').focus();await page.keyboard.press('/');await page.keyboard.press('g');
  assert.equal(await page.evaluate(()=>document.activeElement.id),'about-button');await page.reload();assert.equal(await page.locator('#shortcuts-enabled').isChecked(),false);
+ for(const button of await page.locator('[data-shortcuts-help]').all()){assert.equal(await button.textContent(),'KEYS');assert.equal(await button.getAttribute('aria-label'),'Keyboard shortcuts (single-key shortcuts off)');assert.equal(await button.isEnabled(),true);}
+ await page.locator('[data-shortcuts-help]').first().click();assert.equal(await page.getByRole('dialog',{name:'KEYBOARD SHORTCUTS',exact:true}).isVisible(),true);
  assert.deepEqual(errors,[]);console.log('PASS opt-out after G/reload; no page errors');
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});

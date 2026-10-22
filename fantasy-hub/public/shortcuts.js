@@ -5,10 +5,21 @@
  const help=document.getElementById('shortcuts-dialog');
  const enabled=document.getElementById('shortcuts-enabled');
  const report=document.getElementById('explore-dialog');
+ const helpButtons=[...document.querySelectorAll('[data-shortcuts-help]')];
+ function syncHelpButtons(){
+  for(const button of helpButtons){
+   button.textContent=enabled.checked?'KEYS ?':'KEYS';
+   button.title=enabled.checked?'Keyboard shortcuts (?)':'Keyboard shortcuts (single-key shortcuts off)';
+   button.setAttribute('aria-label',enabled.checked?'Keyboard shortcuts':'Keyboard shortcuts (single-key shortcuts off)');
+   button.setAttribute('aria-controls',help.id);
+  }
+ }
  // Separate from workspace state; write only on an explicit preference change.
  const preferenceKey='gridiron86-keyboard-shortcuts-v1';
  try{enabled.checked=localStorage.getItem(preferenceKey)!=='off';}catch{/* Page-local choice still works when storage is blocked. */}
+ syncHelpButtons();
  enabled.addEventListener('change',()=>{
+  syncHelpButtons();
   try{localStorage.setItem(preferenceKey,enabled.checked?'on':'off');}catch{}
  });
  const visible=node=>node&&!node.disabled&&node.getClientRects().length>0&&!node.closest('[hidden],[inert]')&&getComputedStyle(node).visibility==='visible';
@@ -37,7 +48,7 @@
   const fallback=[...scope.querySelectorAll('[data-shortcuts-help]'),...scope.querySelectorAll('button,input,select,textarea,a[href],[tabindex]')].find(visible);
   fallback?.focus({preventScroll:true});
  });
- document.querySelectorAll('[data-shortcuts-help]').forEach(button=>button.addEventListener('click',showHelp));
+ helpButtons.forEach(button=>button.addEventListener('click',showHelp));
  document.addEventListener('keydown',event=>{
   if(event.defaultPrevented||event.isComposing||event.keyCode===229||event.ctrlKey||event.metaKey||event.altKey||event.getModifierState('AltGraph'))return;
   const top=modal();
