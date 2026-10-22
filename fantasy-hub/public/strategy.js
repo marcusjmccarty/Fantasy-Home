@@ -315,7 +315,7 @@ function requestTradeRecommendations(){
  tradeSearch.worker?.terminate();tradeSearch.key=key;tradeSearch.result=null;tradeSearch.visible=24;tradeSearch.error='';
  if(typeof Worker==='undefined'){tradeSearch.error='Automatic comparisons need browser worker support.';renderTradeRecommendations();return;}
  try{
-  const worker=new Worker('trade-search-worker.js?v=9.14.0');tradeSearch.worker=worker;
+  const worker=new Worker('trade-search-worker.js?v=9.14.1');tradeSearch.worker=worker;
   worker.onmessage=event=>{if(tradeSearch.key!==key)return;tradeSearch.result=event.data;worker.terminate();tradeSearch.worker=null;renderTradeRecommendations();};
   worker.onerror=()=>{if(tradeSearch.key!==key)return;worker.terminate();tradeSearch.worker=null;tradeSearch.error='Trade search could not finish. Change a team to retry.';renderTradeRecommendations();};
   worker.postMessage({own,their,slots,week,mode});
@@ -358,7 +358,7 @@ function ensureTrade(){
 }
 function homeTradeSide(team,side,value){
  const selected=STRATEGY.trade[side],roster=tradeRoster(team);
- return `<div class="home-trade-side"><label><span>${side==='give'?'A SENDS':'B SENDS'}</span><b class="home-trade-total">${value===null?(selected.length?'—':'0.0'):labFormat(value)}</b><select data-home-trade-add="${side}" aria-label="Add player to ${side==='give'?'send':'receive'}"><option value="">+ Add a player…</option>${roster.filter(p=>!selected.includes(String(p.id))).map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · ${esc(p.pos)} · ${labFormat(FantasyMath.value(p,strategyWeek(),STRATEGY.trade.mode))}</option>`).join('')}</select></label><div class="home-trade-picks">${selected.map(id=>{const p=roster.find(p=>String(p.id)===id);return p?`<button data-home-trade-remove="${side}" data-id="${esc(id)}" aria-label="Remove ${esc(p.name)} from ${side==='give'?'send':'receive'}">${esc(p.name)} <b>×</b></button>`:''}).join('')||''}</div></div>`;
+ return `<div class="home-trade-side"><label><span>${side==='give'?'A SENDS':'B SENDS'}</span><b class="home-trade-total">${value===null?(selected.length?'—':'0.0'):labFormat(value)}</b><select data-home-trade-add="${side}" aria-label="Add player to ${side==='give'?'send':'receive'}"><option value="">+ Player…</option>${roster.filter(p=>!selected.includes(String(p.id))).map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · ${esc(p.pos)} · ${labFormat(FantasyMath.value(p,strategyWeek(),STRATEGY.trade.mode))}</option>`).join('')}</select></label><div class="home-trade-picks">${selected.map(id=>{const p=roster.find(p=>String(p.id)===id);return p?`<button data-home-trade-remove="${side}" data-id="${esc(id)}" aria-label="Remove ${esc(p.name)} from ${side==='give'?'send':'receive'}">${esc(p.name)} <b>×</b></button>`:''}).join('')||''}</div></div>`;
 }
 function homePlayer(){return tradeRoster(getTeam()).find(p=>String(p.id)===String(currentPlayerId))||tradeRoster(getTeam())[0];}
 function renderStrategyHome(){

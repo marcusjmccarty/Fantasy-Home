@@ -125,3 +125,4 @@ button.strategy-metric.stat-help-trigger,.strategy-metric,.lab-stat{background:#
 .home-trade-difference>small{display:block;font:10px/1.4 'Courier New',monospace;margin-top:9px;color:#66705f}
 .home-trade-picks:empty{min-height:0;margin:0}
 @media(max-width:650px){.trade-desk .trade-player{grid-template-columns:17px 42px minmax(0,1fr) 25px 37px}.home-trade-dashboard{gap:9px;grid-template-columns:80px minmax(0,1fr)}.home-trade-dashboard .trade-balance-ring{width:80px;height:80px}.home-position-metrics button.strategy-metric.stat-help-trigger>strong{font-size:18px}.explore-title-bar .explore-history-controls{width:50px}.explore-title-bar b#explore-title{padding-left:55px}}
+.trade-balance-ring b.balance-empty{text-align:center}

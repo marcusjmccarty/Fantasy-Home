@@ -200,3 +200,7 @@ test('trade roster follows starting slots before bench and home balance has an e
 test('TD methodology is visible without expanding a disclosure',()=>{
  const h=setup();h.run("renderStrategy('opportunity')");assert.match(h.html(),/<section class="strategy-method lab-panel"><h4>TD ESTIMATE/);assert.ok(!h.html().includes('<details class="strategy-method"'));
 });
+
+test('exhibition rosters supply explicit FLEX and bench slot assignments',()=>{
+ const h=setup();h.run('currentWeek=6');assert.equal(h.run("teamLineupEntries(findTeam('2'),6).filter(e=>e.starter).map(lineupSlotLabel).join(',')"),'QB,RB,RB,WR,WR,TE,FLEX,D/ST,K');
+});

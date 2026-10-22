@@ -73,7 +73,7 @@ function makeDemo(){
   }
   // Recorded exhibition lineups, including benches, exercise the matchup lists.
   for(const [index,team] of teams.entries())for(const history of team.history){
-    history.lineup=team.playerIds.map((id,playerIndex)=>({id,starter:index===0?id in history.starters:playerIndex<9,points:players[id].scores[history.week]}));
+    history.lineup=team.playerIds.map((id,playerIndex)=>{const starter=index===0?id in history.starters:playerIndex<9,slot=starter?(index===0?{QB:0,RB:2,WR:4,TE:6,DEF:16,K:17}[players[id].pos]:[0,2,2,4,4,6,23,17,16][playerIndex]):20;return {id,slot,starter,points:players[id].scores[history.week]};});
     if(index>0)history.starters=Object.fromEntries(history.lineup.filter(row=>row.starter).map(row=>[row.id,row.points]));
   }
   return {source:'demo',leagueId:null,league:'Exhibition League',season:2026,scoring:'PPR',weeks:[1,2,3,4,5,6],
