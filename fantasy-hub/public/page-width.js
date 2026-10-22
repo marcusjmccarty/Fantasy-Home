@@ -7,6 +7,8 @@
  try{apply(localStorage.getItem('gridiron86-page-width')||100,false);}catch{apply(100,false);}
  slider.addEventListener('input',()=>{field.value=slider.value;});
  slider.addEventListener('change',()=>apply(slider.value));
+ field.addEventListener('input',()=>{const n=Number(field.value);if(field.value!==''&&n>=60&&n<=100)apply(n);});
  field.addEventListener('change',()=>apply(field.value));
+ field.addEventListener('blur',()=>apply(field.value));
  field.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();apply(field.value);}});
 })();
