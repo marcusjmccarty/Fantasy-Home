@@ -140,7 +140,7 @@ test('integrated home graph stat cards explain in place and chart headings keep 
  await page.locator('#graph-teaser [data-home-stat]').first().click();
  assert.equal(await page.evaluate(()=>XL.open),null);assert.equal(await page.locator('.metric-popover').count(),1);
  await page.keyboard.press('Escape');
- await page.locator('.home-points-history .window-topline').click();assert.equal(await page.evaluate(()=>XL.open),'player-analytics');
+ await page.locator('.home-points-history .window-topline').click();assert.equal(await page.evaluate(()=>XL.open),'positions');
  await page.locator('#explore-close').click();await settle();
  await page.locator('.home-share-history .share-history-link').click();assert.equal(await page.evaluate(()=>XL.open),'opportunity');
  await page.locator('#explore-close').click();await settle();
@@ -176,4 +176,12 @@ test('pending Free agents search cannot replace a newly opened roster',async()=>
  await page.evaluate(()=>openExplorer('agents'));await settle();await page.locator('#agent-search').fill('a');
  await page.evaluate(()=>{openExplorer('roster');window.agentDestination=document.querySelector('#explore-content table');agentDestination.tabIndex=-1;agentDestination.focus()});await page.waitForTimeout(300);
  assert.equal(await page.evaluate(()=>agentDestination.isConnected&&document.activeElement===agentDestination),true);
+});
+test('Player Terminal Weekly Points opens Position Allocation by click and keyboard',async()=>{
+ for(const activation of ['click','Enter','Space']){
+  await page.evaluate(()=>openExplorer('profile',currentPlayerId));await settle();
+  const chart=page.locator('.player-weekly-panel[data-chart-surface]');
+  if(activation==='click')await chart.locator('h4').click();else{await chart.focus();await page.keyboard.press(activation)}
+  assert.equal(await page.evaluate(()=>XL.open),'positions');
+ }
 });
