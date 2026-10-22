@@ -120,7 +120,7 @@ function updateUI() {
   }
   el('team-select').value=currentTeamId;
   el('team-name').textContent=teamName(team);
-  el('team-owner').textContent=`${team.owner || 'League member'} · ${model.league}`;
+  el('team-owner').textContent=team.owner || 'League member';
   el('league-name').textContent=model.league;
   el('season-name').textContent=`${model.season} SEASON`;
   el('header-record').textContent=`${team.wins}–${team.losses}${team.ties ? `–${team.ties}`:''}`;
@@ -174,7 +174,7 @@ function drawWeekly(team){
   const height=130;
   root.setAttribute('role','group');root.setAttribute('aria-label',`Weekly team points, weeks ${data[0].week} to ${data[data.length-1].week}. Season average ${nfmt(avg,1)}. Best ${nfmt(Math.max(...data.map(x=>x.points)),1)}, lowest ${nfmt(Math.min(...data.map(x=>x.points)),1)}.`);
   root.innerHTML=`<div class="chart-average" style="--avg-height:${(avg/max*height).toFixed(1)}px"></div>`+
-    data.map((x,i)=>`<div class="chart-col" title="Week ${x.week}: ${nfmt(x.points,2)} pts"><span class="chart-val">${nfmt(x.points,0)}</span><div class="chart-bar" data-home-week="${x.week}" role="button" tabindex="0" aria-label="Week ${x.week}: ${nfmt(x.points,1)} points, ${x.points>=avg?'above':'below'} the ${nfmt(avg,1)} season average. Open starting lineup." style="height:${Math.max(1,x.points/max*height).toFixed(1)}px"></div><span class="bar-label">${esc('W'+x.week)}</span></div>`).join('');
+    data.map((x,i)=>`<div class="chart-col" title="Week ${x.week}: ${nfmt(x.points,2)} pts"><span class="chart-val">${nfmt(x.points,0)}</span><div class="chart-bar${x.points<avg?' is-below':''}" data-home-week="${x.week}" role="button" tabindex="0" aria-label="Week ${x.week}: ${nfmt(x.points,1)} points, ${x.points>=avg?'above':'below'} the ${nfmt(avg,1)} season average. Open starting lineup." style="height:${Math.max(1,x.points/max*height).toFixed(1)}px"></div><span class="bar-label">${esc('W'+x.week)}</span></div>`).join('');
 }
 
 function drawWeeklyHomeLedger(team){
@@ -663,6 +663,7 @@ checkESPN().then(s=>{if(s.active){el('espn-league').value=s.leagueId||'28375786'
 
 function drawPlayerDossiers(players){
  const host=el('player-dossiers');if(!host)return;
+ const count=el('dossiers-count');if(count)count.textContent=players.length?`(${players.length})`:'';
  if(!players.length){host.innerHTML='';return;}
  const palette=['#2868b2','#ba424a','#27845e','#7853a7','#bc7428','#16899a'];
  host.innerHTML=players.map((p,i)=>{

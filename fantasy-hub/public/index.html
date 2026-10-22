@@ -7,39 +7,34 @@
   <title>GRIDIRON 86 / Fantasy Team Terminal</title>
   <link rel="preload" href="fonts/IBMPlexMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/IBMPlexMono-Bold.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="type.css?v=9.18.0">
-  <link rel="stylesheet" href="style.css?v=9.18.0">
-  <link rel="stylesheet" href="workspace.css?v=9.18.0">
-  <link rel="stylesheet" href="readability.css?v=9.18.0">
-  <link rel="stylesheet" href="refinements.css?v=9.18.0">
-  <link rel="stylesheet" href="polish.css?v=9.18.0">
-  <link rel="stylesheet" href="terminal.css?v=9.18.0">
-  <link rel="stylesheet" href="keyboard.css?v=9.18.0">
-  <script src="script.js?v=9.18.0" defer></script>
-  <script src="interactions.js?v=9.18.0" defer></script>
-  <script src="explorer.js?v=9.18.0" defer></script>
-  <script src="analytics-math.js?v=9.18.0" defer></script>
-  <script src="strategy.js?v=9.18.0" defer></script>
-  <script src="workspace.js?v=9.18.0" defer></script>
-  <script src="page-width.js?v=9.18.0" defer></script>
-  <script src="shortcuts.js?v=9.18.0" defer></script>
+  <link rel="stylesheet" href="type.css?v=9.19.0">
+  <link rel="stylesheet" href="style.css?v=9.19.0">
+  <link rel="stylesheet" href="workspace.css?v=9.19.0">
+  <link rel="stylesheet" href="readability.css?v=9.19.0">
+  <link rel="stylesheet" href="refinements.css?v=9.19.0">
+  <link rel="stylesheet" href="polish.css?v=9.19.0">
+  <link rel="stylesheet" href="terminal.css?v=9.19.0">
+  <link rel="stylesheet" href="keyboard.css?v=9.19.0">
+  <link rel="stylesheet" href="reports.css?v=9.19.0">
+  <script src="script.js?v=9.19.0" defer></script>
+  <script src="interactions.js?v=9.19.0" defer></script>
+  <script src="explorer.js?v=9.19.0" defer></script>
+  <script src="analytics-math.js?v=9.19.0" defer></script>
+  <script src="strategy.js?v=9.19.0" defer></script>
+  <script src="workspace.js?v=9.19.0" defer></script>
+  <script src="page-width.js?v=9.19.0" defer></script>
+  <script src="shortcuts.js?v=9.19.0" defer></script>
 
 </head>
 <body>
   <div class="desktop" id="desktop">
     <header class="menu-bar">
-      <div class="menu-left"><span class="system-glyph" aria-hidden="true">▦</span><b>GRIDIRON/86</b><span class="menu-divider"></span><span>Fantasy Team Terminal</span></div>
-      <div class="menu-right"><div class="width-control"><button id="page-width-toggle" type="button" class="menu-action" aria-expanded="false" aria-controls="page-width-panel" title="Page width (W)">WIDTH <span id="page-width-readout">100%</span></button><div id="page-width-panel" class="page-width-panel" role="group" aria-labelledby="page-width-heading" hidden><div class="page-width-heading" id="page-width-heading">Page width</div><div class="page-width-row"><input id="page-width" type="range" min="60" max="100" step="1" value="100" aria-label="Page width percentage" aria-valuetext="100 percent"><input id="page-width-value" type="number" min="60" max="100" step="1" value="100" aria-label="Page width percentage, typed"><span aria-hidden="true">%</span></div><div class="page-width-presets" role="group" aria-label="Width presets"><button type="button" data-width="100">Full</button><button type="button" data-width="90">90%</button><button type="button" data-width="80">80%</button><button type="button" data-width="70">70%</button></div><p class="page-width-hint">Arrow keys adjust by 1%, Page Up/Down by 10%. Esc closes.</p></div></div><span id="system-clock"></span><button type="button" class="menu-action" data-shortcuts-help aria-haspopup="dialog" title="Keyboard shortcuts (?)">KEYS ?</button><button id="about-button" class="menu-action">ABOUT</button><button id="open-data" class="menu-action highlighted">+ LOAD DATA</button></div>
+      <nav id="workspace-navigation" class="menu-left menu-nav" aria-label="Reports"><div id="workspace-tabs" class="menu-strip"></div></nav>
+      <div class="menu-right"><span id="system-clock"></span><div class="menu-group view-menu" data-group="View"><button type="button" class="menu-title" id="menu-title-view" aria-expanded="false" aria-controls="menu-view">View<span class="menu-caret" aria-hidden="true">▾</span></button><div class="menu-list menu-list-right" id="menu-view" role="group" aria-labelledby="menu-title-view" hidden><button id="page-width-toggle" type="button" aria-expanded="false" aria-controls="page-width-panel"><span class="menu-label"><b>Page width</b><small>Currently <span id="page-width-readout">100%</span></small></span></button><button type="button" data-shortcuts-help aria-haspopup="dialog"><span class="menu-label"><b>Keyboard shortcuts</b><small>Every action without a mouse</small></span></button><button id="about-button" type="button"><span class="menu-label"><b>About GRIDIRON/86</b><small>Data sources and notes</small></span></button></div></div><div id="page-width-panel" class="page-width-panel" role="group" aria-labelledby="page-width-heading" hidden><div class="page-width-heading" id="page-width-heading">Page width</div><div class="page-width-row"><input id="page-width" type="range" min="60" max="100" step="1" value="100" aria-label="Page width percentage" aria-valuetext="100 percent"><input id="page-width-value" type="number" min="60" max="100" step="1" value="100" aria-label="Page width percentage, typed"><span aria-hidden="true">%</span></div><div class="page-width-presets" role="group" aria-label="Width presets"><button type="button" data-width="100">Full</button><button type="button" data-width="90">90%</button><button type="button" data-width="80">80%</button><button type="button" data-width="70">70%</button></div><p class="page-width-hint">Arrow keys adjust by 1%, Page Up/Down by 10%. Esc closes.</p></div><button id="open-data" class="menu-action highlighted">+ LOAD DATA</button></div>
     </header>
 
-    <div class="utility-bar">
-      <div class="team-selector"><label for="team-select">TEAM:</label><select id="team-select" aria-label="Select fantasy team"></select></div>
-      <div class="context"><b id="league-name">EXHIBITION LEAGUE</b><span class="separator">/</span><span id="season-name">2026 SEASON</span></div>
-      <div class="utility-right"><span class="status-dot" id="status-dot"></span><span id="connection-status">SAMPLE DATA</span><button id="refresh-button" title="Reload connected data">↻ REFRESH</button></div>
-    </div>
-
     <div class="team-strip">
-      <div class="team-headline"><div class="tiny-label">FANTASY FOOTBALL / CLUB DOSSIER</div><h1 id="team-name">THE GRIDIRON CLUB</h1><span id="team-owner">Example franchise · Select a team to inspect</span></div>
+      <div class="team-headline"><div class="tiny-label team-eyebrow" id="team-eyebrow">Dashboard</div><div class="team-picker"><h1 id="team-name">THE GRIDIRON CLUB</h1><span class="team-picker-caret" aria-hidden="true">▾</span><select id="team-select" aria-label="Team: choose which franchise to view"></select></div><div class="team-meta"><span id="team-owner">Example franchise</span><span class="team-meta-sep" aria-hidden="true">·</span><b id="league-name">EXHIBITION LEAGUE</b><span class="team-meta-sep" aria-hidden="true">·</span><span id="season-name">2026 SEASON</span><span class="data-status"><span class="status-dot" id="status-dot"></span><span id="connection-status" role="status">SAMPLE DATA</span><button id="refresh-button" type="button" title="Reload connected data">↻ Refresh</button></span></div></div>
       <div class="team-header-stats">
         <div class="header-week-control"><label class="tiny-label" for="header-current-week">CURRENT WEEK</label><select id="header-current-week" aria-label="Active scoring week"></select></div>
         <div><span class="tiny-label">RECORD</span><b id="header-record">4–2</b></div>
@@ -48,8 +43,6 @@
       </div>
     </div>
 
-    <nav id="workspace-navigation" class="workspace-navigation" aria-label="Reports"><div id="workspace-tabs" class="report-bar"></div></nav>
-
     <main class="window-grid" aria-label="Fantasy football dashboard">
       <section class="win summary-window expandable" data-explore="summary" tabindex="0" aria-label="Open expanded summary statistics" aria-labelledby="title-summary">
         <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-summary">CLUB OVERVIEW</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
@@ -57,22 +50,15 @@
           <span class="section-label">POINTS SCORED / SEASON</span>
           <div class="hero-figure"><strong id="total-points">742.60</strong><span>PTS</span></div>
           <div class="micro-rule"></div>
-          <div class="summary-home-section">SCORING & EFFICIENCY</div>
-          <div class="summary-home-grid">
+          <div class="summary-home-grid summary-key-grid">
             <div><span>PER WEEK</span><strong id="avg-points">123.77</strong></div>
-            <div title="Season points scored compared with the league average team"><span>VS LEAGUE AVG · SEASON</span><strong id="home-league-delta">—</strong></div>
+            <div title="Season points scored compared with the league average team"><span>VS LEAGUE AVG</span><strong id="home-league-delta">—</strong></div>
             <div><span>POINTS ALLOWED</span><strong id="points-against">698.30</strong></div>
-            <div title="Standard deviation of weekly scores: lower means more consistent"><span>WEEKLY SWING (σ)</span><strong id="home-scoring-std">—</strong></div>
-            <div><span>LEAGUE POSITION</span><strong id="home-league-position">—</strong></div>
-          </div>
-          <div class="summary-home-section">RECORD & PERFORMANCE</div>
-          <div class="summary-home-grid">
-            <div><span>HEAD-TO-HEAD</span><strong id="home-record">—</strong></div>
-            <div><span>LEAGUE STANDING</span><strong id="home-standing">—</strong></div>
-            <div><span>BEST WEEK</span><strong id="best-week">W04 / 145.8</strong></div>
             <div><span>POINT DIFFERENTIAL</span><strong id="home-point-diff">—</strong></div>
-            <div><span>REPORTED WEEKS</span><strong id="weeks-reported">06</strong></div>
+            <div><span>BEST WEEK</span><strong id="best-week">W04 / 145.8</strong></div>
+            <div title="Standard deviation of weekly scores: lower means more consistent"><span>WEEKLY SWING (σ)</span><strong id="home-scoring-std">—</strong></div>
           </div>
+          <div hidden><strong id="home-league-position">—</strong><strong id="home-record">—</strong><strong id="home-standing">—</strong><strong id="weeks-reported">06</strong></div>
           <p id="summary-footnote" class="muted-note">This is sample data. Load a league for actual scores.</p>
         </div>
       </section>
@@ -82,7 +68,7 @@
         <div class="win-inner">
           <div class="window-topline"><span>SCORING HISTORY</span><span id="chart-range">WK 01—06</span></div>
           <div class="chart-area" id="weekly-chart" aria-label="Weekly team score chart"></div>
-          <div class="chart-key"><span><i class="key-solid"></i>TEAM PTS</span><span><i class="key-dash"></i>SEASON AVG</span></div>
+          <div class="chart-key"><span><i class="key-solid"></i>AT/ABOVE AVG</span><span><i class="key-solid key-below"></i>BELOW AVG</span><span><i class="key-dash"></i>SEASON AVG</span></div>
           <div class="weekly-home-table-wrap"><table class="dense-table weekly-home-table"><thead><tr><th>WK</th><th>OPPONENT</th><th class="num">PTS</th><th class="num">OPP</th><th class="num">RANK</th></tr></thead><tbody id="weekly-home-rows"></tbody></table></div>
         </div>
       </section>
@@ -148,13 +134,13 @@
         <div class="roster-footer"><span id="player-count">00 PLAYERS</span><span id="roster-footnote">SELECT ROW TO EXAMINE PLAYER DATA · VALUES ARE DEMONSTRATION ONLY</span></div>
       </section>
     </main>
-    <section class="dossiers-section" aria-label="Individual player statistical files"><div class="dossiers-heading"><h2 class="dossiers-title">INDIVIDUAL PLAYER FILES</h2><span>SIX METRICS PER PLAYER · SEASON HISTORY</span></div><div id="player-dossiers" class="dossier-list"></div></section>
+    <details class="dossiers-section" id="dossiers-section"><summary class="dossiers-heading"><h2 class="dossiers-title">Player files <span class="dossiers-count" id="dossiers-count"></span></h2><span class="dossiers-hint">Season history, form and news for every rostered player</span></summary><div id="player-dossiers" class="dossier-list"></div></details>
     <dialog id="explore-dialog" class="explore-dialog" aria-labelledby="explore-title">
       <div class="explore-title-bar"><div><span class="explore-history-controls"><button id="explore-back" class="explore-icon explore-back" type="button" title="Previous expanded view" aria-label="Previous expanded view">&lt;</button><button id="explore-forward" class="explore-icon explore-back" type="button" title="Next view" aria-label="Forward to next view" disabled>&gt;</button></span><span id="explore-match-week" class="explore-match-week" hidden></span><b id="explore-title">STATISTICAL WORKSPACE</b><span id="explore-club" class="explore-club" title="Current report franchise">THE GRIDIRON CLUB</span><small id="explore-context">DEMO</small></div><div class="explore-top-actions"><label class="explore-jump-label" for="explore-jump">GO TO <select id="explore-jump" aria-label="Open another workspace"><option value="summary">FRANCHISE</option><option value="matchup">MATCHUP</option><option value="weekly">WEEKLY</option><option value="standings">LEAGUE TABLE</option><option value="roster">ROSTER</option><option value="profile">PLAYER FILE</option><option value="player-analytics">FULL PLAYER LOG</option><option value="agents">FREE AGENTS</option><option value="positions">POSITIONS</option><option value="position-compare">POSITION / PLAYERS</option><option value="league-contributions">LEAGUE / WEEKLY</option><option value="graph">VARIABLE LAB</option></select></label><button type="button" class="explore-close" data-shortcuts-help aria-haspopup="dialog" title="Keyboard shortcuts (?)">KEYS ?</button><button type="button" id="explore-close" class="explore-close" aria-label="Close expanded window">× CLOSE</button></div></div>
       <div class="explore-content" id="explore-content"></div>
       <footer class="explore-footer"><span id="explore-source">Data source: demo</span><span class="explore-footer-keys">ESC CLOSES CARDS, THEN RETURNS TO THE DASHBOARD · CTRL+K FIND · ? KEYS</span></footer>
     </dialog>
-    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.18.0</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
+    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.19.0</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
   </div>
 
   <dialog id="data-dialog" aria-labelledby="dialog-title">

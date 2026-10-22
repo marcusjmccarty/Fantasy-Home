@@ -44,25 +44,64 @@ table,td,th,strong,b,.chart-val,.hero-figure,svg text{font-variant-numeric:tabul
 .header-week-control label.tiny-label{font:11.5px var(--mono);letter-spacing:.6px;color:#555852;text-transform:uppercase;line-height:1.2}
 #header-current-week{font:bold 19px/1 var(--mono);color:var(--ink);padding:1px 22px 1px 6px;min-height:30px;border:1px solid #8b8e86;background-color:var(--white)}
 
-/* ---------- Report bar: one navigation for the dashboard and every report ---------- */
-.workspace-navigation{position:sticky;top:0;z-index:30;margin:0;padding:8px 12px 0;background:var(--paper);border-bottom:1px solid var(--ink);box-shadow:0 1px 0 #fff8}
-.report-bar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px 8px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:#9a9d95 transparent}
-.report-group{display:flex;flex-direction:column;gap:3px;flex:0 0 auto;min-width:0}
-.report-group-label{font:600 11.5px/1 var(--mono);letter-spacing:1px;text-transform:uppercase;color:#5d605a;padding-left:2px}
-.report-group-items{display:flex;gap:2px}
-.report-bar button{position:relative;flex:0 0 auto;white-space:nowrap;margin:0 0 -1px;padding:8px 8px 9px;border:1px solid #868a81;border-bottom-color:var(--ink);background:#d6d7cf;color:#2d322e;font:500 12px/1 var(--mono);letter-spacing:.1px;cursor:pointer;min-height:32px}
-.report-bar button:hover{background:#eeefe8;color:var(--ink)}
-.report-bar button[aria-current=page]{background:var(--white);color:#111512;font-weight:700;border-color:var(--ink);border-bottom-color:var(--white);box-shadow:inset 0 3px 0 #3f6b5e;z-index:1}
-.report-bar button:focus-visible{outline:2px solid #1f5fa8;outline-offset:-4px;z-index:2}
-.report-home{display:inline-flex!important;align-items:center;gap:6px}
-.report-home-glyph{font-size:14px;line-height:0}
+/* ---------- Menu bar: navigation as classic pull-down menus ---------- */
+.menu-bar{position:sticky;top:0;z-index:40;height:auto;min-height:40px;padding:0 10px 0 6px;flex-wrap:nowrap;gap:10px;font-size:13px}
+.menu-left.menu-nav{display:flex;align-items:stretch;gap:0;min-width:0;align-self:stretch}
+.menu-strip{display:flex;align-items:stretch;gap:2px;min-width:0}
+.menu-home,.menu-title{display:inline-flex;align-items:center;gap:6px;background:transparent;border:0;color:#f6f5f0;font:500 13px/1 var(--mono);padding:0 11px;min-height:40px;cursor:pointer;white-space:nowrap}
+.menu-home{gap:8px;padding-left:8px;margin-right:6px}
+.menu-home b{font-size:14px;letter-spacing:.8px;font-weight:700}
+.menu-home .system-glyph{font-size:19px}
+.menu-home:hover,.menu-title:hover,.menu-title[aria-expanded=true]{background:#f1f0e9;color:#1c1e1d}
+.menu-home[aria-current=page]{box-shadow:inset 0 -3px 0 #9fc9b5}
+.menu-title.is-current{box-shadow:inset 0 -3px 0 #9fc9b5}
+.menu-left .menu-title span.menu-caret,.menu-right .menu-title span.menu-caret{display:inline;font-size:10px;opacity:.75}
+.menu-home:focus-visible,.menu-title:focus-visible{outline:2px solid #9cc2ff;outline-offset:-3px}
+.sr-only{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.menu-left .sr-only{display:inline}
+.menu-list .menu-label,.menu-left .menu-label{display:flex!important}
+.menu-left .menu-check{display:inline!important}
+.menu-group{position:relative;display:flex;align-items:stretch}
+.menu-list{position:absolute;top:100%;left:0;z-index:60;min-width:290px;padding:5px 0;background:var(--panel);color:var(--ink);border:1px solid var(--ink);box-shadow:3px 3px 0 #2b2d2a;white-space:normal}
+.menu-list[hidden]{display:none}
+.menu-list-right{left:auto;right:0}
+.menu-list button{display:grid;grid-template-columns:18px minmax(0,1fr) auto;align-items:center;gap:8px;width:100%;padding:7px 14px 7px 8px;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;font:13px var(--mono)}
+.menu-list button:not(.menu-item){grid-template-columns:minmax(0,1fr) auto;padding-left:14px}
+.menu-list button:hover,.menu-list button:focus-visible{background:#1c1e1d;color:#fff;outline:none}
+.menu-list button:hover small,.menu-list button:focus-visible small{color:#d6d8d0}
+.menu-label{display:flex;flex-direction:column;gap:3px;min-width:0}
+.menu-label b{font:600 13px/1.2 var(--mono)}
+.menu-label small{font:12px/1.3 var(--sans);color:#555852}
+.menu-check{visibility:hidden;font-weight:700}
+.menu-item[aria-current=page] .menu-check{visibility:visible}
+.menu-item[aria-current=page] .menu-label b{text-decoration:underline;text-underline-offset:3px}
+.menu-item::after{content:attr(data-go);font:11px var(--mono);color:#6a6d66;letter-spacing:.5px}
+.menu-item:hover::after,.menu-item:focus-visible::after{color:#d6d8d0}
+body.single-keys-off .menu-item::after{content:none}
+.menu-right{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;margin-left:auto}
+.menu-right .menu-group{align-self:stretch}
+#system-clock{font-size:12px;opacity:.85;margin-right:4px}
+
+/* ---------- Team header: one compact band ---------- */
+.team-strip{padding:14px 18px 14px;gap:20px}
+.team-eyebrow{text-transform:uppercase}
+.team-picker{position:relative;display:inline-flex;align-items:baseline;gap:8px;margin:4px 0 4px;max-width:100%}
+.team-picker h1{margin:0}
+.team-picker-caret{font:16px var(--mono);color:#555852}
+.team-picker select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}
+.team-picker:hover h1{text-decoration:underline;text-decoration-color:#9a9d95;text-underline-offset:5px}
+.team-picker:focus-within{outline:2px solid #1f5fa8;outline-offset:3px}
+.team-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font:12px var(--mono);color:#4d514b}
+.team-meta b{font-weight:600;color:var(--ink)}
+.team-meta-sep{color:#8b8e86}
+.data-status{display:inline-flex;align-items:center;gap:6px;margin-left:10px;padding-left:10px;border-left:1px solid #b8bab2}
+.data-status #refresh-button{font:600 11.5px var(--mono);padding:3px 8px;min-height:24px;border:1px solid #878981;background:#eae9e3;cursor:pointer}
+.data-status #refresh-button:hover{background:#fff}
+
 body[data-layout=tabbed] .window-grid,body[data-layout=tabbed] .dossiers-section,.window-grid[hidden],.dossiers-section[hidden]{display:none!important}
-/* Dashboard selected: the window grid is the "page" under the active tab. */
 body[data-layout=dashboard] .window-grid{padding-top:14px}
-/* Report selected: the report panel attaches to the bar like a folder. */
-body[data-layout=tabbed] .explore-dialog[open]{position:relative;inset:auto;display:flex;width:calc(100% - 24px);max-width:none;height:auto;min-height:500px;max-height:none;margin:12px 12px 14px;border:1px solid #444a43;box-shadow:2px 3px 0 #a8aaa4;overflow:visible}
+body[data-layout=tabbed] .explore-dialog[open]{position:relative;inset:auto;display:flex;width:calc(100% - 24px);max-width:none;height:auto;min-height:500px;max-height:none;margin:14px 12px;border:1px solid #444a43;box-shadow:2px 3px 0 #a8aaa4;overflow:visible}
 body[data-layout=tabbed] .explore-content{overflow:visible;flex:1 0 auto;max-height:none;min-width:0}
-/* Wide tables scroll inside the report instead of pushing past the screen edge. */
 @media (max-width:899px){body[data-layout=tabbed] .explore-content{overflow-x:auto;overflow-y:visible}body[data-layout=tabbed] .explore-dialog[open]{width:calc(100% - 16px);margin:10px 8px 12px}}
 body[data-layout=tabbed] .explore-content>*{flex-shrink:0}
 body[data-layout=tabbed] .explore-title-bar{flex-wrap:wrap}
@@ -71,14 +110,20 @@ body[data-layout=tabbed] .explore-jump-label,body[data-layout=tabbed] .explore-t
 body[data-layout=tabbed] #explore-close{display:inline-flex}
 body[data-layout=tabbed] .explore-footer span:last-child{font-size:inherit}
 body[data-layout=tabbed] .explore-footer span:last-child::after{content:none}
-body[data-layout=tabbed] .explore-dialog[open]{scroll-margin-top:72px}
 #explore-title:focus{outline:none}
 #explore-title:focus-visible{outline:2px solid #9cc2ff;outline-offset:3px}
-@media (max-width:899px){
-  .report-bar{flex-wrap:nowrap;gap:10px;padding-right:28px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
-  .report-bar button{padding:8px 9px;font-size:11.5px}
+
+@media (max-width:760px){
+  .menu-bar{flex-wrap:wrap;padding:0 4px;gap:0}
+  .menu-home b{display:none}
+  .menu-home{margin-right:0;padding:0 8px}
+  .menu-title{padding:0 8px;font-size:12.5px}
+  #system-clock{display:none}
+  .menu-item::after{content:none}
+  .menu-right{gap:4px}
+  .menu-group{position:static}
+  .menu-list{position:absolute;left:6px!important;right:6px;top:100%;min-width:0;max-height:calc(100dvh - 120px);overflow-y:auto}
 }
-@media (max-width:600px){.workspace-navigation{padding:6px 8px 0}}
 
 /* ---------- Page width panel ---------- */
 .width-control{position:relative}
@@ -170,3 +215,44 @@ svg text.weekly-data-label{paint-order:stroke fill;stroke:#fff;stroke-width:3px;
 .trade-club-link{border:0;background:none;padding:2px 0;font:500 20px/1.15 var(--serif);color:var(--ink);text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:#b8bab2;text-underline-offset:4px}
 .trade-club-link:hover{text-decoration-color:var(--ink)}
 .trade-diagnosis,.trade-alternatives{font-size:13px;line-height:1.5}
+
+/* ---------- Dashboard: summary first, depth one click away ---------- */
+/* Row 1 = this week (overview · matchup · standings), row 2 = the season. */
+.window-grid>.summary-window{order:1}
+.window-grid>.matchup-window{order:2}
+.window-grid>.standings-window{order:3}
+.window-grid>.positions-window{order:4}
+.window-grid>.weekly-window{order:5}
+.window-grid>.profile-window{order:6}
+.window-grid>.freeagents-window{order:7}
+.window-grid>.grapher-window{order:8}
+.window-grid>.strategy-windows{order:9}
+.window-grid>.roster-window{order:10}
+/* Club overview: six key figures; record and rank already lead the page header. */
+.summary-key-grid{margin-top:4px}
+/* The week-by-week table lives in the Weekly report; the dashboard keeps the chart. */
+.weekly-window .weekly-home-table-wrap{display:none}
+/* Player files: collapsed by default, one summary line. */
+.dossiers-section{margin:4px 12px 14px;border:1px solid #444a43;background:var(--panel)}
+.dossiers-section>summary{display:flex;align-items:baseline;gap:14px;padding:12px 14px;cursor:pointer;list-style:none;background:#d6d7cf}
+.dossiers-section>summary::-webkit-details-marker{display:none}
+.dossiers-section>summary::before{content:'▸';font:13px var(--mono);transition:transform .15s}
+.dossiers-section[open]>summary::before{transform:rotate(90deg)}
+.dossiers-section>summary:hover{background:#e6e7df}
+.dossiers-section .dossiers-title{font:700 13px var(--mono);letter-spacing:.8px;text-transform:uppercase}
+.dossiers-section .dossiers-hint{display:inline!important;font:12px var(--sans);color:#4d514b}
+.dossiers-section[open] .dossier-list{padding:10px}
+
+/* ---------- Calm data colour: colour only where it means something ---------- */
+/* Weekly scores: strong blue at/above the season average, pale blue below. */
+#weekly-chart .chart-bar{background:#3f74ad!important;border-color:#2b5a8c!important}
+#weekly-chart .chart-bar.is-below{background:#a9bfd6!important;border-color:#7d97b3!important}
+.key-solid.key-below{background:#a9bfd6!important}
+/* Per-player weekly bars and roster output bars: one neutral series colour. */
+.home-player-week>.mini-bar,.roster-table .output-bar>span,.mini-bar{background:#3f74ad!important}
+.home-player-week>.mini-bar.is-blank{background:#d6d7cf!important}
+.dossiers-section .dossiers-title{text-align:left;margin:0}
+.dossiers-section>summary{justify-content:flex-start}
+.share-week-bar{background:#5f8a73!important;border-color:#45695a!important}
+/* Matchup rows: "FINAL" is said once in the score header; live statuses still show per player. */
+.matchup-roster-player strong[title=FINAL] small{display:none}

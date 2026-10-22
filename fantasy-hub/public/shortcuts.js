@@ -176,7 +176,8 @@ if(typeof globalThis!=='undefined')globalThis.GridironKeys=GridironKeys;
  function syncHints(){
   const on=enabled.checked;
   for(const button of helpButtons()){
-   button.textContent=on?'KEYS ?':'KEYS';
+   // Menu items keep their own two-line label; only plain buttons show KEYS.
+   if(!button.closest('.menu-list'))button.textContent=on?'KEYS ?':'KEYS';
    button.title=on?'Keyboard shortcuts (?)':'Keyboard shortcuts (single-key shortcuts are off)';
    button.setAttribute('aria-label',on?'Keyboard shortcuts':'Keyboard shortcuts, single-key shortcuts off');
    button.setAttribute('aria-controls',help.id);
@@ -188,7 +189,7 @@ if(typeof globalThis!=='undefined')globalThis.GridironKeys=GridironKeys;
    const base=button.dataset.baseTitle??=button.title||'';
    const go=K.goKeys(button.dataset.workspace);
    button.title=on&&go?`${base} (${go})`:base;
-   button.dataset.go=go.replace('G then ','G');
+   button.dataset.go=go.replace(' then ',' ');
    if(on&&go)button.setAttribute('aria-keyshortcuts',go.replace(' then ',' '));else button.removeAttribute('aria-keyshortcuts');
   }
   document.body.classList.toggle('single-keys-off',!on);
@@ -203,12 +204,12 @@ if(typeof globalThis!=='undefined')globalThis.GridironKeys=GridironKeys;
  /* ---------- skip links (first Tab stop on the page) ---------- */
  const skip=document.createElement('nav');
  skip.className='skip-links';skip.setAttribute('aria-label','Skip links');
- skip.innerHTML='<a href="#workspace-navigation" class="skip-link" data-skip="bar">Skip to report bar</a><a href="#explore-content" class="skip-link" data-skip="content">Skip to content</a>';
+ skip.innerHTML='<a href="#workspace-navigation" class="skip-link" data-skip="bar">Skip to menus</a><a href="#explore-content" class="skip-link" data-skip="content">Skip to content</a>';
  document.body.prepend(skip);
  skip.addEventListener('click',event=>{
   const link=event.target.closest('[data-skip]');if(!link)return;
   event.preventDefault();
-  if(link.dataset.skip==='bar')(bar.querySelector('[aria-current="page"]')||bar.querySelector('[data-workspace]'))?.focus();
+  if(link.dataset.skip==='bar')(document.querySelector('.menu-title.is-current')||document.querySelector('.menu-home'))?.focus();
   else focusContent();
  });
  function focusContent(){
@@ -224,7 +225,7 @@ if(typeof globalThis!=='undefined')globalThis.GridironKeys=GridironKeys;
  launcher.title=`Command palette (${mac?'⌘K':'Ctrl+K'})`;
  launcher.innerHTML=`<span class="palette-launch-label">FIND</span> <kbd>${mac?'⌘K':'CTRL K'}</kbd>`;
  launcher.setAttribute('aria-label','Command palette');
- keysButton?.before(launcher);
+ (document.querySelector('.menu-right .view-menu')||keysButton)?.before(launcher);
  launcher.addEventListener('click',()=>openPalette());
 
  /* ---------- "G…" pending chip ---------- */
