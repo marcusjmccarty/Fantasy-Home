@@ -180,17 +180,17 @@
       <label>SEARCH<input id="finder-query" type="text" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="finder-results" aria-describedby="finder-hint" autocomplete="off" spellcheck="false" autofocus></label>
       <div id="finder-results" role="listbox" aria-label="Search results"></div>
       <p id="finder-status" role="status" aria-live="polite"></p>
-      <div id="finder-actions" hidden><b id="finder-player-name"></b><button type="button" data-finder-action="profile">PLAYER FILE</button><button type="button" data-finder-action="player-analytics">GAME LOGS</button><button type="button" data-finder-action="compare">COMPARE POSITION PEERS</button></div>
+      <div id="finder-actions" hidden><b id="finder-player-name"></b><label>INSPECT WEEK<select id="finder-week"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option></select></label><p id="finder-weekly"></p><button type="button" data-finder-action="profile">PLAYER FILE</button><button type="button" data-finder-action="player-analytics">GAME LOGS</button><button type="button" data-finder-action="compare">COMPARE POSITION PEERS</button></div>
       <p id="finder-hint">Type a report, player, position or franchise. ↑ / ↓ choose; Enter opens; Tab reaches player actions. Escape returns without navigating. Players include only data already loaded. In Trade, choose Team A or Team B to edit that side's package.</p>
     </div>
   </dialog>
   <dialog id="shortcuts-dialog" aria-labelledby="shortcuts-title" aria-describedby="shortcuts-description">
     <div class="dialog-title"><b id="shortcuts-title">KEYBOARD SHORTCUTS</b><button class="dialog-x" data-close-dialog aria-label="Close keyboard shortcuts" autofocus>×</button></div>
     <div class="dialog-inner">
-      <p id="shortcuts-description">G, /, [, ], and ? work outside text fields and selection controls on Mac and Windows. Use them without Ctrl, Alt, or Command.</p>
+      <p id="shortcuts-description">G, /, and ? work outside text fields and selection controls on Mac and Windows. Use them without Ctrl, Alt, or Command.</p>
       <p><kbd>G</kbd> — Find a report by name; Enter opens it.</p>
       <p><kbd>/</kbd> — Find any loaded player; Enter opens their file. Tab reaches game logs and position comparison. In Trade, find players for an explicit Team A or Team B package.</p>
-      <p><kbd>[</kbd> / <kbd>]</kbd> — Previous / next report in workspace history.</p>
+      <p>Use the report Back / Forward buttons to return to your previous report.</p>
       <p><kbd>?</kbd> — Open this help.</p>
       <p><kbd>Escape</kbd> — Dismiss the top card or window. Inline tabbed reports stay open.</p>
       <p><kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> — Move between controls. In the report tab strip, use arrow keys, Home, or End.</p>

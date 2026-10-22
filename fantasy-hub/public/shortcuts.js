@@ -71,8 +71,5 @@
   if(event.key.toLowerCase()==='g'||event.key==='/'){
    event.preventDefault();FantasyFinder.open(event.key==='/'?'players':'reports');return;
   }
-  if(event.key==='['||event.key===']'){
-   if(FantasyFinder.history(event.key==='['?'back':'forward'))event.preventDefault();
-  }
  },true);
 })();

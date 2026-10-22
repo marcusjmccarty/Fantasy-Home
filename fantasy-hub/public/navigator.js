@@ -6,6 +6,8 @@
  const list=document.getElementById('finder-results'),status=document.getElementById('finder-status');
  const scope=document.getElementById('finder-scope'),actions=document.getElementById('finder-actions');
  const report=document.getElementById('explore-dialog'),content=document.getElementById('explore-content');
+ const weekPicker=document.getElementById('finder-week'),weekly=document.getElementById('finder-weekly');
+ let inspectedWeek=null;
  const memories=new Map();let mode='reports',rows=[],selected=0,opener=null,navigating=false,origin=null,revision=0;
  const normalize=value=>String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
  const usable=node=>node?.isConnected&&!node.disabled&&!node.closest('[hidden],[inert]')&&node.getClientRects().length&&getComputedStyle(node).visibility==='visible';
@@ -49,6 +51,10 @@
   status.textContent=rows.length?`${rows.length} matches. ${selected+1} of ${rows.length}. ${tradeSide()?'Enter adds or removes the highlighted player.':'Enter opens the highlighted result.'}`:'No matching loaded players or reports.';
   actions.hidden=mode==='reports'||tradeSide()||!player();
   document.getElementById('finder-player-name').textContent=player()?.name||'';
+  const p=player(),week=Number(weekPicker.value);
+  const actual=labNum(p?.scores?.[week]);
+  const projected=labNum(p?.projections?.[week])??(week===Number(model.currentWeek||model.liveWeek)?labNum(p?.espnProj):null);
+  weekly.textContent=p?`Week ${week} · Recorded points: ${actual===null?'Not supplied':actual} · Provider projection: ${projected===null?'Not supplied':projected}`:'';
  }
  function changeMode(next){save();mode=next;scope.value=mode;const memory=memories.get(mode);input.value=memory?.query||'';selected=memory?.index||0;paint();list.scrollTop=memory?.scroll||0;input.focus();input.select();}
  function closeForNavigation(){save();navigating=true;dialog.close();revision++;}
@@ -78,13 +84,15 @@
  }
  function history(direction){
   const stack=direction==='back'?XL.history:XL.future;if(!report.open||!stack.length)return false;
-  const saved=stack.at(-1).finderReturn,current=frame();revision++;
+  const saved=stack.at(-1).finderReturn;if(!saved)return false;const current=frame();revision++;
   if(direction==='back')exploreBack();else exploreForward();
   (direction==='back'?XL.future:XL.history).at(-1).finderReturn=current;restore(saved);return true;
  }
  function open(requested){
   if(dialog.open)return;
   opener=document.activeElement;origin=frame();navigating=false;
+  if(inspectedWeek===null)inspectedWeek=Number(XL.viewWeek||currentWeek);
+  weekPicker.value=String(inspectedWeek);
   const isTrade=report.open&&XL.open==='trade';
   scope.querySelectorAll('[data-trade-scope]').forEach(option=>{option.hidden=!isTrade;option.disabled=!isTrade;});
   if(isTrade){
@@ -96,6 +104,7 @@
   const memory=memories.get(mode);scope.value=mode;input.value=memory?.query||'';selected=memory?.index||0;
   paint();dialog.showModal();input.focus();input.select();list.scrollTop=memory?.scroll||0;
  }
+ weekPicker.addEventListener('change',()=>{inspectedWeek=Number(weekPicker.value);paint();});
  scope.addEventListener('change',()=>changeMode(scope.value));
  input.addEventListener('input',()=>{selected=0;paint();});
  input.addEventListener('keydown',event=>{
