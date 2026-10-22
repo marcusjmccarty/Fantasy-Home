@@ -185,3 +185,13 @@ Touches & Share uses the compact public `public/data/usage-SEASON.json` dataset,
 Trade Calculator compares modeled weekly scoring and both teams' optimized starting lineups. Starter format is user-selected. It does not submit trades or price keeper value. Both package selections persist while moving between views and reset when the active league/team changes.
 
 Validation: `npm test` and `python3 -m unittest discover -s test -p 'test_usage.py'` from `fantasy-hub/`.
+
+## v9.8 — full-width Star workspace
+
+The desktop now uses the screen width. Player Outlook pairs an interactive red-to-green range with historical floor/projection/ceiling comparisons and an opponent report; the Player Terminal Scouting File opens that report. Historical ranges are reconstructed using only earlier observations. They are not archived forecasts, and missing provider projections remain blank.
+
+The nightly NFLverse dataset now includes weekly offensive/defensive units. Matchup reports use only weeks preceding the selected week and show yards/play, net passing and rushing efficiency, sacks, turnovers, EPA, success rate and explosive rate. Explosives mean passing plays gaining at least 20 yards or rushing plays gaining at least 10. No-play penalties, kneels, spikes and two-point attempts are excluded. EPA is expected points added; success means positive EPA. These are observed team outcomes, not position-specific fantasy points allowed.
+
+The optional AI matchup report requests 2–3 paragraphs. The Worker retrieves the opponent and team statistics itself; it does not accept caller-supplied opponent statistics. Existing server-side credentials, quotas and caching remain in effect. Exhibition data stays explicitly synthetic and does not trigger AI generation.
+
+Outlook and opportunity reports have franchise/all-player selectors. Opportunity Leaders switches between the active franchise and all NFL players: click anywhere in a row to select, double-click for the Player Terminal; keyboard Enter selects and Enter again opens. Touches & Share includes four distinct share colors and compact workload context. The homepage trade builder supports player packages, partner changes, valuation modes and removal/clearing, sharing state with the full simulator.

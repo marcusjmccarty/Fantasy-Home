@@ -7,8 +7,7 @@ test('Cloudflare runtime can import a cookie-authenticated league without follow
   const calls=[];
   let redirect=false;
   const mf=new Miniflare(convertV4MiniflareOptions({
-    modules:true,
-    scriptPath:path.resolve(__dirname,'../src/worker.js'),
+    modules:[{type:'ESModule',path:path.resolve(__dirname,'../src/worker.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/matchup-context.js')}],
     compatibilityDate:'2026-10-01',
     durableObjects:{ESPN_SESSIONS:{className:'EspnSession',useSQLite:true}},
     outboundService:async request=>{

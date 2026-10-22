@@ -28,3 +28,12 @@ class UsageTests(unittest.TestCase):
         self.assertEqual(data['through_week'],2)
 
 if __name__=='__main__':unittest.main()
+
+class UnitTests(unittest.TestCase):
+    def test_units_include_sacks_deduplicate_and_keep_missing_epa_missing(self):
+        sack=play(kind='pass',play_id='2',receiver_player_id='',defteam='DET',sack='1',yards_gained='-7',epa='-1.5')
+        rows=[play(defteam='DET',yards_gained='12',epa='0.6'),sack,sack,play(play_id='3',defteam='DET',yards_gained='',epa='')]
+        data=usage.aggregate(rows);unit=data['units']['DET']['1']['defense'];offense=data['units']['CHI']['1']['offense']
+        self.assertEqual(unit,offense);self.assertEqual(unit['plays'],3);self.assertEqual(unit['yards'],5);self.assertEqual(unit['yard_plays'],2)
+        self.assertEqual(unit['epa_plays'],2);self.assertEqual(unit['successes'],1);self.assertEqual(unit['sacks'],1);self.assertEqual(unit['explosives'],1)
+        self.assertEqual(len(data['players']),1)

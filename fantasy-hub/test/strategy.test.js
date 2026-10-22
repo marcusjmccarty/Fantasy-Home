@@ -34,10 +34,26 @@ test('home windows follow player selection and keep unavailable data blank',()=>
  h.run("currentPlayerId='dal';renderStrategyHome()");
  assert.match(h.node('share-preview').innerHTML,/TOUCHES<\/span><b>—/);
  h.run("currentPlayerId='allen';model.players.allen.scores={};renderStrategyHome()");
- assert.match(h.node('outlook-preview').innerHTML,/EST. FLOOR<\/span><b>—/);
+ assert.match(h.node('outlook-preview').innerHTML,/Estimated floor.*?<strong>—<\/strong>/);
 });
 test('changing the active team clears trade selections from the old roster',()=>{
  const h=setup();h.run("STRATEGY.trade.give=['cook'];STRATEGY.trade.get=['demo-1-1'];currentTeamId='2';renderStrategyHome()");
  assert.equal(h.run('STRATEGY.trade.give.length'),0);assert.equal(h.run('STRATEGY.trade.get.length'),0);
- assert.match(h.node('trade-preview').innerHTML,/YOUR TOP MODELED VALUES/);
+ assert.match(h.node('trade-preview').innerHTML,/data-home-trade-add="give"/);
+});
+test('franchise scopes and opportunity leader scopes respect roster membership',()=>{
+ const h=setup();assert.equal(h.run("strategyPlayerPool('2').length"),12);
+ assert.equal(h.run("strategyPlayerPool('active').some(p=>p.id==='cook')"),true);
+ const active=h.run('opportunityRows(usageDataset()).length');h.run("STRATEGY.leaders='all'");assert.ok(h.run('opportunityRows(usageDataset()).length')>active);
+ h.run("STRATEGY.homeScope='2';renderStrategyHome()");assert.match(h.node('home-outlook-player').innerHTML,/Avery Knight/);assert.ok(!h.node('home-outlook-player').innerHTML.includes('James Cook'));
+});
+test('home trade controls update the same packages used in the full calculator',()=>{
+ const h=setup();h.run("updateTradeControl({id:'',dataset:{homeTradeAdd:'give'},value:'cook'});updateTradeControl({id:'',dataset:{homeTradeAdd:'get'},value:'demo-1-1'})");
+ assert.equal(h.run("STRATEGY.trade.give[0]"),'cook');assert.match(h.node('trade-preview').innerHTML,/Remove James Cook/);assert.match(h.node('trade-preview').innerHTML,/DIFFERENCE<\/span><b>-1.7/);
+ h.run("renderStrategy('trade')");assert.match(h.html(),/checked/);
+ h.run("updateTradeControl({id:'home-trade-partner',dataset:{},value:'3'})");assert.equal(h.run('STRATEGY.trade.get.length'),0);
+});
+test('D/ST report labels the opposing offense and Scouting File opens Player Outlook',()=>{
+ const h=setup();h.run("STRATEGY.player='dal';renderDefensiveOutlook()");assert.match(h.html(),/OPPOSING OFFENSE/);assert.match(h.html(),/Sack rate conceded/);
+ const file=h.run("scoutingFile(model.players.allen)");assert.match(file,/data-strategy-open="outlook"/);assert.match(file,/range-floor/);assert.match(file,/PRIOR SCORING/);assert.ok(!file.includes('data-strategy-open="trade"'));
 });

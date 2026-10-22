@@ -12,7 +12,7 @@ const WORKSPACE_TABS = [
   ['positions','Positions','ANALYSIS / POSITION ALLOCATION'],
   ['position-compare','Player pool','ANALYSIS / POSITION COMPARISON'],
   ['league-contributions','League trends','ANALYSIS / WEEKLY CONTRIBUTIONS'],
-  ['outlook','Defensive outlook','STRATEGY / MATCHUP & RANGE'],
+  ['outlook','Player outlook','STRATEGY / MATCHUP & RANGE'],
   ['opportunity','Touches & share','STRATEGY / TOUCHES & SHARE'],
   ['trade','Trade calculator','STRATEGY / ROSTER IMPACT'],
   ['graph','Variable lab','ANALYSIS / CUSTOM GRAPHER'],

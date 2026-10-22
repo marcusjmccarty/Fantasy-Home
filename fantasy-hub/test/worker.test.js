@@ -19,3 +19,17 @@ test('JSON content type is enforced before parsing',async()=>{const {env}=enviro
 test('global AI quota persists across object instances and resets by time bucket',async()=>{const {env,records,instances}=environment();const name='global-ai-budget-v1',req=()=>new Request('https://internal/internal/ai-budget',{method:'POST'});for(let i=0;i<12;i++)assert.equal((await env.ESPN_SESSIONS.get(name).fetch(req())).status,200);instances.delete(name);assert.equal((await env.ESPN_SESSIONS.get(name).fetch(req())).status,429);const b=records.get(name).budget;b.minute--;b.dayCount=200;assert.equal((await env.ESPN_SESSIONS.get(name).fetch(req())).status,429);b.day--;assert.equal((await env.ESPN_SESSIONS.get(name).fetch(req())).status,200)});
 test('an old alarm preserves a renewed session',async()=>{const {env,records}=environment(),name='alarm-test';const obj=env.ESPN_SESSIONS.get(name);records.set(name,{record:{leagueId:'1',season:2026,expires:Date.now()+60000}});await obj.alarm();assert.ok(records.get(name).record);});
 test('logout during upstream work cannot resurrect stored credentials',async()=>{const {env,records}=environment(),original=globalThis.fetch;const token='a'.repeat(64),cookie='gridiron_session='+token;let release,started;const wait=new Promise(r=>release=r),ready=new Promise(r=>started=r);globalThis.fetch=async()=>{started();await wait;return Response.json({teams:[{id:1}],scoringPeriodId:1})};try{const pending=worker.fetch(request('/api/espn/league',post({leagueId:'1',season:2026,swid:'fake',s2:'fixture'},cookie)),env);await ready;await worker.fetch(request('/api/espn/logout',{method:'POST',headers:{Cookie:cookie}}),env);release();assert.equal((await pending).status,409);assert.equal(records.has(token),false)}finally{release();globalThis.fetch=original}});
+test('matchup AI verifies opponent units server-side and requests a multi-paragraph report',async()=>{
+ const {env}=environment(),original=globalThis.fetch;env.GEMINI_API_KEY='fixture-key';let prompt;
+ env.ASSETS.fetch=async()=>Response.json({season:2024,through_week:2,source:'fixture PBP',units:{DET:{1:{offense:{game_ids:['one'],plays:10,pass_plays:5,sacks:1,yards:50,yard_plays:10,epa:2,epa_plays:10,successes:6}}}}});
+ globalThis.fetch=async(url,options)=>{
+  if(String(url).includes('scoreboard'))return Response.json({events:[{status:{type:{state:String(url).includes('week=1')?'post':'pre',completed:String(url).includes('week=1')}},competitions:[{competitors:[{team:{abbreviation:'CHI'},score:'14'},{team:{abbreviation:'DET'},score:'21'}]}]}]});
+  prompt=JSON.parse(options.body);return Response.json({candidates:[{content:{parts:[{text:'First paragraph.\n\nSecond paragraph.\n\nThird paragraph.'}]}}]});
+ };
+ try{
+  const response=await worker.fetch(request('/api/ai/outlook',post({report:'matchup',player:{id:'chi',name:'Chicago Defense',pos:'DEF',nfl:'CHI',season:2024,week:2,opponent:'FAKE',opponentPlayByPlay:{sacks:999},floor:2,ceiling:12}})),env);
+  assert.equal(response.status,200);const data=await response.json(),facts=JSON.parse(prompt.contents[0].parts[0].text);
+  assert.equal(facts.verifiedNFLopponent,'DET');assert.equal(facts.opponentUnit,'offense');assert.equal(facts.opponentPlayByPlay.sackRate,20);assert.equal(facts.opponentPlayByPlay.sacks,1);assert.equal(facts.range.floor,2);
+  assert.match(prompt.systemInstruction.parts[0].text,/2–3 substantial/);assert.equal(data.outlook.split('\n\n').length,3);assert.equal(prompt.generationConfig.maxOutputTokens,1300);
+ }finally{globalThis.fetch=original;}
+});

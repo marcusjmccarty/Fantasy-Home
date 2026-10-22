@@ -34,3 +34,10 @@ test('superflex, duplicate IDs, negative points and missing estimates are handle
 test('empty packages have zero value but partial packages remain unavailable',()=>{
  assert.equal(M.packageValue([],5,'projection').total,0);assert.equal(M.packageValue([player('q','QB',20),{id:'x'}],5,'projection').missing,1);
 });
+test('historical ranges never borrow current projections or their own outcomes',()=>{
+ const p={espnProj:999,scores:{1:0,2:10,3:20,4:30,5:100,6:900},projections:{5:25}};
+ const rows=M.scoringHistory(p,6),week5=rows[0],week4=rows[1];
+ assert.equal(rows.length,5);assert.equal(week5.floor,16);assert.equal(week5.ceiling,34);assert.equal(week5.projection,25);assert.equal(week5.actual,100);
+ assert.equal(week4.center,10);assert.equal(week4.projection,null);assert.equal(week4.floor,null);
+ assert.equal(M.scoringHistory({...p,scores:{...p.scores,5:9999,6:99999}},6)[0].ceiling,34);
+});

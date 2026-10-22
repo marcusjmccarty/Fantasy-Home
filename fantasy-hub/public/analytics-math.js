@@ -3,10 +3,10 @@
  'use strict';
  const numeric=v=>v!==null&&v!==undefined&&String(v).trim()!==''&&Number.isFinite(Number(v))?Number(v):null;
  const quantile=(values,q)=>{if(!values.length)return null;const a=[...values].sort((a,b)=>a-b),i=(a.length-1)*q,l=Math.floor(i);return a[l]+(a[Math.ceil(i)]-a[l])*(i-l)};
- function outlook(player,week){
+ function outlook(player,week,{historical=false}={}){
   const observations=Object.entries(player.scores||{}).map(([w,v])=>({week:Number(w),points:numeric(v)})).filter(x=>x.week>0&&x.week<week&&x.points!==null).sort((a,b)=>a.week-b.week).slice(-8);
   const values=observations.map(x=>x.points),mean=values.length?values.reduce((a,b)=>a+b,0)/values.length:null;
-  const projection=numeric(player.projections?.[week])??numeric(player.espnProj),center=projection??mean;
+  const projection=numeric(player.projections?.[week])??(historical?null:numeric(player.espnProj)),center=projection??mean;
   const low=values.length>=4?quantile(values,.2):null,high=values.length>=4?quantile(values,.8):null;
   // Preserve the observed distance from the mean around the current projection.
   // This is a transparent scenario band, not a calibrated probability forecast.
@@ -34,5 +34,8 @@
   });dp=next;});
   const result=dp.get((1<<slots.length)-1);return result?{...result,missing:unique.filter((p,i)=>scores[i]===null).length}:null;
  }
- root.FantasyMath={numeric,quantile,outlook,value,packageValue,bestLineup};
+ function scoringHistory(player,week){
+  return Object.entries(player.scores||{}).map(([w,v])=>({week:Number(w),actual:numeric(v)})).filter(r=>r.week>0&&r.week<week&&r.actual!==null).sort((a,b)=>b.week-a.week).map(r=>({...r,...outlook(player,r.week,{historical:true}),projection:numeric(player.projections?.[r.week])}));
+ }
+ root.FantasyMath={numeric,quantile,outlook,scoringHistory,value,packageValue,bestLineup};
 })(globalThis);
