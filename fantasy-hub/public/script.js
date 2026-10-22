@@ -204,17 +204,35 @@ function drawPositions(team){
  picker.innerHTML='<option value="all">Season</option>'+weeks.map(w=>`<option value="${w}">Week ${w}</option>`).join('');picker.value=period;
  const {totals,known}=homePositionTotals(team,period),max=Math.max(...Object.values(totals),1),total=sum(Object.values(totals)),colors={QB:'#487ebb',RB:'#399676',WR:'#9466bc',TE:'#b85d70',K:'#b07c33',DEF:'#657b83'};
  el('position-caption').textContent=known?'':'No starter scores for this period.';
+ const leader=Object.entries(totals).sort((a,b)=>b[1]-a[1])[0],periodName=period==='all'?'the season':'Week '+period;
+ const metrics=[['Starter points',known?nfmt(total,1):'—','Recorded starting-player points for '+periodName+'. Bench scores are excluded.'],['Points / start',known?nfmt(total/known,1):'—','Average points per recorded player start for '+periodName+'. A reported zero counts as a start.'],['Leading share',known&&total>0?leader[0]+' '+nfmt(leader[1]/total*100,0)+'%':'—','The position contributing the largest share of recorded starter points for '+periodName+'.']];
+ el('home-position-metrics').innerHTML=metrics.map(([label,value,help])=>`<button type="button" class="stat-help-trigger strategy-metric" data-stat-title="${esc(label)}" data-stat-help="${esc(help)}" aria-expanded="false"><span>${esc(label)}</span><strong>${esc(value)}</strong></button>`).join('');
  el('position-chart').innerHTML=known?Object.entries(totals).map(([pos,value])=>`<div class="position-row"><strong>${pos}</strong><div class="meter-track"><button type="button" class="meter-fill" data-home-position="${pos}" style="width:${Math.max(1,Math.min(100,100*Math.max(0,value)/max)).toFixed(1)}%;background:${colors[pos]}" aria-label="Open ${pos} position allocation${period==='all'?' for the season':' for week '+period}"></button></div><b>${nfmt(value,1)}<small>${total>0&&value>=0?nfmt(value/total*100,0)+'%':''}</small></b></div>`).join(''):'<div class="empty-chart">NO POSITION DATA</div>';
 }
 el('home-position-week').addEventListener('change',()=>drawPositions(getTeam()));
 el('position-chart').addEventListener('click',event=>{if(!event.target.closest('[data-home-position]'))return;event.stopPropagation();const period=el('home-position-week').value;openExplorer('positions',null,period==='all'?{}:{week:Number(period)});});
-function homeMatchupRoster(team,week){
- if(!team)return '<p class="lab-note">No opponent.</p>';
- const h=team.history.find(h=>Number(h.week)===week),active=week===Number(model.currentWeek||model.liveWeek||currentWeek);
+// Slot order is shared by home matchup and trade rosters. Preserve provider assignments.
+function lineupSlotLabel(entry){
+ const labels={0:'QB',2:'RB',4:'WR',6:'TE',16:'D/ST',17:'K',20:'BENCH',21:'IR',23:'FLEX',24:'FLEX',3:'FLEX',5:'FLEX',7:'SUPERFLEX'};
+ return entry.slot!=null&&labels[entry.slot]?labels[entry.slot]:entry.p?.pos==='DEF'?'D/ST':entry.p?.pos||'?';
+}
+function compareLineupEntries(a,b){
+ const ranks={QB:0,RB:1,WR:2,TE:3,FLEX:4,SUPERFLEX:4,'D/ST':5,DEF:5,K:6};
+ const rank=e=>ranks[e.starter===false?(e.p?.pos):lineupSlotLabel(e)]??7;
+ return Number(a.starter===false)-Number(b.starter===false)||rank(a)-rank(b)||(a.order??0)-(b.order??0)||String(a.p?.name||'').localeCompare(String(b.p?.name||''));
+}
+function teamLineupEntries(team,week,includeRoster=false){
+ if(!team)return [];
+ const h=team.history?.find(h=>Number(h.week)===Number(week)),active=Number(week)===Number(model.currentWeek||model.liveWeek||currentWeek);
  let rows=(h?.lineup?.length?h.lineup:active?team.currentLineup||[]:[]).map(r=>({...r,p:model.players[r.id]})).filter(r=>r.p);
  if(!rows.length)rows=Object.entries(h?.starters||{}).map(([id,points])=>({id,p:model.players[id],points,starter:true})).filter(r=>r.p);
- rows=rows.filter(r=>r.starter!==false);
- return `<section class="home-matchup-team"><div class="matchup-roster-scroll" aria-label="${esc(teamName(team))} week ${week} starters">${rows.length?rows.map(r=>`<button type="button" class="matchup-roster-player" data-matchup-player="${esc(r.id)}"><span>${esc(r.p.pos)}</span><b title="${esc(r.p.name)}">${esc(r.p.name)}</b><strong>${nfmt(number(r.points)??number(r.p.scores?.[week]),1)}</strong></button>`).join(''):'<p class="lab-note">Starter scores unavailable.</p>'}</div></section>`;
+ if(includeRoster){const known=new Set(rows.map(r=>String(r.id)));for(const id of team.playerIds||[])if(!known.has(String(id))&&model.players[id])rows.push({id,p:model.players[id],starter:false});}
+ return rows.sort(compareLineupEntries);
+}
+function homeMatchupRoster(team,week){
+ if(!team)return '<p class="lab-note">No opponent.</p>';
+ const rows=teamLineupEntries(team,week).filter(r=>r.starter!==false);
+ return `<section class="home-matchup-team"><div class="matchup-roster-scroll" aria-label="${esc(teamName(team))} week ${week} starters">${rows.length?rows.map(r=>`<button type="button" class="matchup-roster-player" data-matchup-player="${esc(r.id)}"><span>${esc(lineupSlotLabel(r))}</span><b title="${esc(r.p.name)}">${esc(r.p.name)}</b><strong>${nfmt(number(r.points)??number(r.p.scores?.[week]),1)}</strong></button>`).join(''):'<p class="lab-note">Starter scores unavailable.</p>'}</div></section>`;
 }
 el('matchup-panel').addEventListener('click',event=>{const player=event.target.closest('[data-matchup-player]');if(player){event.stopPropagation();openExplorer('profile',player.dataset.matchupPlayer);}});
 
@@ -225,7 +243,7 @@ function updateWeekMenu(team){
  const weeks=availableActiveWeeks(team);
  if(!weeks.includes(Number(currentWeek)))currentWeek=weeks.at(-1)||1;
  for(const id of ['header-current-week','week-select']){
-  const picker=el(id);picker.replaceChildren(...weeks.map(w=>new Option(id==='header-current-week'?'Week '+w:String(w).padStart(2,'0'),String(w))));
+  const picker=el(id);picker.replaceChildren(...weeks.map(w=>new Option(String(w).padStart(2,'0'),String(w))));
   if(!weeks.length)picker.add(new Option('—','1'));
   picker.value=String(currentWeek);
  }

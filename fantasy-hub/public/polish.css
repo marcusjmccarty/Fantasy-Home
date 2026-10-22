@@ -86,3 +86,42 @@ button.strategy-metric.stat-help-trigger,.strategy-metric,.lab-stat{background:#
 .home-trade-controls{gap:12px}.home-trade-controls>label{font-size:12px;color:#3b6c97}.home-trade-controls>label:last-child{color:#a45e61}.home-trade-controls select{font-size:14px;min-height:33px}.home-trade-dashboard{display:block;padding:7px 0}.home-trade-dashboard .trade-favor-title{font-size:11px}.home-trade-dashboard .trade-favor-labels{font-size:20px;margin:5px 0}.home-trade-dashboard .trade-favor-labels>b:first-child{color:#3b6c97}.home-trade-dashboard .trade-favor-labels>b:last-child{color:#a45e61}.home-trade-dashboard .trade-favor-track{height:20px;background:#b9696d;border:1px solid #8c8e84}.home-trade-dashboard .trade-favor-track i{background:#4f82b2}.home-trade-dashboard .trade-favor-track.is-empty{opacity:.65}
 .home-trade-builder{grid-template-columns:minmax(0,1fr) 96px minmax(0,1fr);gap:9px;margin:0}.home-trade-side>label{border-color:#4f82b2;padding-top:7px}.home-trade-side:last-child>label{border-color:#b9696d}.home-trade-total{font-size:30px;margin:0 0 4px}.home-trade-side select{font-size:13px;min-height:33px}.home-trade-difference{padding-top:10px;font-size:11px}.home-trade-difference b{font-size:24px;margin-top:5px}.home-trade-difference .home-balance-label{display:block;margin-top:11px;font-size:10px;color:#60705d}.home-trade-difference>strong{display:block;margin-top:3px;font:bold 23px 'Courier New',monospace;color:#416e51}.home-trade-picks{min-height:24px;max-height:64px;margin-top:6px}.home-trade-picks>span{font-size:11px;padding:3px 0}.home-trade-picks button{font-size:12px}.home-trade-footer{margin-top:0}.home-trade-footer>span{font-size:11px}.home-trade-footer button{font-size:12px;min-height:28px}
 @media(max-width:650px){#header-current-week{font-size:16px;min-height:30px}.home-trade-builder{grid-template-columns:minmax(0,1fr) 78px minmax(0,1fr);gap:7px}.home-trade-total{font-size:27px}.home-trade-difference b{font-size:21px}.home-trade-controls select,.home-trade-side select{font-size:12px}.matchup-score-club{font-size:11px}.compact-range button.strategy-metric.stat-help-trigger>strong,.home-usage-metrics button.strategy-metric.stat-help-trigger>strong,.profile-figures button.strategy-metric.stat-help-trigger>strong{font-size:23px}.strategy-window .window-topline>b{font-size:13px}}
+/* v9.14 — shared subtitle scale, edge-aligned rosters and clear report routes. */
+:root{--report-subtitle:700 13px/1.35 'Courier New',monospace}
+#explore-content h4,#explore-content .franchise-week-title h4,#explore-content .strategy-section-label,#explore-content .share-history-panel .window-topline{font:var(--report-subtitle);letter-spacing:.2px}
+#explore-content .franchise-week-picker{font:inherit;font-size:13px;min-height:26px}
+.matchup-window>.title-bar{background:#d5d5cd;color:#252b28;border-color:#3e403b}
+.matchup-window .matchup-banner-week{color:inherit}
+.matchup-window>.win-inner{padding:2px 0 0;gap:0}
+.matchup-window .matchup-panel{border:0;padding:0;background:#fff}
+.matchup-window .matchup-original-score{padding:5px 9px}
+.matchup-window .matchup-score-club{margin-bottom:2px}
+.matchup-window #matchup-comment:empty{display:none}
+.matchup-roster-player{grid-template-columns:35px minmax(0,1fr) 41px;padding-left:8px;padding-right:8px}
+#header-current-week{min-width:64px;width:auto}
+.home-position-metrics{gap:6px;margin:7px 0 3px}
+.home-position-metrics button.strategy-metric.stat-help-trigger{background:#fff;min-height:76px;padding:7px}
+.home-position-metrics button.strategy-metric.stat-help-trigger>span{min-height:0;font-size:11px}
+.home-position-metrics button.strategy-metric.stat-help-trigger>strong{font-size:clamp(18px,1.65vw,26px);white-space:nowrap}
+.positions-window .position-chart{margin-top:8px;gap:9px}
+.meter-track,.position-focus-track{position:relative;overflow:hidden}
+.meter-track:after,.position-focus-track:after{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(90deg,transparent 0,transparent 5px,#39493b18 5px,#39493b18 6px)}
+.graph-home-stats button,.graph-screen .graph-stat-chip,.lab-stat{background:#fff}
+.explore-history-controls .explore-back{width:24px;height:24px;min-width:24px;min-height:24px;font-size:16px}
+#explore-close{height:26px;min-height:26px;min-width:70px;padding:2px 7px;font-size:11px;line-height:20px}
+.report-link{cursor:pointer}.report-link:focus-visible,[data-trade-club]:focus-visible,[data-trade-player]:focus-visible{outline:2px solid #4a7b9d;outline-offset:2px}
+.report-link:hover>h4,.strategy-opponent.report-link:hover>.strategy-section-title h4{text-decoration:underline;text-decoration-color:#8c9e95;text-underline-offset:3px}
+.strategy-method.lab-panel{background:#fff;border:1px solid #b7c5b6}
+[data-trade-club]{cursor:pointer}.trade-side-heading:hover>strong{text-decoration:underline;text-underline-offset:3px}
+.trade-desk .trade-player{grid-template-columns:18px 48px minmax(0,1fr) 30px 45px}
+.home-trade-dashboard{display:grid;grid-template-columns:88px minmax(0,1fr);gap:12px;align-items:center;padding:4px 0}
+.home-trade-dashboard .trade-balance-ring{width:88px;height:88px;padding:5px;flex-shrink:0}
+.home-trade-dashboard .trade-balance-ring b{font-size:24px}
+.trade-balance-ring b.balance-empty{font:bold 11px/1.3 'Courier New',monospace;max-width:60px;white-space:normal}
+.home-trade-dashboard .trade-balance-ring small{font-size:9px}
+.home-trade-dashboard .trade-favor{min-width:0;width:100%}
+.home-trade-dashboard .trade-favor-labels{font-size:20px}
+.home-trade-builder{grid-template-columns:minmax(0,1fr) 78px minmax(0,1fr);gap:8px}
+.home-trade-difference>small{display:block;font:10px/1.4 'Courier New',monospace;margin-top:9px;color:#66705f}
+.home-trade-picks:empty{min-height:0;margin:0}
+@media(max-width:650px){.trade-desk .trade-player{grid-template-columns:17px 42px minmax(0,1fr) 25px 37px}.home-trade-dashboard{gap:9px;grid-template-columns:80px minmax(0,1fr)}.home-trade-dashboard .trade-balance-ring{width:80px;height:80px}.home-position-metrics button.strategy-metric.stat-help-trigger>strong{font-size:18px}.explore-title-bar .explore-history-controls{width:50px}.explore-title-bar b#explore-title{padding-left:55px}}
