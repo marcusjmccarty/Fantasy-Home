@@ -71,6 +71,6 @@ test('a disconnected public-read caller does not poison a follower or a later re
     const url='https://hub.example/api/nfl/game-status?season=2032&week=7';
     const owner=mf.dispatchFetch(url,{signal:controller.signal}).catch(()=>null);
     await ready;const follower=mf.dispatchFetch(url);await new Promise(r=>setTimeout(r,30));controller.abort();release();
-    await owner;assert.equal((await follower).status,200);assert.equal((await mf.dispatchFetch(url)).status,200);assert.equal(calls,1);
+    assert.equal(await owner,null);assert.equal((await follower).status,200);assert.equal((await mf.dispatchFetch(url)).status,200);assert.equal(calls,1);
   }finally{controller.abort();release();await mf.dispose();}
 });

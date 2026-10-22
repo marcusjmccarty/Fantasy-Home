@@ -65,3 +65,16 @@ test('method and cross-origin checks reject requests before public loading',asyn
   assert.equal(calls,0);
  }finally{globalThis.fetch=original}
 });
+test('public overview keys distinguish both player ID and caller-supplied display name',async()=>{
+ const worker=await fresh(),original=globalThis.fetch;let calls=0;
+ globalThis.fetch=async url=>{
+  calls++;await new Promise(r=>setImmediate(r));const id=String(url).match(/athletes\/(\d+)/)[1];
+  return Response.json({athlete:{id},news:[{headline:'Fixture article '+id,athleteId:id,links:{web:{href:'https://espn.com/story/'+id}}}]});
+ };
+ try{
+  const pairs=[['1','First Name'],['1','First Name'],['1','Other Name'],['2','First Name']];
+  const responses=await Promise.all(pairs.map(([id,name])=>worker.fetch(req('/api/espn/player-overview?'+new URLSearchParams({playerId:id,playerName:name})),{})));
+  const bodies=await Promise.all(responses.map(r=>r.json()));assert.equal(calls,3);
+  assert.deepEqual(bodies.map(b=>[b.playerId,b.playerName]),pairs);
+ }finally{globalThis.fetch=original}
+});
