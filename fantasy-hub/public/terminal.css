@@ -21,12 +21,12 @@ table,td,th,strong,b,.chart-val,.hero-figure,svg text{font-variant-numeric:tabul
 .dialog p,.dialog-note,.modal p,dialog p,.outlook-text,.strategy-copy,.exhibition-copy{font-family:var(--sans);font-size:13px;line-height:1.5;max-width:72ch}
 
 /* ---------- Legibility floors ---------- */
-.chart-val{font:600 10px var(--mono);position:relative;z-index:2;padding-bottom:3px;line-height:1.2;text-shadow:0 0 2px #fff,0 0 2px #fff,1px 0 0 #fff,-1px 0 0 #fff,0 1px 0 #fff,0 -1px 0 #fff}
-.bar-label{font-size:10px}
-.matchup-roster-player strong small{font-size:8px;letter-spacing:.4px;opacity:.75}
+.chart-val{font:600 11.5px var(--mono);position:relative;z-index:2;padding-bottom:3px;line-height:1.2;text-shadow:0 0 2px #fff,0 0 2px #fff,1px 0 0 #fff,-1px 0 0 #fff,0 1px 0 #fff,0 -1px 0 #fff}
+.bar-label{font-size:11.5px}
+.matchup-roster-player strong small{font-size:11px;letter-spacing:.4px;opacity:.75}
 .tiny-label,.section-label,.window-topline,.tiny-caption,.muted-note{color:#555852}
-.utility-bar{font-size:11px}
-.utility-right button{font-size:11px}
+.utility-bar{font-size:12px}
+.utility-right button{font-size:12px}
 .title-bar h2{letter-spacing:.9px}
 
 /* Keyboard focus is always visible and always the same. */
@@ -41,14 +41,14 @@ table,td,th,strong,b,.chart-val,.hero-figure,svg text{font-variant-numeric:tabul
 
 /* ---------- Header: Current week reads like its neighbours ---------- */
 .team-header-stats>.header-week-control{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:4px;align-self:auto}
-.header-week-control label.tiny-label{font:10px var(--mono);letter-spacing:.6px;color:#555852;text-transform:uppercase;line-height:1.2}
+.header-week-control label.tiny-label{font:11.5px var(--mono);letter-spacing:.6px;color:#555852;text-transform:uppercase;line-height:1.2}
 #header-current-week{font:bold 19px/1 var(--mono);color:var(--ink);padding:1px 22px 1px 6px;min-height:30px;border:1px solid #8b8e86;background-color:var(--white)}
 
 /* ---------- Report bar: one navigation for the dashboard and every report ---------- */
 .workspace-navigation{position:sticky;top:0;z-index:30;margin:0;padding:8px 12px 0;background:var(--paper);border-bottom:1px solid var(--ink);box-shadow:0 1px 0 #fff8}
 .report-bar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px 8px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:#9a9d95 transparent}
 .report-group{display:flex;flex-direction:column;gap:3px;flex:0 0 auto;min-width:0}
-.report-group-label{font:600 9.5px/1 var(--mono);letter-spacing:1px;text-transform:uppercase;color:#5d605a;padding-left:2px}
+.report-group-label{font:600 11.5px/1 var(--mono);letter-spacing:1px;text-transform:uppercase;color:#5d605a;padding-left:2px}
 .report-group-items{display:flex;gap:2px}
 .report-bar button{position:relative;flex:0 0 auto;white-space:nowrap;margin:0 0 -1px;padding:8px 8px 9px;border:1px solid #868a81;border-bottom-color:var(--ink);background:#d6d7cf;color:#2d322e;font:500 12px/1 var(--mono);letter-spacing:.1px;cursor:pointer;min-height:32px}
 .report-bar button:hover{background:#eeefe8;color:var(--ink)}
@@ -84,17 +84,17 @@ body[data-layout=tabbed] .explore-dialog[open]{scroll-margin-top:72px}
 .width-control{position:relative}
 .page-width-panel{position:fixed;z-index:200;width:260px;padding:12px;background:var(--panel);color:var(--ink);border:1px solid var(--ink);box-shadow:3px 3px 0 #2b2d2a;font:12px var(--mono);white-space:normal}
 .page-width-panel[hidden]{display:none}
-.page-width-heading{font:700 11px var(--mono);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px}
+.page-width-heading{font:700 12px var(--mono);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px}
 .page-width-row{display:flex;align-items:center;gap:8px}
 .page-width-panel #page-width{flex:1;width:auto;min-width:0;height:24px}
 .page-width-panel #page-width::-webkit-slider-runnable-track{height:4px;background:#8c968a}
 .page-width-panel #page-width::-webkit-slider-thumb{width:14px;height:20px;margin-top:-8px;background:var(--white);border:1px solid var(--ink)}
 .page-width-panel #page-width-value{width:52px;min-width:52px;height:28px;font-size:13px}
 .page-width-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:10px}
-.page-width-presets button{padding:6px 0;border:1px solid #868a81;background:#eceee6;font:600 11px var(--mono);cursor:pointer;min-height:28px}
+.page-width-presets button{padding:6px 0;border:1px solid #868a81;background:#eceee6;font:600 12px var(--mono);cursor:pointer;min-height:28px}
 .page-width-presets button:hover{background:#fff}
 .page-width-presets button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
-.page-width-hint{margin:10px 0 0;font:11px/1.4 var(--sans);color:#4f534d}
+.page-width-hint{margin:10px 0 0;font:12px/1.4 var(--sans);color:#4f534d}
 #page-width-readout{font-variant-numeric:tabular-nums}
 
 /* ---------- Dialogs ---------- */
@@ -116,7 +116,7 @@ dialog::backdrop{background:rgba(28,30,29,.45)}
   .team-header-stats>div:first-child{padding-left:0;border-left:0}
   .team-header-stats .tiny-label{white-space:nowrap}
   /* Long player names wrap to two lines instead of losing their surname. */
-  .matchup-roster-player b{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.15;font-size:11px}
+  .matchup-roster-player b{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.15;font-size:12px}
 }
 
 @media (prefers-reduced-motion:reduce){
@@ -128,4 +128,39 @@ dialog::backdrop{background:rgba(28,30,29,.45)}
 .home-graph-controls{grid-template-columns:minmax(64px,auto) minmax(0,1fr) minmax(0,1fr) auto auto}
 
 /* Scatter labels sit on a paper-coloured halo so trend and grid lines never strike through names. */
-.lab-label,.graph-home-label{paint-order:stroke;stroke:#fff;stroke-width:5px;stroke-linejoin:round}
+svg text.lab-label,svg text.graph-home-label{paint-order:stroke fill;stroke:#fff;stroke-width:5px;stroke-linejoin:round;stroke-opacity:.95}
+.graph-home-svg text.graph-home-label{font-weight:600}
+
+/* ---------- Accessibility pass (WCAG 2.2 AA) ---------- */
+/* Contrast: every small grey label reaches at least 4.5:1 on its actual background. */
+.position-player-place{color:#5f6b65}
+.matchup-roster-player strong small{color:#4f534d;font-size:10px}
+.explore-footer,#explore-source{color:#3f4443}
+.standings-category h4 small,.summary-home-grid span{color:#55605b}
+.positive-text{color:#1f6b4c}
+.graph-screen small,.lab-stat small,.lab-stats small{color:#55605b}
+/* Weekly report values drawn over bars keep a white halo. */
+svg text.weekly-data-label{paint-order:stroke fill;stroke:#fff;stroke-width:3px;stroke-linejoin:round}
+
+/* Target size: interactive controls are at least 24×24 CSS px. */
+.title-bar .chrome{min-width:24px;min-height:24px;width:24px;height:24px;display:inline-grid;place-items:center;padding:0;font-size:14px;line-height:1}
+.title-bar .chrome:hover{background:#fff;outline:1px solid var(--ink)}
+#load-help,.text-button,.share-history-link{min-height:24px;padding:4px 6px}
+.dialog-x{width:28px;height:28px;line-height:24px}
+#refresh-button,.utility-right button{min-height:26px}
+.win select,.roster-tools select,.title-bar select{min-height:26px}
+#shortcuts-enabled,input[type=checkbox]{min-width:18px;min-height:18px}
+
+/* Reflow at 320px: header stats fall into two columns. */
+@media (max-width:480px){
+  .team-header-stats{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:12px}
+  .team-header-stats>div:nth-child(3){padding-left:0;border-left:0}
+}
+
+/* Forced colours (Windows High Contrast): keep data marks and state visible. */
+@media (forced-colors:active){
+  .chart-bar,.output-bar span,.position-bar span,.share-bar span,[class*=-bar]>span,.status-dot,.range-track{forced-color-adjust:none}
+  .report-bar button[aria-current=page]{border:2px solid Highlight;color:HighlightText;background:Highlight}
+  .win,.explore-dialog{border:1px solid CanvasText}
+}
+.dossiers-title{margin:0;font:700 12px var(--mono);letter-spacing:.8px}

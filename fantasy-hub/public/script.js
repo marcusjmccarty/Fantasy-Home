@@ -172,8 +172,9 @@ function drawWeekly(team){
   const avg=sum(data.map(x=>x.points))/data.length;
   const max=Math.max(1,...data.map(x=>x.points),avg)*1.15;
   const height=130;
+  root.setAttribute('role','group');root.setAttribute('aria-label',`Weekly team points, weeks ${data[0].week} to ${data[data.length-1].week}. Season average ${nfmt(avg,1)}. Best ${nfmt(Math.max(...data.map(x=>x.points)),1)}, lowest ${nfmt(Math.min(...data.map(x=>x.points)),1)}.`);
   root.innerHTML=`<div class="chart-average" style="--avg-height:${(avg/max*height).toFixed(1)}px"></div>`+
-    data.map((x,i)=>`<div class="chart-col" title="Week ${x.week}: ${nfmt(x.points,2)} pts"><span class="chart-val">${nfmt(x.points,0)}</span><div class="chart-bar" data-home-week="${x.week}" role="button" tabindex="0" aria-label="Open week ${x.week} starting lineup" style="height:${Math.max(1,x.points/max*height).toFixed(1)}px"></div><span class="bar-label">${esc('W'+x.week)}</span></div>`).join('');
+    data.map((x,i)=>`<div class="chart-col" title="Week ${x.week}: ${nfmt(x.points,2)} pts"><span class="chart-val">${nfmt(x.points,0)}</span><div class="chart-bar" data-home-week="${x.week}" role="button" tabindex="0" aria-label="Week ${x.week}: ${nfmt(x.points,1)} points, ${x.points>=avg?'above':'below'} the ${nfmt(avg,1)} season average. Open starting lineup." style="height:${Math.max(1,x.points/max*height).toFixed(1)}px"></div><span class="bar-label">${esc('W'+x.week)}</span></div>`).join('');
 }
 
 function drawWeeklyHomeLedger(team){

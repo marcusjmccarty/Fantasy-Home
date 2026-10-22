@@ -112,7 +112,7 @@ function togglePlayerRanking(index){
  }
  el('explore-content').querySelectorAll('.player-rank-trigger').forEach(b=>b.setAttribute('aria-expanded',String(!host.hidden&&b.dataset.playerRank===host.dataset.rank)));
 }
-function expandTable(headers,rows,cls=''){return `<div class="lab-table-scroll"><table class="lab-table ${cls}"><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')||`<tr><td colspan="${headers.length}" class="empty-chart">DATA NOT SUPPLIED BY THIS PROVIDER</td></tr>`}</tbody></table></div>`}
+function expandTable(headers,rows,cls=''){return `<div class="lab-table-scroll"><table class="lab-table ${cls}"><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')||`<tr><td colspan="${headers.length}" class="empty-chart">No matching rows. Clear the search or filters — or this league’s provider doesn’t supply this data.</td></tr>`}</tbody></table></div>`}
 function trendBars(items,colorFn=()=>COLORS.QB,maximum=null){
  const max=maximum||Math.max(1,...items.map(v=>Math.max(0,labNum(v.v)||0)));
  return `<div class="lab-histogram ${items.length>12?'dense-weeks':''}" style="--week-count:${items.length}">${items.map((v,i)=>`<div class="lab-hist-col" title="${esc(v.label)} · ${labFormat(v.v)}"><strong>${labFormat(v.v,0)}</strong><button type="button" class="lab-hist-bar ${v.week?'player-week-bar':''}" ${v.week?`data-player-week="${v.week}" aria-label="Open Week ${v.week} starter contributions"`: 'disabled'} style="height:${Math.max(2,(labNum(v.v)||0)/max*100)}%;background:${colorFn(v,i)}"></button><small>${esc(v.short??v.label)}</small></div>`).join('')}</div>`;

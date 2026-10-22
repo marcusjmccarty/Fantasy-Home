@@ -47,8 +47,12 @@ const workspaceButtons=()=>[...workspaceTabs.querySelectorAll('[data-workspace]'
 function playerFor(type){
   return PLAYER_REPORTS.includes(type)?(XL.player||currentPlayerId||rowsFor(getTeam())[0]?.id):null;
 }
+const BASE_TITLE=document.title;
 function markCurrent(view){
   workspace.view=view;
+  // Each view has its own page title, so tabs, history and screen readers say where you are.
+  const label=WORKSPACE_GROUPS.flatMap(([,items])=>items).find(([id])=>id===view)?.[1];
+  document.title=view==='dashboard'||!label?BASE_TITLE:`${label} — ${BASE_TITLE}`;
   for(const button of workspaceButtons()){
     const current=button.dataset.workspace===view;
     if(current)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
