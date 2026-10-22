@@ -25,7 +25,7 @@ test('home matchup retains all starters, excludes bench and preserves missing sc
  const c=vm.createContext({model:{players,currentWeek:6},currentWeek:6,esc:String,teamName:t=>t.name,number:n=>typeof n==='number'?n:null,nfmt:n=>n==null?'—':String(n)});
  vm.runInContext(section(read('script.js'),'function lineupSlotLabel(',"el('matchup-panel').addEventListener"),c);
  c.team={name:'Test',wins:3,losses:2,history:[{week:1,lineup:[{id:'b',starter:false,points:20},{id:'a',starter:true,points:0},{id:'c',starter:true,points:null}]}]};
- const html=vm.runInContext('homeMatchupRoster(team,1)',c);assert.match(html,/Starter A/);assert.match(html,/Starter C/);assert.ok(!html.includes('Bench B'));assert.match(html,/<strong>0<\/strong>/);assert.match(html,/<strong>—<\/strong>/);
+ const html=vm.runInContext('homeMatchupRoster(team,1)',c);assert.match(html,/Starter A/);assert.match(html,/Starter C/);assert.ok(!html.includes('Bench B'));assert.match(html,/>0<small>FINAL<\/small>/);assert.match(html,/>—<small>FINAL<\/small>/);
 });
 
 test('active week selectors stay synchronized and reject unavailable weeks',()=>{
@@ -34,7 +34,7 @@ test('active week selectors stay synchronized and reject unavailable weeks',()=>
  vm.runInContext(section(read('script.js'),'function availableActiveWeeks(','function drawMatchup('),c);vm.runInContext('var updateUI=()=>updateWeekMenu(getTeam());updateUI();setActiveWeek(2)',c);
  assert.equal(el('header-current-week').value,'2');assert.equal(el('week-select').value,'2');assert.equal(vm.runInContext('currentWeek',c),2);
  vm.runInContext('setActiveWeek(18)',c);assert.equal(vm.runInContext('currentWeek',c),2);
- assert.ok(el('week-select').options.some(o=>o.value==='7'));assert.equal(el('header-current-week').options.find(o=>o.value==='7').text,'07');
+ assert.ok(el('week-select').options.some(o=>o.value==='7'));assert.equal(el('header-current-week').options.find(o=>o.value==='7').text,'7');
 });
 
 test('home lineup respects actual slots, keeps FLEX after TE and D/ST before K',()=>{

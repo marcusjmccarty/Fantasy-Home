@@ -71,6 +71,7 @@ function makeDemo(){
       return id;
     });
   }
+  for(const player of Object.values(players))player.projections=Object.fromEntries(Array.from({length:7},(_,i)=>{const week=i+1,prior=Object.entries(player.scores).filter(([w])=>Number(w)<week).map(([,v])=>v);return [week,prior.length?Math.round(sum(prior)/prior.length*10)/10:null];}));
   // Recorded exhibition lineups, including benches, exercise the matchup lists.
   for(const [index,team] of teams.entries())for(const history of team.history){
     history.lineup=team.playerIds.map((id,playerIndex)=>{const starter=index===0?id in history.starters:playerIndex<9,slot=starter?(index===0?{QB:0,RB:2,WR:4,TE:6,DEF:16,K:17}[players[id].pos]:[0,2,2,4,4,6,23,17,16][playerIndex]):20;return {id,slot,starter,points:players[id].scores[history.week]};});
@@ -229,10 +230,22 @@ function teamLineupEntries(team,week,includeRoster=false){
  if(includeRoster){const known=new Set(rows.map(r=>String(r.id)));for(const id of team.playerIds||[])if(!known.has(String(id))&&model.players[id])rows.push({id,p:model.players[id],starter:false});}
  return rows.sort(compareLineupEntries);
 }
+// A zero is not proof that a game has happened. Never borrow another week's score.
+function matchupPlayerScore(entry,week,state=null,providerWeek=Number(model.currentWeek||model.liveWeek||0)){
+ const p=entry.p||{},actual=number(entry.points)??number(p.scores?.[week]);
+ const projected=number(entry.projected)??number(p.projections?.[week])??(week===providerWeek?number(p.espnProj):null);
+ if(week<providerWeek||(!providerWeek&&actual!==null))return {points:actual,basis:'FINAL',projected:false};
+ if(state==='post')return {points:actual,basis:'FINAL',projected:false};
+ if(state==='in')return {points:actual,basis:'LIVE',projected:false};
+ if(state==='pre'||week>providerWeek)return {points:projected,basis:'PROJ',projected:true};
+ // A nonzero current-week actual is evidence of play; zero needs game status.
+ if(actual!==null&&actual!==0)return {points:actual,basis:'FPTS',projected:false};
+ return {points:projected,basis:'PROJ',projected:true};
+}
 function homeMatchupRoster(team,week){
  if(!team)return '<p class="lab-note">No opponent.</p>';
  const rows=teamLineupEntries(team,week).filter(r=>r.starter!==false);
- return `<section class="home-matchup-team"><div class="matchup-roster-scroll" aria-label="${esc(teamName(team))} week ${week} starters">${rows.length?rows.map(r=>`<button type="button" class="matchup-roster-player" data-matchup-player="${esc(r.id)}"><span>${esc(lineupSlotLabel(r))}</span><b title="${esc(r.p.name)}">${esc(r.p.name)}</b><strong>${nfmt(number(r.points)??number(r.p.scores?.[week]),1)}</strong></button>`).join(''):'<p class="lab-note">Starter scores unavailable.</p>'}</div></section>`;
+ return `<section class="home-matchup-team"><div class="matchup-roster-scroll" aria-label="${esc(teamName(team))} week ${week} starters">${rows.length?rows.map(r=>{const score=matchupPlayerScore(r,week,typeof nflGameState==='function'?nflGameState(week,r.p):null);return `<button type="button" class="matchup-roster-player" data-matchup-player="${esc(r.id)}"><span>${esc(lineupSlotLabel(r))}</span><b title="${esc(r.p.name)}">${esc(r.p.name)}</b><strong title="${score.basis}" class="${score.projected?'score-projection':''}">${nfmt(score.points,1)}<small>${score.basis}</small></strong></button>`;}).join(''):'<p class="lab-note">Starter scores unavailable.</p>'}</div></section>`;
 }
 el('matchup-panel').addEventListener('click',event=>{const player=event.target.closest('[data-matchup-player]');if(player){event.stopPropagation();openExplorer('profile',player.dataset.matchupPlayer);}});
 
@@ -243,7 +256,7 @@ function updateWeekMenu(team){
  const weeks=availableActiveWeeks(team);
  if(!weeks.includes(Number(currentWeek)))currentWeek=weeks.at(-1)||1;
  for(const id of ['header-current-week','week-select']){
-  const picker=el(id);picker.replaceChildren(...weeks.map(w=>new Option(String(w).padStart(2,'0'),String(w))));
+  const picker=el(id);picker.replaceChildren(...weeks.map(w=>new Option(String(w),String(w))));
   if(!weeks.length)picker.add(new Option('—','1'));
   picker.value=String(currentWeek);
  }
@@ -251,7 +264,7 @@ function updateWeekMenu(team){
 function setActiveWeek(value){
  const week=Number(value);if(!availableActiveWeeks(getTeam()).includes(week))return;
  currentWeek=week;updateUI();
- if(typeof XL!=='undefined'&&XL.open){if(['matchup','summary'].includes(XL.open))XL.viewWeek=week;renderExplorer();}
+ if(typeof XL!=='undefined'&&XL.open){if(['matchup','summary'].includes(XL.open))XL.viewWeek=week;if(XL.open==='summary')XL.franchiseWeek=week;renderExplorer();}
 }
 
 function drawMatchup(team){
@@ -265,12 +278,14 @@ function drawMatchup(team){
   const ownOfficial=number(current.points),otherOfficial=number(current.oppPoints);
   const calculated=typeof weeklyLineupData==='function'?weeklyLineupData(team,week):null;
   const opposite=opponent&&typeof weeklyLineupData==='function'?weeklyLineupData(opponent,week):null;
-  const own=calculated?.officialDisplay??ownOfficial??calculated?.computedActual??null;
-  const other=opposite?.officialDisplay??otherOfficial??opposite?.computedActual??null;
+  const provisional=Number(model.currentWeek||model.liveWeek)===week;
+  const own=provisional?calculated?.matchupTotal??null:calculated?.officialDisplay??ownOfficial??calculated?.computedActual??null;
+  const other=provisional?opposite?.matchupTotal??null:opposite?.officialDisplay??otherOfficial??opposite?.computedActual??null;
   const result=own===null?'NOT STARTED':other===null?'NO OPPONENT':own===other?'TIE':own>other?'VICTORY':'DEFEAT';
-  const provisional=Number(model.currentWeek||model.liveWeek)===Number(current.week);
-  el('matchup-panel').innerHTML=`<div class="matchup-original-score"><div class="matchup-competitors"><div class="matchup-side"><div class="matchup-score-club"><b>${esc(teamName(team))}</b><span>${team.wins}–${team.losses}${team.ties?'–'+team.ties:''}</span></div><strong>${nfmt(own,1)}</strong></div><div class="matchup-divider"><b>VS</b><small>${provisional?'LIVE':result}</small></div><div class="matchup-side right"><div class="matchup-score-club"><b>${esc(opponent?teamName(opponent):'BYE')}</b><span>${opponent?opponent.wins+'–'+opponent.losses:'—'}</span></div><strong>${nfmt(other,1)}</strong></div></div></div><div class="matchup-roster-pair">${homeMatchupRoster(team,week)}${homeMatchupRoster(opponent,week)}</div>`;
+
+  el('matchup-panel').innerHTML=`<div class="matchup-original-score"><div class="matchup-competitors"><div class="matchup-side"><div class="matchup-score-club"><b>${esc(teamName(team))}</b><span>${team.wins}–${team.losses}${team.ties?'–'+team.ties:''}</span></div><strong>${nfmt(own,1)}</strong></div><div class="matchup-divider"><b>VS</b><small>${provisional?'ACT + PROJ':result}</small></div><div class="matchup-side right"><div class="matchup-score-club"><b>${esc(opponent?teamName(opponent):'BYE')}</b><span>${opponent?opponent.wins+'–'+opponent.losses:'—'}</span></div><strong>${nfmt(other,1)}</strong></div></div></div><div class="matchup-roster-pair">${homeMatchupRoster(team,week)}${homeMatchupRoster(opponent,week)}</div>`;
   el('matchup-comment').textContent='';
+  if(provisional&&typeof fetchNFLWeekState==='function')void fetchNFLWeekState(week);
 
 }
 
@@ -534,23 +549,24 @@ function espnScoring(settings){const items=settings?.scoringSettings?.scoringIte
 function makeEspnPlayer(entry,current){
  const pool=entry?.playerPoolEntry||{},p=pool.player||{},pid=String(entry?.playerId||pool.id||p.id||'');if(!pid)return null;
  const stats=[...(p.stats||[]),...(pool.stats||[])];
- const actualSeason=stats.find(s=>Number(s.statTypeId ?? s.statSourceId)===0&&Number(s.scoringPeriodId)===0&&espnN(s.appliedTotal)!==null);
- const projection=stats.find(s=>(Number(s.statTypeId ?? s.statSourceId)===1||Number(s.statTypeId ?? s.statSourceId)===2)&&Number(s.scoringPeriodId)===Number(current)&&espnN(s.appliedTotal)!==null);
+ const actualSeason=stats.find(s=>Number(s.statSourceId ?? s.statTypeId)===0&&Number(s.scoringPeriodId)===0&&espnN(s.appliedTotal)!==null);
+ const projection=stats.find(s=>(Number(s.statSourceId ?? s.statTypeId)===1||Number(s.statSourceId ?? s.statTypeId)===2)&&Number(s.scoringPeriodId)===Number(current)&&espnN(s.appliedTotal)!==null);
  const availability=p.injuryStatus|| (p.injured?'INJURED':null) || entry?.status || 'ACTIVE';
- return espnPlayer({id:pid,espnId:pid,name:p.fullName||[p.firstName,p.lastName].filter(Boolean).join(' ')||`ESPN PLAYER ${pid}`,pos:POS[p.defaultPositionId]||POS[entry.lineupSlotId]||'?',nfl:NFL[p.proTeamId]||'FA',status:availability,eligibleSlots:Array.isArray(p.eligibleSlots)?p.eligibleSlots.map(Number):[],starter:![20,21].includes(Number(entry.lineupSlotId)),scores:{},statlines:{},projections:{},seasonTotal:espnN(actualSeason?.appliedTotal),gamesPlayed:espnN(p.gamesPlayed??p.statistics?.gamesPlayed),espnProj:espnN(projection?.appliedTotal),owned:espnN(p.ownership?.percentOwned??pool.percentOwned),started:espnN(p.ownership?.percentStarted??pool.percentStarted)});
+ return espnPlayer({id:pid,espnId:pid,name:p.fullName||[p.firstName,p.lastName].filter(Boolean).join(' ')||`ESPN PLAYER ${pid}`,pos:POS[p.defaultPositionId]||POS[entry.lineupSlotId]||'?',nfl:NFL[p.proTeamId]||'FA',status:availability,eligibleSlots:Array.isArray(p.eligibleSlots)?p.eligibleSlots.map(Number):[],starter:![20,21].includes(Number(entry.lineupSlotId)),scores:{},statlines:{},projections:{},seasonTotal:espnN(actualSeason?.appliedTotal),gamesPlayed:espnN(p.gamesPlayed??p.statistics?.gamesPlayed),espnProj:espnN(projection?.appliedTotal),projectionWeek:Number(current),byeWeek:espnN(p.proTeamByeWeek??p.byeWeek),owned:espnN(p.ownership?.percentOwned??pool.percentOwned),started:espnN(p.ownership?.percentStarted??pool.percentStarted)});
 }
-function rosterStatsFromEntry(entry,week){const pool=entry?.playerPoolEntry||{},p=pool.player||{};
- const groups=[...(pool.stats||[]),...(p.stats||[])];
- const actual=groups.find(s=>Number(s.statTypeId ?? s.statSourceId)===0&&Number(s.scoringPeriodId)===week&&espnN(s.appliedTotal)!==null);
- const projected=groups.find(s=>(Number(s.statTypeId ?? s.statSourceId)===1||Number(s.statTypeId ?? s.statSourceId)===2)&&Number(s.scoringPeriodId)===week&&espnN(s.appliedTotal)!==null);
- return {actual:espnN(actual?.appliedTotal)??espnN(pool.appliedStatTotal),projected:espnN(projected?.appliedTotal),statline:actual?.stats||actual?.appliedStats||null};
+function rosterStatsFromEntry(entry,week,contextWeek=null){const pool=entry?.playerPoolEntry||{},p=pool.player||{};
+ const groups=[...(pool.stats||[]),...(p.stats||[])],actualGroups=groups.filter(s=>Number(s.statSourceId??s.statTypeId)===0);
+ const actual=actualGroups.find(s=>Number(s.scoringPeriodId)===Number(week));
+ const projected=groups.find(s=>[1,2].includes(Number(s.statSourceId??s.statTypeId))&&Number(s.scoringPeriodId)===Number(week)&&espnN(s.appliedTotal)!==null);
+ const scopedFallback=Number(contextWeek)===Number(week)&&(actual||!actualGroups.length)?espnN(pool.appliedStatTotal):null;
+ return {actual:espnN(actual?.appliedTotal)??scopedFallback,projected:espnN(projected?.appliedTotal),statline:actual?.stats||actual?.appliedStats||null};
 }
 function normalizeESPN(input,leagueId,year){const raw=input.base||{},sourceTeams=raw.teams||[],members=raw.members||[],memberMap=Object.fromEntries(members.map(m=>[String(m.id),m]));
  if(!sourceTeams.length)throw Error('ESPN supplied no rostered teams.');
  const current=Number(raw.scoringPeriodId||raw.status?.currentScoringPeriod?.id||input.boxscores?.at(-1)?.week||1);
  const teams=sourceTeams.map(t=>({id:String(t.id),name:String(t.name||[t.location,t.nickname].filter(Boolean).join(' ')||t.abbrev||`Team ${t.id}`),owner:(t.owners||[]).map(o=>{const m=memberMap[String(o)];return m?.displayName||[m?.firstName,m?.lastName].filter(Boolean).join(' ')||'League manager'}).join(' & ')||'League manager',wins:Number(t.record?.overall?.wins||0),losses:Number(t.record?.overall?.losses||0),ties:Number(t.record?.overall?.ties||0),pf:espnN(t.record?.overall?.pointsFor),pa:espnN(t.record?.overall?.pointsAgainst),playerIds:[],currentLineup:[],history:[]}));
  const byId=Object.fromEntries(teams.map(t=>[t.id,t]));const players=Object.create(null);
- for(const original of sourceTeams){const team=byId[String(original.id)];for(const entry of original.roster?.entries||[]){const p=makeEspnPlayer(entry,current);if(!p)continue;players[p.id]=players[p.id]||p;players[p.id].starter=p.starter;team.playerIds.push(p.id);const currentStats=rosterStatsFromEntry(entry,current);team.currentLineup.push({id:p.id,slot:Number(entry.lineupSlotId),starter:p.starter,points:currentStats.actual,projected:currentStats.projected})}}
+ for(const original of sourceTeams){const team=byId[String(original.id)];for(const entry of original.roster?.entries||[]){const p=makeEspnPlayer(entry,current);if(!p)continue;players[p.id]=players[p.id]||p;players[p.id].starter=p.starter;team.playerIds.push(p.id);const currentStats=rosterStatsFromEntry(entry,current,current);team.currentLineup.push({id:p.id,slot:Number(entry.lineupSlotId),starter:p.starter,points:currentStats.actual,projected:currentStats.projected})}}
  // Full-season matchup scoreboard: only count scoring periods through the current NFL week,
  // and avoid recording scheduled future 0-0 matchups as completed games.
  for(const match of raw.schedule||[]){const w=Number(match.matchupPeriodId||0);if(w<1||w>18||w>current)continue;const home=match.home||{},away=match.away||{};const a=byId[String(home.teamId)],b=byId[String(away.teamId)];if(!a&&!b)continue;const hp=espnN(home.totalPoints)||0,ap=espnN(away.totalPoints)||0;
@@ -572,7 +588,7 @@ function normalizeESPN(input,leagueId,year){const raw=input.base||{},sourceTeams
  for(const entry of entries){const pid=String(entry.playerId||entry.playerPoolEntry?.id||entry.playerPoolEntry?.player?.id||'');if(!pid)continue;
  if(!players[pid]){const p=makeEspnPlayer(entry,current);if(p)players[pid]=p;else continue}
  else{const detail=makeEspnPlayer(entry,current);if(detail){if(players[pid].name.startsWith('ESPN PLAYER'))players[pid].name=detail.name;if(players[pid].pos==='?')players[pid].pos=detail.pos}}
- const scores=rosterStatsFromEntry(entry,Number(week));if(!players[pid].statlines)players[pid].statlines={};if(!players[pid].projections)players[pid].projections={};
+ const scores=rosterStatsFromEntry(entry,Number(week),Number(week));if(!players[pid].statlines)players[pid].statlines={};if(!players[pid].projections)players[pid].projections={};
  if(scores.actual!==null){players[pid].scores[week]=scores.actual;if(![20,21].includes(Number(entry.lineupSlotId)))hist.starters[pid]=scores.actual}
  if(scores.statline)players[pid].statlines[week]=scores.statline;
  if(scores.projected!==null){players[pid].projections[week]=scores.projected;if(Number(week)===current)players[pid].espnProj=scores.projected;}
@@ -582,7 +598,7 @@ function normalizeESPN(input,leagueId,year){const raw=input.base||{},sourceTeams
  }
  }
  // Fallback where ESPN's basic mRoster includes weekly stats, but historical box scores did not.
- for(const original of sourceTeams)for(const entry of original.roster?.entries||[]){const pid=String(entry.playerId||entry.playerPoolEntry?.id||'');const p=players[pid];if(!p)continue;const stats=[...(entry.playerPoolEntry?.player?.stats||[]),...(entry.playerPoolEntry?.stats||[])];for(const s of stats){if(Number(s.statTypeId ?? s.statSourceId)===0&&Number(s.scoringPeriodId)>=1&&Number(s.scoringPeriodId)<=current&&espnN(s.appliedTotal)!==null&&p.scores[s.scoringPeriodId]===undefined)p.scores[s.scoringPeriodId]=Number(s.appliedTotal);if(Number(s.statTypeId ?? s.statSourceId)===0&&Number(s.scoringPeriodId)>=1&&(s.stats||s.appliedStats)){p.statlines??={};p.statlines[s.scoringPeriodId]=s.stats||s.appliedStats}}}
+ for(const original of sourceTeams)for(const entry of original.roster?.entries||[]){const pid=String(entry.playerId||entry.playerPoolEntry?.id||'');const p=players[pid];if(!p)continue;const stats=[...(entry.playerPoolEntry?.player?.stats||[]),...(entry.playerPoolEntry?.stats||[])];for(const s of stats){if([1,2].includes(Number(s.statSourceId??s.statTypeId))&&Number(s.scoringPeriodId)>=1&&Number(s.scoringPeriodId)<=18&&espnN(s.appliedTotal)!==null)p.projections[s.scoringPeriodId]=Number(s.appliedTotal);if(Number(s.statSourceId ?? s.statTypeId)===0&&Number(s.scoringPeriodId)>=1&&Number(s.scoringPeriodId)<=current&&espnN(s.appliedTotal)!==null&&p.scores[s.scoringPeriodId]===undefined)p.scores[s.scoringPeriodId]=Number(s.appliedTotal);if(Number(s.statSourceId ?? s.statTypeId)===0&&Number(s.scoringPeriodId)>=1&&(s.stats||s.appliedStats)){p.statlines??={};p.statlines[s.scoringPeriodId]=s.stats||s.appliedStats}}}
  teams.forEach(t=>t.history.sort((a,b)=>a.week-b.week));
  const missing=(input.unavailableWeeks||[]).length;
  return {source:'espn',league:String(raw.settings?.name||`ESPN LEAGUE ${leagueId}`),season:year,scoring:espnScoring(raw.settings),leagueId:String(leagueId),currentWeek:current,teams,players,description:`ESPN FANTASY · ${year} · ${missing?missing+' BOX SCORE WEEKS UNAVAILABLE · ':''}CURRENT WEEK CAN BE PROVISIONAL`,url:`https://fantasy.espn.com/football/league?leagueId=${encodeURIComponent(leagueId)}`,settings:raw.settings||{}};

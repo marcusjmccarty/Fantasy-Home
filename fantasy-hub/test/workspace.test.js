@@ -28,8 +28,9 @@ function setup(saved=null,blocked=false){
  const document={body,querySelector:get,querySelectorAll:()=>modes,addEventListener(k,fn){(events.get(k)||events.set(k,[]).get(k)).push(fn)},dispatchEvent(e){for(const fn of events.get(e.type)||[])fn(e)}};
  const storage=new Map(saved?[['gridiron86-workspace-v2',JSON.stringify(saved)]]:[]);
  const XL={open:null,player:null,viewWeek:null,history:[],future:[],lineupScenarios:new Map(),free:[]};
- const context=vm.createContext({document,window:document,localStorage:{getItem(k){if(blocked)throw Error('blocked');return storage.get(k)},setItem(k,v){if(blocked)throw Error('blocked');storage.set(k,v)}},el:get,XL,currentTeamId:'1',currentPlayerId:'p1',currentWeek:6,model:{season:2026,players:{p1:{id:'p1'}}},getTeam:()=>({id:'1'}),rowsFor:()=>[{id:'p1'}],explorerClubHeader(){},renderExplorer(){renders.push(XL.open)},CustomEvent:class{constructor(type,{detail}){this.type=type;this.detail=detail}}});
+ const context=vm.createContext({document,window:document,localStorage:{getItem(k){if(blocked)throw Error('blocked');return storage.get(k)},setItem(k,v){if(blocked)throw Error('blocked');storage.set(k,v)}},el:get,XL,currentTeamId:'1',currentPlayerId:'p1',currentWeek:6,model:{season:2026,teams:[{id:'1'},{id:'2'},{id:'3'}],players:{p1:{id:'p1'}}},findTeam:id=>({id:String(id)}),updateUI(){},getTeam:()=>({id:'1'}),rowsFor:()=>[{id:'p1'}],explorerClubHeader(){},renderExplorer(){renders.push(XL.open)},CustomEvent:class{constructor(type,{detail}){this.type=type;this.detail=detail}}});
  vm.runInContext(explorer.slice(explorer.indexOf('function openExplorer('),explorer.indexOf('function focusWeeklyLedger()')),context);
+ vm.runInContext(explorer.slice(explorer.indexOf("el('explore-club').addEventListener('change'"),explorer.indexOf("el('explore-content').addEventListener('change'",explorer.indexOf("el('explore-club').addEventListener('change'"))),context);
  // Same queued close handling as the production dialog listener.
  get('explore-dialog').addEventListener('close',()=>{if(get('explore-dialog').open)return;XL.open=null;XL.viewWeek=null;XL.history=[];XL.future=[];XL.viewTeamId=null;XL.lineupScenarios.clear()});
  vm.runInContext(source,context);
@@ -97,4 +98,17 @@ test('unchanged tab synchronization does not write storage; a changed tab persis
  h.run("activateWorkspace('graph')");assert.equal(h.run('writes'),1);
  assert.equal(JSON.parse(h.storage.get('gridiron86-workspace-v2')).tab,'graph');
  h.resize();assert.equal(h.run('writes'),1);
+});
+
+
+test('window franchise selector is independent in Windowed and updates active franchise in Tabbed, including team drilldowns',()=>{
+ const h=setup();h.run("openExplorer('summary')");
+ h.get('explore-club').fire('change',{target:{id:'explore-team-switch',value:'2'}});
+ assert.equal(h.run('currentTeamId'),'1');assert.equal(h.XL.viewTeamId,'2');
+ h.get('mode-tabbed').fire('click');h.flush();
+ h.get('explore-club').fire('change',{target:{id:'explore-team-switch',value:'2'}});
+ assert.equal(h.run('currentTeamId'),'2');assert.equal(h.XL.viewTeamId,'2');
+ h.run("openExplorer('summary',null,{teamId:'3'})");assert.equal(h.run('currentTeamId'),'3');
+ h.get('mode-dashboard').fire('click');h.flush();h.run("openExplorer('summary',null,{teamId:'1'})");
+ assert.equal(h.run('currentTeamId'),'3');assert.equal(h.XL.viewTeamId,'1');
 });

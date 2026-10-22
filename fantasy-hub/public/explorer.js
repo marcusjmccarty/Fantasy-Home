@@ -7,7 +7,7 @@ const XL = {
   agent:{pos:'ALL',search:'',sort:'projected'}, positionComparePos:'ALL', positionCompareWeek:'all', positionComparisonView:'position', positionComparisonPool:'ROSTERED', positionComparisonSort:'GRADE', leagueComparisonPos:'ALL', leagueComparisonView:'week', graphStatFocus:null, graphAutoSource:null, graphUserSelected:false, graphNotice:'',
   standingsSort:'rank', viewTeamId:null, lineupScenarios:new Map(), viewWeek:null, franchiseWeek:null, franchiseWeekTeam:null, selectedPoint:null, news:new Map(), overview:new Map(), history:[], future:[], focusedSeries:null, focusTarget:null, positionWeek:"all", positionFocusPlayer:null, positionSharePos:'LEADING', playerLogRange:'all', playerArchiveAll:false, opponentScouting:new Map(), scoutingPending:new Set(),
 };
-const NFL_WEEK_STATE=new Map(); // Scoring week -> ESPN NFL game states, no speculation about status.
+const NFL_WEEK_STATE=new Map(),NFL_WEEK_FETCHED=new Map(),NFL_WEEK_PENDING=new Set(); // Scoring week -> ESPN NFL game states, no speculation about status.
 const COLORS={QB:'#3875bc',RB:'#2c9764',WR:'#8a61bb',TE:'#d57939',K:'#d0a22b',DEF:'#bd5960','D/ST':'#bd5960','?':'#6b777f'};
 const METRICS=[
   ['total','Fantasy points','pts','Fantasy league'],['avg','Fantasy pts / game','pts','Fantasy league'],['last','Latest week pts','pts','Fantasy league'],
@@ -123,7 +123,7 @@ function explorerClubHeader(type,playerId=null){
  const host=el('explore-club');if(!host)return;
  const id=String(explorerTeam().id);
  host.innerHTML=`<select id="explore-team-switch" aria-label="Choose active fantasy team">${model.teams.map(t=>`<option value="${esc(String(t.id))}" ${String(t.id)===id?'selected':''}>${esc(teamName(t))}</option>`).join('')}</select>`;
- host.title='Change active homepage franchise without leaving this report or player';
+ host.title=document.body.dataset.layout==='tabbed'?'Change the active franchise':'Change this window’s franchise';
 }
 
 function openExplorer(type,arg=null,options={}){
@@ -138,6 +138,7 @@ function openExplorer(type,arg=null,options={}){
    XL.future=[];
  }
  if(options.teamId!==undefined)XL.viewTeamId=String(options.teamId);
+ if(document.body.dataset.layout==='tabbed'&&XL.viewTeamId&&String(currentTeamId)!==String(XL.viewTeamId)){currentTeamId=String(XL.viewTeamId);currentPlayerId=null;updateUI();}
  if(type==='summary'&&XL.franchiseWeekTeam!==String(XL.viewTeamId)){
    XL.franchiseWeekTeam=String(XL.viewTeamId);XL.franchiseWeek=null;
  }
@@ -248,6 +249,9 @@ function weeklyLineupData(t,wanted){
  const changes=starters.filter(e=>e.isSub).length;
  const scoreFor=e=>labNum(e.points??e.p?.scores?.[wanted]);
  const projFor=e=>labNum(e.projected??e.p?.projections?.[wanted]??(wanted===activeWeek?e.p?.espnProj:null));
+ const effectiveFor=e=>matchupPlayerScore({...e,points:scoreFor(e),projected:projFor(e)},wanted,nflGameState(wanted,e.p),Number(model.currentWeek||model.liveWeek||0));
+ const effective=starters.map(effectiveFor),completeEffective=!!starters.length&&effective.every(s=>s.points!==null);
+ const estimatedTotal=completeEffective?labSum(effective.map(s=>s.points)):null;
  const actualValues=starters.map(scoreFor).filter(v=>v!==null);
  const projectionValues=starters.map(projFor).filter(v=>v!==null);
  const computedActual=actualValues.length?labSum(actualValues):null;
@@ -259,11 +263,14 @@ function weeklyLineupData(t,wanted){
  // clearly-marked fallback, NOT the temporary what-if total.
  const officialDisplay=official??(completeOrig?labSum(origActual):null);
  const displayedTotal=changes?computedActual:official??computedActual;
+ const isCurrent=wanted===Number(model.currentWeek||model.liveWeek||0);
+ const allFinished=starters.length>0&&starters.every(e=>nflGameState(wanted,e.p)==='post');
+ const matchupTotal=!changes&&allFinished&&official!==null?official:estimatedTotal;
  const completeActual=starters.length>0&&actualValues.length===starters.length;
  const completeProj=starters.length>0&&projectionValues.length===starters.length;
  const reliableActual=changes?completeActual:(official!==null||completeActual);
  const diff=displayedTotal!==null&&computedProjection!==null&&completeProj&&reliableActual?displayedTotal-computedProjection:null;
- return {team:t,week:wanted,activeWeek,weekHistory,originalStarters,starters,bench,scenario,changes,scoreFor,projFor,computedActual,computedProjection,official,officialDisplay,completeOrig,displayedTotal,completeActual,completeProj,diff};
+ return {team:t,week:wanted,activeWeek,weekHistory,originalStarters,starters,bench,scenario,changes,scoreFor,projFor,computedActual,computedProjection,official,officialDisplay,completeOrig,displayedTotal,completeActual,completeProj,diff,effectiveFor,matchupTotal,completeEffective,isCurrent};
 }
 function lineupPickerButton(data,e,asBench=false){
  const {scenario,originalStarters,bench,projFor}=data;
@@ -286,11 +293,11 @@ function lineupPickerButton(data,e,asBench=false){
  return button+popup;
 }
 function matchupProgress(data){
- const events=NFL_WEEK_STATE.get(data.week);
+ const events=NFL_WEEK_STATE.get(nflStateKey(data.week));
  if(!events||!data.starters.length)return {live:null,pending:null};
  let live=0,pending=0,known=0;
  for(const e of data.starters){
-  const team=String(e.p?.nfl||'').toUpperCase();
+  const team=normalizeNFLAbbr(e.p?.nfl);
   const state=events[team];
   if(state==='in'){live++;known++;}
   else if(state==='pre'){pending++;known++;}
@@ -302,24 +309,24 @@ function progressLabel(data){
  const progress=matchupProgress(data);
  return `IN PLAY ${progress.live===null?'—':progress.live} · YET TO PLAY ${progress.pending===null?'—':progress.pending}`;
 }
+function nflStateKey(week){return `${model.season}:${week}`;}
+function nflGameState(week,player){return NFL_WEEK_STATE.get(nflStateKey(week))?.[normalizeNFLAbbr(player?.nfl)]||null;}
 async function fetchNFLWeekState(week){
- const current=Number(model.currentWeek||model.liveWeek||currentWeek);
- if(week!==current||NFL_WEEK_STATE.has(week)||model.source==='demo')return;
- NFL_WEEK_STATE.set(week,null);
+ const current=Number(model.currentWeek||model.liveWeek||0),key=nflStateKey(week);
+ if(week!==current||NFL_WEEK_PENDING.has(key)||Date.now()-(NFL_WEEK_FETCHED.get(key)||0)<75000||model.source==='demo')return;
+ NFL_WEEK_PENDING.add(key);NFL_WEEK_FETCHED.set(key,Date.now());const season=model.season;
  try{
-  const url='/api/nfl/game-status?season='+encodeURIComponent(model.season)+'&week='+encodeURIComponent(week);
-  const resp=await fetch(url,{credentials:'same-origin'});
-  if(!resp.ok)throw Error('NFL games unavailable');
-  const payload=await resp.json();
-  NFL_WEEK_STATE.set(week,payload.teams||null);
+  const resp=await fetch('/api/nfl/game-status?season='+encodeURIComponent(season)+'&week='+encodeURIComponent(week),{credentials:'same-origin'});
+  if(!resp.ok)throw Error('NFL games unavailable');const payload=await resp.json();
+  NFL_WEEK_STATE.set(key,payload.teams||null);
+  if(model.season!==season)return;
+  if(Number(currentWeek)===week)drawMatchup(getTeam());
   if(XL.open==='matchup'&&Number(XL.viewWeek)===week){
-   // Update only progress labels; never clear user substitutions or scroll position.
-   for(const tag of el('explore-content').querySelectorAll('[data-matchup-progress]')){
-    const t=findTeam(tag.dataset.matchupProgress);
-    if(t)tag.textContent=progressLabel(weeklyLineupData(t,week));
-   }
+   for(const tag of el('explore-content').querySelectorAll('[data-matchup-progress]')){const t=findTeam(tag.dataset.matchupProgress);if(t)tag.textContent=progressLabel(weeklyLineupData(t,week));}
+   for(const tag of el('explore-content').querySelectorAll('[data-matchup-estimate]')){const t=findTeam(tag.dataset.matchupEstimate);if(t)tag.textContent=labFormat(weeklyLineupData(t,week).matchupTotal,2);}
+   for(const row of el('explore-content').querySelectorAll('[data-matchup-effective]')){const t=findTeam(row.dataset.matchupTeam),data=t&&weeklyLineupData(t,week),e=data?.starters.find(e=>String(e.id)===row.dataset.matchupEffective);if(e){const score=data.effectiveFor(e);row.textContent=labFormat(score.points,2);row.title=score.basis;}}
   }
- }catch{NFL_WEEK_STATE.set(week,null);}
+ }catch{/* Keep projections when game status cannot be verified. */}finally{NFL_WEEK_PENDING.delete(key);}
 }
 function focusExplorerSection(targetId){
  const container=el('explore-content'),target=document.getElementById(targetId);
@@ -1082,9 +1089,9 @@ function matchupLines(t,week){
  if(!t)return '<div class="lab-panel">No opponent box score is recorded.</div>';
  const data=weeklyLineupData(t,week),{starters,bench,projFor,scoreFor}=data;
  const tr=e=>{
-   const p=e.p,actual=scoreFor(e),projected=projFor(e);
+   const p=e.p,actual=scoreFor(e),projected=projFor(e),effective=data.effectiveFor(e);
    const stat=describeStatline(p,week),injured=/^(OUT|IR|DOUBTFUL|QUESTIONABLE)/i.test(String(p.status||''));
-   return `<tr class="lab-clickable matchup-player-row ${e.isSub?'franchise-substituted':''}" data-open-player="${esc(String(e.id))}" tabindex="0" role="button" aria-label="Open ${esc(p.name)} player dossier"><td class="franchise-slot-cell">${lineupPickerButton(data,e,!e.starter)}</td><td class="matchup-player-name"><strong title="${esc(p.name)}">${esc(p.name)}</strong>${injured?`<small title="${esc(p.status)}"> ${esc(p.status)}</small>`:''}</td><td class="matchup-numeric">${labFormat(projected,2)}</td><td class="matchup-numeric"><strong>${labFormat(actual,2)}</strong></td><td class="matchup-statline" title="${esc(stat)}"><span>${esc(stat)}</span></td></tr>`;
+   return `<tr class="lab-clickable matchup-player-row ${e.isSub?'franchise-substituted':''}" data-open-player="${esc(String(e.id))}" tabindex="0" role="button" aria-label="Open ${esc(p.name)} player dossier"><td class="franchise-slot-cell">${lineupPickerButton(data,e,!e.starter)}</td><td class="matchup-player-name"><strong title="${esc(p.name)}">${esc(p.name)}</strong>${injured?`<small title="${esc(p.status)}"> ${esc(p.status)}</small>`:''}</td><td class="matchup-numeric">${labFormat(projected,2)}</td><td class="matchup-numeric"><strong data-matchup-effective="${esc(String(e.id))}" data-matchup-team="${esc(String(t.id))}" title="${effective.basis}">${labFormat(data.isCurrent?effective.points:actual,2)}</strong></td><td class="matchup-statline" title="${esc(stat)}"><span>${esc(stat)}</span></td></tr>`;
  };
  // The official score is immutable. Both official and what-if totals remain
  // legible beneath their corresponding columns after a substitution.
@@ -1095,8 +1102,8 @@ function matchupLines(t,week){
  const scenarioRaw=formatRecordedTotals(starters,[week]);
  const officialRow=`<tr class="matchup-total-row matchup-official-row"><td colspan="2"><b>OFFICIAL${officialTag}</b> · ${starters.length} STARTERS</td><td class="matchup-numeric">${labFormat(officialProjection,2)}</td><td class="matchup-numeric"><b>${official}</b></td><td class="matchup-statline">${rawTotalCell(officialRaw)}</td></tr>`;
  const whatIfRow=data.changes?`<tr class="matchup-total-row matchup-simulation-row"><td colspan="2"><b>WHAT-IF</b>${!data.completeActual?' · PARTIAL':''}</td><td class="matchup-numeric">${labFormat(data.computedProjection,2)}</td><td class="matchup-numeric"><b>${labFormat(data.displayedTotal,2)}</b></td><td class="matchup-statline">${rawTotalCell(scenarioRaw)}</td></tr>`:'';
- return `<div class="lab-panel matchup-franchise-panel" data-matchup-team="${esc(String(t.id))}" data-lineup-team="${esc(String(t.id))}" data-lineup-week="${week}" tabindex="0" role="button" aria-label="Open ${esc(teamName(t))} starting lineup"><div class="lab-match-team"><div><small>${esc(record(t))}</small><div class="matchup-team-heading"><h4 title="${esc(teamName(t))}">${esc(teamName(t))}</h4>${data.changes?lineupReset(data):''}</div></div><div class="matchup-franchise-score"><strong>${labFormat(data.displayedTotal,2)}</strong><small data-matchup-progress="${esc(String(t.id))}">${progressLabel(data)}</small>${data.changes?`<small>WHAT-IF${!data.completeActual?' (PARTIAL)':''}</small>`:''}</div></div>
- ${expandTable(['SLOT','PLAYER','PROJ','FPTS','BOX SCORE'],[...starters.map(tr),officialRow,whatIfRow,...(bench.length?['<tr class="lab-subhead"><td colspan="5">BENCH / IR</td></tr>']:[]),...bench.map(tr)],'matchup-whatif-table')}
+ return `<div class="lab-panel matchup-franchise-panel" data-matchup-team="${esc(String(t.id))}" data-lineup-team="${esc(String(t.id))}" data-lineup-week="${week}" tabindex="0" role="button" aria-label="Open ${esc(teamName(t))} starting lineup"><div class="lab-match-team"><div><small>${esc(record(t))}</small><div class="matchup-team-heading"><h4 title="${esc(teamName(t))}">${esc(teamName(t))}</h4>${data.changes?lineupReset(data):''}</div></div><div class="matchup-franchise-score"><strong data-matchup-estimate="${esc(String(t.id))}">${labFormat(data.isCurrent?data.matchupTotal:data.displayedTotal,2)}</strong><small data-matchup-progress="${esc(String(t.id))}">${progressLabel(data)}</small>${data.changes?`<small>WHAT-IF${!data.completeActual?' (PARTIAL)':''}</small>`:''}</div></div>
+ ${expandTable(['SLOT','PLAYER','PROJ',data.isCurrent?'ACT / PROJ':'FPTS','BOX SCORE'],[...starters.map(tr),officialRow,whatIfRow,...(bench.length?['<tr class="lab-subhead"><td colspan="5">BENCH / IR</td></tr>']:[]),...bench.map(tr)],'matchup-whatif-table')}
  ${!starters.length?'<p class="lab-note">ESPN did not supply starting lineup entries for this week; official team totals are used when available.</p>':''}</div>`;
 }
 function matchupWeekList(t){
@@ -1107,13 +1114,13 @@ function detailMatchup(){
  XL.viewWeek=wk;
  const h=t.history.find(x=>Number(x.week)===wk)||(Number(t.currentMatchup?.week)===wk?t.currentMatchup:null);
  const op=findTeam(h?.opponentId),ourData=weeklyLineupData(t,wk),theirData=op?weeklyLineupData(op,wk):null;
- const status=wk===Number(model.currentWeek||model.liveWeek)?'CURRENT / PROVISIONAL':'HISTORICAL / REPORTED';
- const boardSide=(team,data)=>`<div><small>${esc(team?teamName(team):'BYE / UNAVAILABLE')}</small><b>${labFormat(data?.displayedTotal,2)}</b><span>${team?esc(record(team)):''}</span>${data?.changes?`<span class="matchup-score-whatif">WHAT-IF${!data.completeActual?' (PARTIAL)':''} · OFFICIAL ${labFormat(data.officialDisplay,2)}</span>`:data?.official===null&&data?.displayedTotal!==null?`<span>${data.completeActual?'STARTERS REPORTED':'PARTIAL · UNREPORTED SCORES'}</span>`:''}</div>`;
+ const status=wk===Number(model.currentWeek||model.liveWeek)?'ACTUAL POINTS + UNPLAYED PROJECTIONS':'HISTORICAL / REPORTED';
+ const boardSide=(team,data)=>`<div><small>${esc(team?teamName(team):'BYE / UNAVAILABLE')}</small><b data-matchup-estimate="${esc(String(team?.id||''))}">${labFormat(data?.isCurrent?data?.matchupTotal:data?.displayedTotal,2)}</b><span>${team?esc(record(team)):''}</span>${data?.changes?`<span class="matchup-score-whatif">WHAT-IF${!data.completeActual?' (PARTIAL)':''} · OFFICIAL ${labFormat(data.officialDisplay,2)}</span>`:data?.official===null&&data?.displayedTotal!==null?`<span>${data.completeActual?'STARTERS REPORTED':'PARTIAL · UNREPORTED SCORES'}</span>`:''}</div>`;
  setExplorer(`<div class="lab-intro"><h3 class="matchup-heading">Week <select id="lab-match-week" class="matchup-heading-week" aria-label="Choose matchup week">${weeks.map(w=>`<option value="${w}" ${w===wk?'selected':''}>${String(w).padStart(2,'0')}</option>`).join('')}</select> / Matchup box score</h3><p>${status} · Select a player for their dossier, a slot for a what-if substitution, or a team box score for its focused Starting Lineup report.</p></div>`+
  `${model.source==='espn'?`<a class="matchup-espn-link matchup-under-title" href="https://fantasy.espn.com/football/league?leagueId=${encodeURIComponent(model.leagueId)}" target="_blank" rel="noopener noreferrer">VIEW ON ESPN ↗</a>`:''}`+
  `<div class="lab-scoreboard">${boardSide(t,ourData)}<strong>VS</strong>${boardSide(op,theirData)}</div>`+
  `<div class="lab-two match-columns">${matchupLines(t,wk)}${op?matchupLines(op,wk):'<div class="lab-panel">No opponent box score is recorded.</div>'}</div>`+
- `<p class="lab-note">The scoreboard uses official ESPN team points when available; otherwise it sums reported starters. What-if substitutions recalculate each side separately and never change ESPN rosters. A dash means the source has not reported a result.</p>`);
+ `<p class="lab-note">Current-week totals combine actual points for games underway or finished with projections for unplayed games. Official points remain in each roster table. Historical weeks use recorded results; substitutions are local scenarios.</p>`);
  if(wk===Number(model.currentWeek||model.liveWeek||currentWeek))void fetchNFLWeekState(wk);
 }
 function playerTitle(p){return `${p.name} / ${p.pos} / ${p.nfl}`}
@@ -2111,8 +2118,6 @@ el('explore-club').addEventListener('change',e=>{
  const opts={teamId:id};
  if(XL.open==='summary'&&Number.isFinite(Number(XL.franchiseWeek))&&Number(XL.franchiseWeek)>0)opts.week=Number(XL.franchiseWeek);
  if(XL.open==='matchup'&&Number.isFinite(Number(XL.viewWeek)))opts.week=Number(XL.viewWeek);
- currentTeamId=id;
- updateUI(); // Intentional active-team switch across every report.
  XL.player=selectedPlayer;
  openExplorer(XL.open,XL.open==='profile'?selectedPlayer:null,opts);
 });
@@ -2120,7 +2125,7 @@ el('explore-club').addEventListener('change',e=>{
 el('explore-content').addEventListener('change',e=>{
  if(e.target.id==='roster-team-switch'){
   const id=String(e.target.value),team=findTeam(id);if(!team)return;
-  if(id!==String(currentTeamId)){
+  if(document.body.dataset.layout==='tabbed'&&id!==String(currentTeamId)){
    currentTeamId=id;currentPlayerId=null;updateUI();
    XL.viewTeamId=id;XL.franchiseWeek=null;XL.franchiseWeekTeam=id;
    // Back from this special roster switch goes to the NEW home franchise.

@@ -109,3 +109,28 @@ test('trade percentages distinguish exchanged value from actual lineup improveme
  assert.equal(M.tradeSignals({...a,ready:false}).theirChange,null);
  assert.equal(M.tradeSignals({...a,impact:null}).yourChange,null);
 });
+
+test('bench-only exchanges can be very unbalanced in package value with zero starter impact',()=>{
+ const own=[player('a','QB',25),player('b','QB',20)],their=[player('c','QB',30),player('d','QB',5)];
+ const a=M.tradeAnalysis(own,their,['b'],['d'],['QB'],5,'projection');
+ assert.equal(a.delta,-15);assert.equal(a.balance,25);assert.equal(a.impact,0);assert.equal(a.theirImpact,0);
+ // A third backup does not improve a lineup or turn the deal into a win.
+ own.push(player('e','QB',12));const b=M.tradeAnalysis(own,their,['b','e'],['d'],['QB'],5,'projection');
+ assert.equal(b.impact,0);assert.equal(b.theirImpact,0);assert.equal(b.requiredDrops.get,1);
+});
+test('trade optimizer uses ESPN eligibility for exact flexible-slot allocation and keeps unavailable starters at zero',()=>{
+ const slots=[{id:2,label:'RB',positions:['RB']},{id:3,label:'RB/WR',positions:['RB','WR']},{id:6,label:'TE',positions:['TE']}];
+ const own=[{...player('r','RB',30),eligibleSlots:[2,3],tradeUnavailable:true},{...player('w','WR',20),eligibleSlots:[3]},{...player('t','TE',10),eligibleSlots:[6]},{...player('x','RB',12),eligibleSlots:[2,3]}];
+ const a=M.bestLineup(own,slots,5,'projection');assert.equal(a.total,42);assert.equal(a.players[0].player,'x');assert.equal(a.players[1].player,'w');
+ assert.equal(M.tradeValue(own[0],5,'projection'),0);assert.equal(M.value(own[0],5,'projection'),30);
+});
+test('provider projections are week-bound and actual earned points never inflate trade value',()=>{
+ const p={id:'p',pos:'QB',espnProj:21,projectionWeek:7,scores:{6:50,7:70},projections:{6:18}};
+ assert.equal(M.value(p,6,'projection'),18);assert.equal(M.value(p,7,'projection'),21);assert.equal(M.value(p,8,'projection'),null);
+ assert.equal(M.value(p,5,'projection'),null);
+});
+test('numeric and repeated IDs cannot duplicate a traded player; optional drops change the actual lineup',()=>{
+ const own=[player(1,'RB',20),player(2,'RB',10)],their=[player(3,'RB',15),player(4,'RB',8)];
+ const a=M.tradeAnalysis(own,their,[2,2],[3],['RB'],5,'projection',{give:[1],get:[]});
+ assert.equal(a.give.length,1);assert.equal(a.impact,-5);assert.equal(a.afterOwn.length,1);assert.equal(a.after.players[0].player,3);
+});
