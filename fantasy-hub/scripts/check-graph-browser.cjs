@@ -36,3 +36,8 @@ test('graph opening builds SVG once after measurement settles',async()=>{
  await page.evaluate(()=>{window.svgBuilds=0;const f=scatterSVG;window.scatterSVG=function(...args){svgBuilds++;return f(...args)}});
  await open();assert.equal(await page.evaluate(()=>svgBuilds),1);
 });
+test('tabbed resize does not persist an unchanged preference',async()=>{
+ await page.evaluate(()=>setWorkspaceLayout('tabbed'));await open();
+ await page.evaluate(()=>{window.writes=0;const f=Storage.prototype.setItem;Storage.prototype.setItem=function(...args){writes++;return f.apply(this,args)}});
+ await page.setViewportSize({width:1400,height:980});await settle();assert.equal(await page.evaluate(()=>writes),0);
+});

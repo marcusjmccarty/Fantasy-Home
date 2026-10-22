@@ -29,7 +29,7 @@ const workspaceTabs=el('workspace-tabs');
 workspaceTabs.innerHTML=WORKSPACE_TABS.map(([id,label])=>`<button type="button" role="tab" id="workspace-tab-${id}" data-workspace="${id}" aria-controls="explore-content" aria-selected="false" tabindex="-1">${label}</button>`).join('');
 function syncWorkspaceTab(type){
   const report=WORKSPACE_TABS.find(([id])=>id===type);if(!report)return;
-  workspacePreference.tab=type;saveWorkspacePreference();
+  if(workspacePreference.tab!==type){workspacePreference.tab=type;saveWorkspacePreference();}
   workspaceTabs.querySelectorAll('[role=tab]').forEach(button=>{
     const selected=button.dataset.workspace===type;
     button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;
