@@ -1,0 +1,13 @@
+#finder-dialog{width:min(620px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:0;border:2px solid #222;background:#f5f4ef;color:#191919;box-shadow:6px 6px 0 #2226}
+#finder-dialog .dialog-inner{display:grid;gap:10px;max-height:calc(100dvh - 90px);overflow:auto}
+#finder-dialog label{display:grid;gap:4px;font-weight:bold}
+#finder-dialog input,#finder-dialog select{width:100%;min-width:0;padding:9px;font:inherit;border:1px solid #222;background:#fff;color:#111}
+#finder-results{max-height:38dvh;overflow:auto;border:1px solid #222;min-height:48px}
+#finder-results [role=option]{display:grid;gap:3px;padding:9px;border-bottom:1px dotted #999;cursor:pointer}
+#finder-results [aria-selected=true]{background:#222;color:#fff}
+#finder-results span{font-size:12px}
+#finder-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#finder-actions[hidden]{display:none}
+#finder-player-name{flex-basis:100%}
+#finder-dialog button:focus-visible,#finder-dialog input:focus-visible,#finder-dialog select:focus-visible{outline:3px double currentColor;outline-offset:2px}
+#finder-status,#finder-hint{margin:0;font-size:12px;line-height:1.5}

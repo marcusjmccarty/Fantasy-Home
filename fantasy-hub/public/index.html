@@ -16,6 +16,8 @@
   <script src="analytics-math.js?v=9.14.0" defer></script>
   <script src="strategy.js?v=9.14.0" defer></script>
   <script src="workspace.js?v=9.14.0" defer></script>
+  <link rel="stylesheet" href="navigator.css?v=1">
+  <script src="navigator.js?v=1" defer></script>
   <script src="shortcuts.js?v=9.14.0" defer></script>
 
 </head>
@@ -23,7 +25,7 @@
   <div class="desktop" id="desktop">
     <header class="menu-bar">
       <div class="menu-left"><span class="system-glyph" aria-hidden="true">▦</span><b>GRIDIRON/86</b><span class="menu-divider"></span><span>Fantasy Team Terminal</span></div>
-      <div class="menu-right"><div class="layout-switch" role="group" aria-label="Workspace view"><button id="mode-dashboard" type="button" data-layout="dashboard" aria-pressed="true">WINDOWED</button><button id="mode-tabbed" type="button" data-layout="tabbed" aria-pressed="false">TABBED</button></div><span id="system-clock"></span><button type="button" class="menu-action" data-shortcuts-help aria-haspopup="dialog" title="Keyboard shortcuts (?)">KEYS ?</button><button id="about-button" class="menu-action">ABOUT</button><button id="open-data" class="menu-action highlighted">+ LOAD DATA</button></div>
+      <div class="menu-right"><div class="layout-switch" role="group" aria-label="Workspace view"><button id="mode-dashboard" type="button" data-layout="dashboard" aria-pressed="true">WINDOWED</button><button id="mode-tabbed" type="button" data-layout="tabbed" aria-pressed="false">TABBED</button></div><span id="system-clock"></span><button type="button" class="menu-action" data-finder-open aria-haspopup="dialog" aria-controls="finder-dialog">FIND / GO</button><button type="button" class="menu-action" data-shortcuts-help aria-haspopup="dialog" title="Keyboard shortcuts (?)">KEYS ?</button><button id="about-button" class="menu-action">ABOUT</button><button id="open-data" class="menu-action highlighted">+ LOAD DATA</button></div>
     </header>
 
     <div class="utility-bar">
@@ -144,7 +146,7 @@
 
     <nav id="workspace-navigation" class="workspace-navigation" aria-label="Statistical reports" hidden><div id="workspace-tabs" role="tablist" aria-label="Choose a full report"></div></nav>
     <dialog id="explore-dialog" class="explore-dialog" aria-labelledby="explore-title">
-      <div class="explore-title-bar"><div><span class="explore-history-controls"><button id="explore-back" class="explore-icon explore-back" type="button" title="Previous expanded view" aria-label="Previous expanded view">&lt;</button><button id="explore-forward" class="explore-icon explore-back" type="button" title="Next view" aria-label="Forward to next view" disabled>&gt;</button></span><span id="explore-match-week" class="explore-match-week" hidden></span><b id="explore-title">STATISTICAL WORKSPACE</b><span id="explore-club" class="explore-club" title="Current report franchise">THE GRIDIRON CLUB</span><small id="explore-context">DEMO</small></div><div class="explore-top-actions"><label class="explore-jump-label" for="explore-jump">GO TO <select id="explore-jump" aria-label="Open another workspace"><option value="summary">FRANCHISE</option><option value="matchup">MATCHUP</option><option value="weekly">WEEKLY</option><option value="standings">LEAGUE TABLE</option><option value="roster">ROSTER</option><option value="profile">PLAYER FILE</option><option value="player-analytics">FULL PLAYER LOG</option><option value="agents">FREE AGENTS</option><option value="positions">POSITIONS</option><option value="position-compare">POSITION / PLAYERS</option><option value="league-contributions">LEAGUE / WEEKLY</option><option value="graph">VARIABLE LAB</option></select></label><button type="button" class="explore-close" data-shortcuts-help aria-haspopup="dialog" title="Keyboard shortcuts (?)">KEYS ?</button><button type="button" id="explore-close" class="explore-close" aria-label="Close expanded window">× CLOSE</button></div></div>
+      <div class="explore-title-bar"><div><span class="explore-history-controls"><button id="explore-back" class="explore-icon explore-back" type="button" title="Previous expanded view" aria-label="Previous expanded view">&lt;</button><button id="explore-forward" class="explore-icon explore-back" type="button" title="Next view" aria-label="Forward to next view" disabled>&gt;</button></span><span id="explore-match-week" class="explore-match-week" hidden></span><b id="explore-title">STATISTICAL WORKSPACE</b><span id="explore-club" class="explore-club" title="Current report franchise">THE GRIDIRON CLUB</span><small id="explore-context">DEMO</small></div><div class="explore-top-actions"><label class="explore-jump-label" for="explore-jump">GO TO <select id="explore-jump" aria-label="Open another workspace"><option value="summary">FRANCHISE</option><option value="matchup">MATCHUP</option><option value="weekly">WEEKLY</option><option value="standings">LEAGUE TABLE</option><option value="roster">ROSTER</option><option value="profile">PLAYER FILE</option><option value="player-analytics">FULL PLAYER LOG</option><option value="agents">FREE AGENTS</option><option value="positions">POSITIONS</option><option value="position-compare">POSITION / PLAYERS</option><option value="league-contributions">LEAGUE / WEEKLY</option><option value="graph">VARIABLE LAB</option></select></label><button type="button" class="explore-close" data-finder-open aria-haspopup="dialog" aria-controls="finder-dialog">FIND / GO</button><button type="button" class="explore-close" data-shortcuts-help aria-haspopup="dialog" title="Keyboard shortcuts (?)">KEYS ?</button><button type="button" id="explore-close" class="explore-close" aria-label="Close expanded window">× CLOSE</button></div></div>
       <div class="explore-content" id="explore-content"></div>
       <footer class="explore-footer"><span id="explore-source">Data source: demo</span><span>ESC DISMISSES CARDS / WINDOWS · CLICK A PLAYER TO INSPECT. </span></footer>
     </dialog>
@@ -170,17 +172,29 @@
   </dialog>
 
   <dialog id="about-dialog" aria-labelledby="about-title"><div class="dialog-title"><b id="about-title">ABOUT GRIDIRON/86</b><button class="dialog-x" data-close-dialog aria-label="Close">×</button></div><div class="dialog-inner"><p>A compact fantasy football dashboard inspired by monochrome workstation software of the 1980s. Built with plain HTML, CSS, and JavaScript.</p><p><b>Live leagues:</b> Connect ESPN via the Cloudflare bridge or use the read-only Sleeper API. Team history, ranks, matchup points, and individual player scoring are calculated from your league's data.</p><p><b>Other leagues:</b> Import a correctly structured JSON file; no external account integration is implied.</p><p><b>Important:</b> In-progress weekly totals can change. If past player-level details are missing from the provider, this terminal displays a dash rather than inventing stats. Demo figures are fictional.</p><button data-close-dialog class="action-button">OK</button></div></dialog>
+  <dialog id="finder-dialog" aria-labelledby="finder-title">
+    <div class="dialog-title"><b id="finder-title">FIND / GO</b><button class="dialog-x" data-close-dialog aria-label="Close finder">×</button></div>
+    <div class="dialog-inner">
+      <label>LOOK IN<select id="finder-scope"><option value="reports">Reports</option><option value="players">All loaded players</option><option value="give" data-trade-scope hidden disabled>Team A sends</option><option value="get" data-trade-scope hidden disabled>Team B sends</option></select></label>
+      <label>SEARCH<input id="finder-query" type="text" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="finder-results" aria-describedby="finder-hint" autocomplete="off" spellcheck="false" autofocus></label>
+      <div id="finder-results" role="listbox" aria-label="Search results"></div>
+      <p id="finder-status" role="status" aria-live="polite"></p>
+      <div id="finder-actions" hidden><b id="finder-player-name"></b><button type="button" data-finder-action="profile">PLAYER FILE</button><button type="button" data-finder-action="player-analytics">GAME LOGS</button><button type="button" data-finder-action="compare">COMPARE POSITION PEERS</button></div>
+      <p id="finder-hint">Type a report, player, position or franchise. ↑ / ↓ choose; Enter opens; Tab reaches player actions. Escape returns without navigating. Players include only data already loaded. In Trade, choose Team A or Team B to edit that side's package.</p>
+    </div>
+  </dialog>
   <dialog id="shortcuts-dialog" aria-labelledby="shortcuts-title" aria-describedby="shortcuts-description">
     <div class="dialog-title"><b id="shortcuts-title">KEYBOARD SHORTCUTS</b><button class="dialog-x" data-close-dialog aria-label="Close keyboard shortcuts" autofocus>×</button></div>
     <div class="dialog-inner">
-      <p id="shortcuts-description">G, /, and ? work outside text fields and selection controls. Use them without Ctrl, Alt, or Command.</p>
-      <p><kbd>G</kbd> — Focus GO TO or the active report tab. Choose a report with the arrow keys.</p>
-      <p><kbd>/</kbd> — Focus search in the current report, when available.</p>
+      <p id="shortcuts-description">G, /, [, ], and ? work outside text fields and selection controls on Mac and Windows. Use them without Ctrl, Alt, or Command.</p>
+      <p><kbd>G</kbd> — Find a report by name; Enter opens it.</p>
+      <p><kbd>/</kbd> — Find any loaded player; Enter opens their file. Tab reaches game logs and position comparison. In Trade, find players for an explicit Team A or Team B package.</p>
+      <p><kbd>[</kbd> / <kbd>]</kbd> — Previous / next report in workspace history.</p>
       <p><kbd>?</kbd> — Open this help.</p>
       <p><kbd>Escape</kbd> — Dismiss the top card or window. Inline tabbed reports stay open.</p>
       <p><kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> — Move between controls. In the report tab strip, use arrow keys, Home, or End.</p>
       <p><label><input id="shortcuts-enabled" type="checkbox" checked style="width:auto"> Enable single-key shortcuts</label></p>
-      <p class="dialog-hint">You can always reopen this help with the KEYS button. Your choice is remembered in this browser when storage is available.</p>
+      <p class="dialog-hint">FIND / GO and KEYS remain clickable when single-key shortcuts are off. Finder queries and highlighted results are retained while this page is open. Your choice is remembered in this browser when storage is available.</p>
     </div>
   </dialog>
 </body>
