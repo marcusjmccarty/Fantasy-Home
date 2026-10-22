@@ -57,3 +57,20 @@ test('Cloudflare runtime shares public cold reads without forwarding caller cook
     assert.equal(calls,1);
   }finally{release();await mf.dispose();}
 });
+
+test('a disconnected public-read caller does not poison a follower or a later retry',async()=>{
+  let calls=0,release,started;
+  const gate=new Promise(r=>release=r),ready=new Promise(r=>started=r),controller=new AbortController();
+  const mf=new Miniflare(convertV4MiniflareOptions({
+    modules:[{type:'ESModule',path:path.resolve(__dirname,'../src/worker.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/matchup-context.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/public-read-coalescer.js')}],
+    compatibilityDate:'2026-10-01',
+    durableObjects:{ESPN_SESSIONS:{className:'EspnSession',useSQLite:true}},
+    outboundService:async()=>{calls++;started();await gate;return new Response('{"events":[]}',{headers:{'Content-Type':'application/json'}})}
+  }));
+  try{
+    const url='https://hub.example/api/nfl/game-status?season=2032&week=7';
+    const owner=mf.dispatchFetch(url,{signal:controller.signal}).catch(()=>null);
+    await ready;const follower=mf.dispatchFetch(url);await new Promise(r=>setTimeout(r,30));controller.abort();release();
+    await owner;assert.equal((await follower).status,200);assert.equal((await mf.dispatchFetch(url)).status,200);assert.equal(calls,1);
+  }finally{controller.abort();release();await mf.dispose();}
+});
