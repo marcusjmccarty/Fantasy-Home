@@ -5,26 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#dfded6">
   <title>GRIDIRON 86 / Fantasy Team Terminal</title>
-  <link rel="stylesheet" href="style.css?v=9.15.1">
-  <link rel="stylesheet" href="workspace.css?v=9.15.1">
-  <link rel="stylesheet" href="readability.css?v=9.15.1">
-  <link rel="stylesheet" href="refinements.css?v=9.15.1">
-  <link rel="stylesheet" href="polish.css?v=9.15.1">
-  <script src="script.js?v=9.15.1" defer></script>
-  <script src="interactions.js?v=9.15.1" defer></script>
-  <script src="explorer.js?v=9.15.1" defer></script>
-  <script src="analytics-math.js?v=9.15.1" defer></script>
-  <script src="strategy.js?v=9.15.1" defer></script>
-  <script src="workspace.js?v=9.15.1" defer></script>
-  <script src="page-width.js?v=9.15.1" defer></script>
-  <script src="shortcuts.js?v=9.15.1" defer></script>
+  <link rel="stylesheet" href="style.css?v=9.15.2">
+  <link rel="stylesheet" href="workspace.css?v=9.15.2">
+  <link rel="stylesheet" href="readability.css?v=9.15.2">
+  <link rel="stylesheet" href="refinements.css?v=9.15.2">
+  <link rel="stylesheet" href="polish.css?v=9.15.2">
+  <script src="script.js?v=9.15.2" defer></script>
+  <script src="interactions.js?v=9.15.2" defer></script>
+  <script src="explorer.js?v=9.15.2" defer></script>
+  <script src="analytics-math.js?v=9.15.2" defer></script>
+  <script src="strategy.js?v=9.15.2" defer></script>
+  <script src="workspace.js?v=9.15.2" defer></script>
+  <script src="page-width.js?v=9.15.2" defer></script>
+  <script src="shortcuts.js?v=9.15.2" defer></script>
 
 </head>
 <body>
   <div class="desktop" id="desktop">
     <header class="menu-bar">
       <div class="menu-left"><span class="system-glyph" aria-hidden="true">▦</span><b>GRIDIRON/86</b><span class="menu-divider"></span><span>Fantasy Team Terminal</span></div>
-      <div class="menu-right"><div class="layout-switch" role="group" aria-label="Workspace view"><button id="mode-dashboard" type="button" data-layout="dashboard" aria-pressed="true">WINDOWED</button><button id="mode-tabbed" type="button" data-layout="tabbed" aria-pressed="false">TABBED</button></div><label class="page-width-control" title="Page width; browser zoom remains independent">WIDTH <input id="page-width" type="range" min="60" max="100" step="1" value="100" aria-label="Page width percentage"><output id="page-width-value" for="page-width">100%</output></label><span id="system-clock"></span><button type="button" class="menu-action" data-shortcuts-help aria-haspopup="dialog" title="Keyboard shortcuts (?)">KEYS ?</button><button id="about-button" class="menu-action">ABOUT</button><button id="open-data" class="menu-action highlighted">+ LOAD DATA</button></div>
+      <div class="menu-right"><div class="layout-switch" role="group" aria-label="Workspace view"><button id="mode-dashboard" type="button" data-layout="dashboard" aria-pressed="true">WINDOWED</button><button id="mode-tabbed" type="button" data-layout="tabbed" aria-pressed="false">TABBED</button></div><label class="page-width-control" title="Page width; browser zoom remains independent">WIDTH <input id="page-width" type="range" min="60" max="100" step="1" value="100" aria-label="Page width percentage"><input id="page-width-value" type="number" min="60" max="100" step="1" value="100" aria-label="Custom page width percentage"><span>%</span></label><span id="system-clock"></span><button type="button" class="menu-action" data-shortcuts-help aria-haspopup="dialog" title="Keyboard shortcuts (?)">KEYS ?</button><button id="about-button" class="menu-action">ABOUT</button><button id="open-data" class="menu-action highlighted">+ LOAD DATA</button></div>
     </header>
 
     <div class="utility-bar">
@@ -149,7 +149,7 @@
       <div class="explore-content" id="explore-content"></div>
       <footer class="explore-footer"><span id="explore-source">Data source: demo</span><span>ESC DISMISSES CARDS / WINDOWS · CLICK A PLAYER TO INSPECT. </span></footer>
     </dialog>
-    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.15.1</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
+    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.15.2</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
   </div>
 
   <dialog id="data-dialog" aria-labelledby="dialog-title">

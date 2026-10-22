@@ -174,3 +174,14 @@ body:not([data-layout=tabbed]) .explore-dialog,body:not([data-layout=tabbed]) .e
 .page-width-control{display:flex;align-items:center;gap:4px;font:10px 'Courier New',monospace;white-space:nowrap}.page-width-control input{width:65px;accent-color:#aeb9ab;cursor:pointer}.page-width-control output{width:33px;text-align:right}.menu-bar,.menu-right{flex-wrap:wrap}
 .metric-ranking{width:100%;border-collapse:collapse;font:12px/1.4 'Courier New',monospace;margin-top:10px}.metric-ranking th{font-size:10px;text-align:left}.metric-ranking td,.metric-ranking th{padding:6px 4px;border-bottom:1px solid #cbd0c6}.metric-ranking td:last-child{text-align:right;font-weight:bold}.metric-ranking .is-active{background:#dce8ef;font-weight:bold}
 @container(max-width:850px){.window-grid{grid-template-columns:1fr}.window-grid>.window,.window-grid>.strategy-windows{grid-column:1/-1}.strategy-windows{grid-template-columns:1fr}.strategy-window:last-child{grid-column:auto}.team-strip,.utility-bar{flex-wrap:wrap}.team-header-stats{flex-wrap:wrap}}
+
+/* Range inputs must not inherit text-field padding or borders. */
+#page-width{appearance:none;-webkit-appearance:none;display:block;box-sizing:border-box;width:88px;min-width:88px;height:18px;min-height:0;padding:0;margin:0;border:0;border-radius:0;background:transparent;box-shadow:none;cursor:ew-resize}
+#page-width::-webkit-slider-runnable-track{height:4px;background:#aeb9ab;border:0}
+#page-width::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:12px;height:16px;margin-top:-6px;background:#f4f4ed;border:1px solid #606a5c;border-radius:0}
+#page-width::-moz-range-track{height:4px;background:#aeb9ab;border:0}
+#page-width::-moz-range-thumb{width:10px;height:14px;background:#f4f4ed;border:1px solid #606a5c;border-radius:0}
+#page-width-value{box-sizing:border-box;width:46px;min-width:46px;min-height:0;height:24px;margin:0;padding:2px 3px;border:1px solid #7c8477;background:#f4f4ed;color:#263027;text-align:right;font:12px 'Courier New',monospace;appearance:textfield;-moz-appearance:textfield}
+#page-width-value::-webkit-inner-spin-button,#page-width-value::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.trade-favor-track{background:#b9696d}.trade-favor-track i{background:#4f82b2}.trade-favor-labels>b:first-child,.trade-team-a,.trade-side.give .trade-side-heading>span{color:#3b6c97}.trade-favor-labels>b:last-child,.trade-team-b,.trade-side.get .trade-side-heading>span,.trade-dashboard>.trade-impact-card:last-child>span{color:#a34c53}
+.trade-side.give{border-top-color:#4f82b2}.trade-side.get{border-top-color:#b9696d}.trade-side.get input{accent-color:#b9696d}.trade-side.give input{accent-color:#4f82b2}
