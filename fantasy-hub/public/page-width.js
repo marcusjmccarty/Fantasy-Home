@@ -2,13 +2,14 @@
 'use strict';
 (()=>{
  const slider=document.getElementById('page-width'),field=document.getElementById('page-width-value');
- const clamp=value=>Math.round(Math.min(100,Math.max(60,Number(value)||100)));
+ // Blank or non-numeric entries keep the current width instead of jumping to 100%.
+ const clamp=value=>{const n=String(value??'').trim()===''?NaN:Number(value);return Math.round(Math.min(100,Math.max(60,Number.isFinite(n)?n:Number(slider.value)||100)));};
  const apply=(value,save=true)=>{const width=clamp(value);slider.value=field.value=String(width);document.documentElement.style.setProperty('--page-width',width+'%');if(save)try{localStorage.setItem('gridiron86-page-width',String(width));}catch{}window.dispatchEvent(new Event('resize'));};
  try{apply(localStorage.getItem('gridiron86-page-width')||100,false);}catch{apply(100,false);}
  slider.addEventListener('input',()=>{field.value=slider.value;});
  slider.addEventListener('change',()=>apply(slider.value));
  field.addEventListener('input',()=>{const n=Number(field.value);if(field.value!==''&&n>=60&&n<=100)apply(n);});
  field.addEventListener('change',()=>apply(field.value));
- field.addEventListener('blur',()=>apply(field.value));
+ field.addEventListener('blur',()=>{if(field.value!==slider.value)apply(field.value);});
  field.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();apply(field.value);}});
 })();

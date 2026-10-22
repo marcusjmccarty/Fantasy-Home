@@ -50,7 +50,7 @@ test('franchise scopes and opportunity leader scopes respect roster membership',
 });
 test('home trade controls update the same packages used in the full calculator',()=>{
  const h=setup();h.run("updateTradeControl({id:'',dataset:{homeTradeAdd:'give'},value:'cook'});updateTradeControl({id:'',dataset:{homeTradeAdd:'get'},value:'demo-1-1'})");
- assert.equal(h.run("STRATEGY.trade.give[0]"),'cook');assert.match(h.node('trade-preview').innerHTML,/Remove James Cook/);assert.match(h.node('trade-preview').innerHTML,/A LINEUP GAIN/);assert.equal(h.run('tradeModel().impact'),-1.5);assert.match(h.node('trade-preview').innerHTML,/home-trade-center/);
+ assert.equal(h.run("STRATEGY.trade.give[0]"),'cook');assert.match(h.node('trade-preview').innerHTML,/Remove James Cook/);assert.match(h.node('trade-preview').innerHTML,/A LINEUP GAIN/);assert.equal(h.run('Math.round(tradeModel().impact*10)/10'),3.1);assert.match(h.node('trade-preview').innerHTML,/home-trade-center/);
  h.run("renderStrategy('trade')");assert.match(h.html(),/checked/);
  h.run("updateTradeControl({id:'home-trade-partner',dataset:{},value:'3'})");assert.equal(h.run('STRATEGY.trade.get.length'),0);
 });
@@ -212,5 +212,5 @@ test('home trade accepts every rostered player, fits into adaptive packages and 
  const html=h.node('trade-preview').innerHTML;assert.equal((html.match(/data-home-trade-remove="give"/g)||[]).length,h.run('getTeam().playerIds.length'));
  assert.match(html,/home-trade-packages dense/);assert.ok(!html.includes('home-trade-difference'));
  h.run("STRATEGY.trade.give=['cook'];STRATEGY.trade.get=['demo-1-1'];renderHomeTrade();renderTrade()");
- assert.match(h.html(),/This week’s projections/);assert.match(h.html(),/-1.5 pts \/ week/);assert.match(h.node('trade-preview').innerHTML,/-1.5/);
+ assert.match(h.html(),/This week’s projections/);assert.match(h.html(),/\+3\.1 pts \/ week/);assert.match(h.node('trade-preview').innerHTML,/\+3\.1/);
 });

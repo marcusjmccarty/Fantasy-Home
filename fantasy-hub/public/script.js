@@ -16,6 +16,7 @@ let currentWeek = 6;
 let playerDirectory = null;
 let linkedUserId = null;
 let loading = false;
+let startupLeaguePending = !!initialUrlParams.get('league');
 
 const teamName = t => t?.name || `Team ${t?.id ?? '—'}`;
 const findTeam = id => model.teams.find(t => String(t.id) === String(id));
@@ -37,9 +38,15 @@ function setDialogMessage(message, kind = '') {
   const p=el('dialog-message'); p.textContent=message;p.className=`dialog-message ${kind}`;
 }
 function clock() { el('system-clock').textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }
-clock(); setInterval(clock, 60_000);
+clock(); setTimeout(()=>{clock();setInterval(clock,60_000);},60_000-Date.now()%60_000);
 
+// Exhibition league. Every team total, record, PF/PA and rank is derived from
+// recorded starting lineups and one deterministic round-robin schedule.
 function makeDemo(){
+  // Lineup slots shared by every exhibition franchise (ESPN slot ids).
+  const DEMO_SLOTS=[['QB',0],['RB',2],['RB',2],['WR',4],['WR',4],['TE',6],['FLEX',23],['DEF',16],['K',17]];
+  // Circle-method round robin: team 0 fixed, the rest rotate; [home,away] index pairs.
+  const demoRound=(n,round)=>{const order=[0,...Array.from({length:n-1},(_,i)=>1+(i+round)%(n-1))];return Array.from({length:n/2},(_,i)=>[order[i],order[n-1-i]]);};
   const p=[
     ['allen','Josh Allen','QB','BUF',[24.2,31.6,18.4,22.0,19.0,27.4]],
     ['cmc','Christian McCaffrey','RB','SF',[18.4,22.2,14.0,21.0,22.0,19.6]],
@@ -49,35 +56,58 @@ function makeDemo(){
     ['dal','Dallas Defense','DEF','DAL',[12,9,8,13,9,11]],
     ['deebo','Deebo Samuel','WR','SF',[15,17,11,13,14,12.4]],
     ['cook','James Cook','RB','BUF',[12.2,13.6,10.2,14,12.4,14.6]],
-    ['demo-flex','Jordan Vale','WR','CHI',[9,15,7,11,16,12]]
+    ['demo-flex','Jalen Corwin','WR','CHI',[9,15,7,11,16,12]]
   ];
+  const WEEKS=[1,2,3,4,5,6];
   const players=Object.fromEntries(p.map(([id,name,pos,nfl,weeks])=>[id,{id,name,pos,nfl,status:'ACTIVE',scores:Object.fromEntries(weeks.map((v,i)=>[i+1,v]))}]));
   players.deebo.status='QUESTIONABLE';
-  const scores=[108.4,132.6,96.2,145.8,119.6,140.0], against=[102.2,115,119.6,121.6,101.3,148.6];
+  // The user's lineup: every slot filled, bench players promoted to RB2/WR2/FLEX.
+  const userLineup=['allen','cmc','cook','chase','deebo','kelce','demo-flex','dal','tucker'];
   const names=['The Gridiron Club','Sunday Strikers','Fourth & Forever','End Zone Theory','Two-Minute Drill','The Blitz Unit','Red Zone Society','Hail Mary Club'];
-  const records=[[4,2],[6,0],[5,1],[4,2],[3,3],[2,4],[1,5],[0,6]];
-  const teams=names.map((name,i)=>({id:String(i+1),name,owner:i===0?'Example Owner':`Manager ${i+1}`,
-    wins:records[i][0],losses:records[i][1],ties:0,playerIds:i===0?p.map(x=>x[0]):[],
-    history:i===0?scores.map((points,index)=>({week:index+1,points,oppPoints:against[index],opponentId:String(index%7+2),
-      starters:Object.fromEntries(p.slice(0,6).map(x=>[x[0],x[4][index]]))}))
-      :scores.map((v,j)=>({week:j+1,points:Math.round((v*(.8+i*.035)+(j%3)*5)*10)/10,oppPoints:null,opponentId:null,starters:{}}))}));
-  // Fictional opponent rosters let the Trade Desk be explored before connecting.
-  const demoNames=['Riley Park','Drew Palmer','Avery Knight','Cameron Stone','Miles Sutton','Alex Reed','Sam Brooks','Taylor Hayes','Casey Ward','Logan Ellis','Morgan West','Blake Quinn'];
+  const teams=names.map((name,i)=>({id:String(i+1),name,owner:i===0?'Example Owner':`Manager ${i+1}`,wins:0,losses:0,ties:0,playerIds:i===0?p.map(x=>x[0]):[],history:[]}));
+  // Fictional opponent rosters. Names are unique league-wide and never reuse a
+  // demo free-agent name, so rostered and available pools stay disjoint.
+  const first=['Tyler','Marcus','Devin','Brandon','Isaiah','Caleb','Trevor','Darius','Elijah','Hunter','Jaden','Malik','Nolan','Owen','Preston','Quentin','Reggie','Spencer'];
+  const last=['Abbott','Barlow','Carver','Dalton','Easton','Fowler','Garrison','Holloway','Ingram','Jarvis','Kendrick','Lowry','Mercer','Norwood','Oakley','Pruitt','Ramsey','Sloan','Tatum','Upton','Vickers','Whitfield','Yates','Zeller'];
+  const defenses=[['GB','Green Bay Defense'],['DET','Detroit Defense'],['MIN','Minnesota Defense'],['KC','Kansas City Defense'],['PHI','Philadelphia Defense'],['PIT','Pittsburgh Defense'],['SEA','Seattle Defense']];
   const demoPositions=['QB','RB','RB','WR','WR','TE','WR','K','DEF','RB','WR','QB'];
+  const starterSlots=[0,2,2,4,4,6,23,17,16]; // demoPositions order: QB RB RB WR WR TE WR(FLEX) K DEF
+  const baseline={QB:20,RB:13,WR:13,TE:9,K:8.5,DEF:8};
+  const strength=[1,1.24,1.19,1.13,1.08,1.03,0.98,0.92];
+  let seed=86;const rand=()=>{seed=seed*16807%2147483647;return seed/2147483647;};
+  // Every first/last pairing, visited in a fixed scrambled order (173 is coprime to 432).
+  const combos=first.flatMap(f=>last.map(l=>f+' '+l)),freeAgentNames=['Jordan Vale','Drew Palmer','Miles Sutton','Avery Knight','Riley Park','Cameron Stone','Julian West','Theo Burns','Micah Reed','Owen Brooks','Nico Price','Luca Hayes','Marcus Lane','Damon Moss'];
+  const used=new Set([...Object.values(players).map(x=>x.name),...freeAgentNames]);let nameIndex=0;
+  const nextName=()=>{while(nameIndex<combos.length){const name=combos[(nameIndex++*173)%combos.length];if(!used.has(name)){used.add(name);return name;}}throw new Error('Demo name pool exhausted');};
+  const nflTeams=['CHI','GB','DET','MIN','BUF','KC','ATL','HOU','LAR','NO','TB','DEN'];
   for(let i=1;i<teams.length;i++){
     teams[i].playerIds=demoPositions.map((pos,j)=>{
-      const id=`demo-${i}-${j}`,baseline=pos==='QB'?18:pos==='K'||pos==='DEF'?7:10;
-      players[id]={id,name:demoNames[(j+i)%demoNames.length]+' '+String(i),pos,nfl:['CHI','GB','DET','MIN','BUF','KC'][j%6],status:'ACTIVE',scores:Object.fromEntries(Array.from({length:6},(_,w)=>[w+1,Math.round((baseline+(i+j+w)%7-2)*10)/10]))};
+      const id=`demo-${i}-${j}`,isDef=pos==='DEF';
+      const [nfl,name]=isDef?defenses[i-1]:[nflTeams[(i*3+j)%nflTeams.length],nextName()];
+      const scores=Object.fromEntries(WEEKS.map(w=>[w,Math.round(baseline[pos]*strength[i]*(0.7+rand()*0.6)*10)/10]));
+      players[id]={id,name,pos,nfl,status:'ACTIVE',scores};
       return id;
     });
   }
   for(const player of Object.values(players))player.projections=Object.fromEntries(Array.from({length:7},(_,i)=>{const week=i+1,prior=Object.entries(player.scores).filter(([w])=>Number(w)<week).map(([,v])=>v);return [week,prior.length?Math.round(sum(prior)/prior.length*10)/10:null];}));
-  // Recorded exhibition lineups, including benches, exercise the matchup lists.
-  for(const [index,team] of teams.entries())for(const history of team.history){
-    history.lineup=team.playerIds.map((id,playerIndex)=>{const starter=index===0?id in history.starters:playerIndex<9,slot=starter?(index===0?{QB:0,RB:2,WR:4,TE:6,DEF:16,K:17}[players[id].pos]:[0,2,2,4,4,6,23,17,16][playerIndex]):20;return {id,slot,starter,points:players[id].scores[history.week]};});
-    if(index>0)history.starters=Object.fromEntries(history.lineup.filter(row=>row.starter).map(row=>[row.id,row.points]));
+  // Recorded lineups (starters and bench). Team points are the starter sum.
+  const userSlot=new Map(userLineup.map((id,k)=>[id,DEMO_SLOTS[k][1]]));
+  const lineupFor=(index,team,week)=>team.playerIds.map((id,j)=>{
+    const slot=index===0?(userSlot.has(id)?userSlot.get(id):20):j<starterSlots.length?starterSlots[j]:20;
+    return {id,slot,starter:slot!==20,points:players[id].scores[week]};
+  });
+  for(const week of WEEKS){
+    const totals=teams.map((team,index)=>{const lineup=lineupFor(index,team,week),starters=Object.fromEntries(lineup.filter(r=>r.starter).map(r=>[r.id,r.points]));
+      return {lineup,starters,points:Math.round(sum(Object.values(starters))*10)/10};});
+    for(const [a,b] of demoRound(teams.length,week-1)){
+      for(const [me,them] of [[a,b],[b,a]]){
+        const t=teams[me],mine=totals[me].points,theirs=totals[them].points;
+        t.history.push({week,points:mine,oppPoints:theirs,opponentId:teams[them].id,starters:totals[me].starters,lineup:totals[me].lineup});
+        if(mine>theirs)t.wins++;else if(mine<theirs)t.losses++;else t.ties++;
+      }
+    }
   }
-  return {source:'demo',leagueId:null,league:'Exhibition League',season:2026,scoring:'PPR',weeks:[1,2,3,4,5,6],
+  return {source:'demo',leagueId:null,league:'Exhibition League',season:2026,scoring:'PPR',weeks:WEEKS,
     teams,players, liveWeek:null, description:'FICTIONAL EXAMPLE · not league results'};
 }
 
@@ -129,7 +159,7 @@ function updateDeepLink(){
   try{
     const u=new URL(window.location.href);
     if(model.source==='sleeper'){u.searchParams.set('league',model.leagueId);u.searchParams.set('roster',currentTeamId);}
-    else {u.searchParams.delete('league');u.searchParams.delete('roster');}
+    else if(!startupLeaguePending){u.searchParams.delete('league');u.searchParams.delete('roster');}
     history.replaceState(null,'',u);
   }catch{}
 }
@@ -287,7 +317,7 @@ function drawMatchup(team){
   const other=provisional?opposite?.matchupTotal??null:opposite?.officialDisplay??otherOfficial??opposite?.computedActual??null;
   const result=own===null?'NOT STARTED':other===null?'NO OPPONENT':own===other?'TIE':own>other?'VICTORY':'DEFEAT';
 
-  el('matchup-panel').innerHTML=`<div class="matchup-original-score"><div class="matchup-competitors"><div class="matchup-side"><div class="matchup-score-club"><b>${esc(teamName(team))}</b><span>${team.wins}–${team.losses}${team.ties?'–'+team.ties:''}</span></div><strong>${nfmt(own,1)}</strong></div><div class="matchup-divider"><b>VS</b><small>${provisional?'ACT + PROJ':result}</small></div><div class="matchup-side right"><div class="matchup-score-club"><b>${esc(opponent?teamName(opponent):'BYE')}</b><span>${opponent?opponent.wins+'–'+opponent.losses:'—'}</span></div><strong>${nfmt(other,1)}</strong></div></div></div><div class="matchup-roster-pair">${homeMatchupRoster(team,week)}${homeMatchupRoster(opponent,week)}</div>`;
+  el('matchup-panel').innerHTML=`<div class="matchup-original-score"><div class="matchup-competitors"><div class="matchup-side"><div class="matchup-score-club"><b>${esc(teamName(team))}</b><span>${team.wins}–${team.losses}${team.ties?'–'+team.ties:''}</span></div><strong>${nfmt(own,1)}</strong></div><div class="matchup-divider"><b>VS</b><small>${provisional?'ACT + PROJ':result}</small></div><div class="matchup-side right"><div class="matchup-score-club"><b>${esc(opponent?teamName(opponent):'BYE')}</b><span>${opponent?opponent.wins+'–'+opponent.losses+(opponent.ties?'–'+opponent.ties:''):'—'}</span></div><strong>${nfmt(other,1)}</strong></div></div></div><div class="matchup-roster-pair">${homeMatchupRoster(team,week)}${homeMatchupRoster(opponent,week)}</div>`;
   el('matchup-comment').textContent='';
   if(provisional&&typeof fetchNFLWeekState==='function')void fetchNFLWeekState(week);
 
@@ -327,7 +357,7 @@ el('player-rows').addEventListener('keydown',e=>{
 function playerQuickStats(p){
  const week=Number(currentWeek),providerWeek=Number(model.currentWeek||model.liveWeek||model.weeks?.at(-1)),projection=number(p?.projections?.[week])??(week===providerWeek?number(p?.espnProj):null);
  const prior=Object.entries(p?.scores||{}).filter(([w,v])=>Number(w)<week&&number(v)!==null).sort((a,b)=>Number(a[0])-Number(b[0])).slice(-3).map(([,v])=>v);
- const stats=[['Proj · W'+week,projection,'Provider fantasy-point projection for the active week. A dash means no projection was supplied.'],['Last wk · W'+Math.max(1,week-1),week>1?number(p?.scores?.[week-1]):null,'Recorded fantasy points in the week immediately before the active week.'],['Last 3 avg',prior.length?sum(prior)/prior.length:null,'Average fantasy points across the last three recorded games before the active week.']];
+ const stats=[['Proj · W'+week,projection,'Provider fantasy-point projection for the active week. A dash means no projection was supplied.'],[week>1?'Last wk · W'+(week-1):'Last wk',week>1?number(p?.scores?.[week-1]):null,'Recorded fantasy points in the week immediately before the active week.'],['Last 3 avg',prior.length?sum(prior)/prior.length:null,'Average fantasy points across the last three recorded games before the active week.']];
  return stats.map(([label,value,help])=>`<button type="button" class="stat-help-trigger strategy-metric player-quick-metric" data-stat-title="${esc(label)}" data-stat-help="${esc(help)}" aria-expanded="false"><span>${esc(label)}</span><strong>${nfmt(value)}</strong></button>`).join('');
 }
 function drawProfile(team){
@@ -524,7 +554,7 @@ document.querySelectorAll('[data-close-dialog]').forEach(b=>b.addEventListener('
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>selectTab(b.dataset.tab)));
 el('lookup-user-form').addEventListener('submit',async e=>{e.preventDefault();try{await discoverUser(el('username-input').value,Number(el('season-input').value))}catch(error){setDialogMessage(error.message,'error')}});
 el('direct-league-form').addEventListener('submit',e=>{e.preventDefault();connect(el('league-id-input').value,null,null)});
-el('demo-button').addEventListener('click',()=>{model=makeDemo();currentTeamId='1';currentWeek=6;currentPlayerId=null;linkedUserId=null;try{localStorage.removeItem('gridiron86-last')}catch{}updateUI();el('data-dialog').close()});
+el('demo-button').addEventListener('click',()=>{startupLeaguePending=false;model=makeDemo();currentTeamId='1';currentWeek=6;currentPlayerId=null;linkedUserId=null;try{localStorage.removeItem('gridiron86-last')}catch{}updateUI();el('data-dialog').close()});
 el('refresh-button').addEventListener('click',()=>{if(model.source==='sleeper')connect(model.leagueId,currentTeamId,null);else if(model.source==='espn')connectESPN();else if(model.source==='demo')openData();else{openData();selectTab('json');setDialogMessage('Choose your JSON file again to reload it.')}});
 el('team-select').addEventListener('change',e=>{currentTeamId=e.target.value;currentPlayerId=null;updateUI()});
 for(const id of ['week-select','header-current-week'])el(id).addEventListener('change',e=>setActiveWeek(e.target.value));
@@ -542,7 +572,7 @@ let last=null;try{last=JSON.parse(localStorage.getItem('gridiron86-last')||'null
 const startupLeague=initialUrlParams.get('league'); // ESPN-first: do not auto-open an old Sleeper league over a saved ESPN session.
 if(startupLeague){
   const requested=initialUrlParams.get('roster')||last?.roster;
-  connect(startupLeague,requested,null);
+  connect(startupLeague,requested,null).finally(()=>{startupLeaguePending=false;});
 }
 
 const espnN = v => v===null||v===undefined||v===''||!Number.isFinite(Number(v))?null:Number(v);
@@ -626,7 +656,7 @@ async function connectESPN(){
  catch(e){setDialogMessage(e.message,'error')}finally{button.disabled=false}
 }
 el('espn-form').addEventListener('submit',e=>{e.preventDefault();connectESPN()});
-el('espn-forget').addEventListener('click',async()=>{await fetch('/api/espn/logout',{method:'POST',credentials:'same-origin'});await checkESPN()});
+el('espn-forget').addEventListener('click',async()=>{try{await fetch('/api/espn/logout',{method:'POST',credentials:'same-origin'})}catch{}await checkESPN()});
 checkESPN().then(s=>{if(s.active){el('espn-league').value=s.leagueId||'28375786';el('espn-season').value=s.season||2026;connectESPN()}});
 
 

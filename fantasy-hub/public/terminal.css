@@ -80,3 +80,6 @@ dialog::backdrop{background:rgba(28,30,29,.45)}
 /* Home Custom Grapher: the POS select needs room for "ALL" plus its arrow. */
 #home-graph-pos{min-width:64px}
 .home-graph-controls{grid-template-columns:minmax(64px,auto) minmax(0,1fr) minmax(0,1fr) auto auto}
+
+/* Scatter labels sit on a paper-coloured halo so trend and grid lines never strike through names. */
+.lab-label,.graph-home-label{paint-order:stroke;stroke:#fff;stroke-width:5px;stroke-linejoin:round}
