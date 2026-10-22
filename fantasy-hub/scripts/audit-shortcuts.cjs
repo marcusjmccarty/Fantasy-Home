@@ -78,12 +78,16 @@ const base=process.env.SHORTCUTS_BASE_URL||'http://127.0.0.1:8765';
  assert.equal(await page.locator('#explore-dialog').evaluate(n=>n.open),true);
  await page.keyboard.press('Escape');assert.equal(await page.locator('#explore-dialog').evaluate(n=>n.open),false);
  // Metric-card capture must honor the same modifier/composition exclusions.
- await page.locator('[data-stat-help]').first().click();
+ await page.locator('#home-go-to').selectOption('opportunity');
+ const metric=page.locator('#explore-dialog [data-stat-help]').first();await metric.click();
  for(const options of [{ctrlKey:true},{altKey:true},{metaKey:true},{shiftKey:true},{isComposing:true},{repeat:true},{keyCode:229},{modifierAltGraph:true}]){
   const result=await page.evaluate(options=>{const e=new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true,...options});document.activeElement.dispatchEvent(e);return{prevented:e.defaultPrevented,open:!!document.querySelector('.metric-popover')}},options);
-  assert.deepEqual(result,{prevented:false,open:true});
+  assert.deepEqual(result,{prevented:!!options.repeat,open:true}); // repeat is consumed to protect the underlying modal
  }
  await page.keyboard.press('Escape');assert.equal(await page.locator('.metric-popover').count(),0);
+ assert.equal(await page.locator('#explore-dialog').evaluate(n=>n.open),true,'metric Escape must not reach its report');
+ assert.equal(await metric.evaluate(n=>n===document.activeElement),true);
+ await page.keyboard.press('Escape');assert.equal(await page.locator('#explore-dialog').evaluate(n=>n.open),false);
  for(const key of ['g','/','?']){
   await page.locator('#about-button').focus();
   const result=await page.evaluate(key=>{const e=new KeyboardEvent('keydown',{key,bubbles:true,cancelable:true,modifierAltGraph:true});document.activeElement.dispatchEvent(e);return e.defaultPrevented},key);

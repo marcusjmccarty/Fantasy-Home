@@ -134,3 +134,33 @@ Priority backlog requiring owner/environment coordination:
 
 No operations were denied and no outcome is uncertain. The renderer edit is
 pending owner coordination, not a tool/permission rejection.
+
+## Latest-main integration checkpoint
+
+Prepared `codex/keyboard-shortcuts-integration` in a separate worktree on freshly
+fetched main `e8eb5af937c4ab298713f815ee95c18633c86356` (newer than the supplied
+8f6e87c checkpoint). Original branch remains intact at `761e87d`.
+
+The eight original commits were cherry-picked locally. One conflict in index.html
+script includes was resolved by retaining main's v9.12.1 versions and its new
+interactions-before-explorer ordering, then loading shortcuts last. No graph or
+workspace implementation was edited. Mapped integration commits:
+
+| Original | Integration |
+| --- | --- |
+| 0f5c9ad | b332e1c |
+| 51ec1e6 | 9da09b0 |
+| 3c53e74 | 335a6ba |
+| ad16f86 | 97f39f3 |
+| afa820e | be63fc1 |
+| a209ec7 | 1a0566e |
+| b23844c | aaa415e |
+| 761e87d | cc2d8dc |
+
+Latest-main validation: **75/75 Node tests pass** (main added three tests), both
+browser scripts pass with `SHORTCUTS_BASE_URL=http://127.0.0.1:8766`, and syntax/
+whitespace checks pass. The audit additionally verifies nested metric/report
+Escape: first Escape removes only the metric and restores its trigger; second
+Escape closes the native report. Held Escape, help-over-ranking, and modifier/IME
+guards pass with main's updated global listener order. Screenshots here were
+refreshed on the integrated v9.12.1 build. No main checkout, push, merge, or deploy.
