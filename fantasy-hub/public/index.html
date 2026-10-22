@@ -7,23 +7,23 @@
   <title>GRIDIRON 86 / Fantasy Team Terminal</title>
   <link rel="preload" href="fonts/IBMPlexMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/IBMPlexMono-Bold.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="type.css?v=9.19.0">
-  <link rel="stylesheet" href="style.css?v=9.19.0">
-  <link rel="stylesheet" href="workspace.css?v=9.19.0">
-  <link rel="stylesheet" href="readability.css?v=9.19.0">
-  <link rel="stylesheet" href="refinements.css?v=9.19.0">
-  <link rel="stylesheet" href="polish.css?v=9.19.0">
-  <link rel="stylesheet" href="terminal.css?v=9.19.0">
-  <link rel="stylesheet" href="keyboard.css?v=9.19.0">
-  <link rel="stylesheet" href="reports.css?v=9.19.0">
-  <script src="script.js?v=9.19.0" defer></script>
-  <script src="interactions.js?v=9.19.0" defer></script>
-  <script src="explorer.js?v=9.19.0" defer></script>
-  <script src="analytics-math.js?v=9.19.0" defer></script>
-  <script src="strategy.js?v=9.19.0" defer></script>
-  <script src="workspace.js?v=9.19.0" defer></script>
-  <script src="page-width.js?v=9.19.0" defer></script>
-  <script src="shortcuts.js?v=9.19.0" defer></script>
+  <link rel="stylesheet" href="type.css?v=9.20.0">
+  <link rel="stylesheet" href="style.css?v=9.20.0">
+  <link rel="stylesheet" href="workspace.css?v=9.20.0">
+  <link rel="stylesheet" href="readability.css?v=9.20.0">
+  <link rel="stylesheet" href="refinements.css?v=9.20.0">
+  <link rel="stylesheet" href="polish.css?v=9.20.0">
+  <link rel="stylesheet" href="terminal.css?v=9.20.0">
+  <link rel="stylesheet" href="keyboard.css?v=9.20.0">
+  <link rel="stylesheet" href="reports.css?v=9.20.0">
+  <script src="script.js?v=9.20.0" defer></script>
+  <script src="interactions.js?v=9.20.0" defer></script>
+  <script src="explorer.js?v=9.20.0" defer></script>
+  <script src="analytics-math.js?v=9.20.0" defer></script>
+  <script src="strategy.js?v=9.20.0" defer></script>
+  <script src="workspace.js?v=9.20.0" defer></script>
+  <script src="page-width.js?v=9.20.0" defer></script>
+  <script src="shortcuts.js?v=9.20.0" defer></script>
 
 </head>
 <body>
@@ -136,11 +136,11 @@
     </main>
     <details class="dossiers-section" id="dossiers-section"><summary class="dossiers-heading"><h2 class="dossiers-title">Player files <span class="dossiers-count" id="dossiers-count"></span></h2><span class="dossiers-hint">Season history, form and news for every rostered player</span></summary><div id="player-dossiers" class="dossier-list"></div></details>
     <dialog id="explore-dialog" class="explore-dialog" aria-labelledby="explore-title">
-      <div class="explore-title-bar"><div><span class="explore-history-controls"><button id="explore-back" class="explore-icon explore-back" type="button" title="Previous expanded view" aria-label="Previous expanded view">&lt;</button><button id="explore-forward" class="explore-icon explore-back" type="button" title="Next view" aria-label="Forward to next view" disabled>&gt;</button></span><span id="explore-match-week" class="explore-match-week" hidden></span><b id="explore-title">STATISTICAL WORKSPACE</b><span id="explore-club" class="explore-club" title="Current report franchise">THE GRIDIRON CLUB</span><small id="explore-context">DEMO</small></div><div class="explore-top-actions"><label class="explore-jump-label" for="explore-jump">GO TO <select id="explore-jump" aria-label="Open another workspace"><option value="summary">FRANCHISE</option><option value="matchup">MATCHUP</option><option value="weekly">WEEKLY</option><option value="standings">LEAGUE TABLE</option><option value="roster">ROSTER</option><option value="profile">PLAYER FILE</option><option value="player-analytics">FULL PLAYER LOG</option><option value="agents">FREE AGENTS</option><option value="positions">POSITIONS</option><option value="position-compare">POSITION / PLAYERS</option><option value="league-contributions">LEAGUE / WEEKLY</option><option value="graph">VARIABLE LAB</option></select></label><button type="button" class="explore-close" data-shortcuts-help aria-haspopup="dialog" title="Keyboard shortcuts (?)">KEYS ?</button><button type="button" id="explore-close" class="explore-close" aria-label="Close expanded window">× CLOSE</button></div></div>
+      <div class="explore-title-bar"><div><span class="explore-history-controls"><button id="explore-back" class="explore-icon explore-back" type="button" title="Previous expanded view" aria-label="Previous expanded view">&lt;</button><button id="explore-forward" class="explore-icon explore-back" type="button" title="Next view" aria-label="Forward to next view" disabled>&gt;</button></span><span id="explore-match-week" class="explore-match-week" hidden></span><b id="explore-title" tabindex="-1" autofocus>STATISTICAL WORKSPACE</b><span id="explore-club" class="explore-club" title="Current report franchise">THE GRIDIRON CLUB</span><small id="explore-context">DEMO</small></div><div class="explore-top-actions"><label class="explore-jump-label" for="explore-jump">GO TO <select id="explore-jump" aria-label="Open another workspace"><option value="summary">FRANCHISE</option><option value="matchup">MATCHUP</option><option value="weekly">WEEKLY</option><option value="standings">LEAGUE TABLE</option><option value="roster">ROSTER</option><option value="profile">PLAYER FILE</option><option value="player-analytics">FULL PLAYER LOG</option><option value="agents">FREE AGENTS</option><option value="positions">POSITIONS</option><option value="position-compare">POSITION / PLAYERS</option><option value="league-contributions">LEAGUE / WEEKLY</option><option value="graph">VARIABLE LAB</option></select></label><button type="button" class="explore-close" data-shortcuts-help aria-haspopup="dialog" title="Keyboard shortcuts (?)">KEYS ?</button><button type="button" id="explore-close" class="explore-close" aria-label="Close expanded window">× CLOSE</button></div></div>
       <div class="explore-content" id="explore-content"></div>
       <footer class="explore-footer"><span id="explore-source">Data source: demo</span><span class="explore-footer-keys">ESC CLOSES CARDS, THEN RETURNS TO THE DASHBOARD · CTRL+K FIND · ? KEYS</span></footer>
     </dialog>
-    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.19.0</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
+    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.20.0</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
   </div>
 
   <dialog id="data-dialog" aria-labelledby="dialog-title">

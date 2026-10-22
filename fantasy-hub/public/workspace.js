@@ -133,6 +133,9 @@ function openReport(type,{player=null,focus=true}={}){
 document.addEventListener('workspace:opened',event=>{
   const type=event.detail.type;
   markCurrent(type);
+  // The report toolbar uses the same short name as the menu item that opens it.
+  const name=WORKSPACE_GROUPS.flatMap(([,items])=>items).find(([id])=>id===type)?.[1];
+  if(name)el('explore-title').textContent=name.toUpperCase();
   el('explore-content').setAttribute('aria-labelledby','explore-title');
   remember(type,XL.player);
   const entering=workspace.entering;workspace.entering=false;
