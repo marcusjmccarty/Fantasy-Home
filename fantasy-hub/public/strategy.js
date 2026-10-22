@@ -326,7 +326,7 @@ document.addEventListener('keydown',event=>{
 document.addEventListener('change',event=>{
  const t=event.target;if(updateTradeControl(t)){const focus=t.id?el(t.id):t.dataset.homeTradeAdd?el('trade-preview').querySelector(`[data-home-trade-add="${t.dataset.homeTradeAdd}"]`):el('explore-content').querySelector?.(`input[${t.dataset.tradeDrop?'data-trade-drop':'data-trade-side'}="${t.dataset.tradeDrop||t.dataset.tradeSide}"][value="${CSS.escape(t.value)}"]`);focus?.focus?.({preventScroll:true});return;}
  if(t.id==='strategy-player'){STRATEGY.player=t.value;XL.player=t.value;renderStrategy(XL.open);}
- if(t.id==='strategy-scope'){STRATEGY.scope=t.value;STRATEGY.player=strategyPlayerPool(t.value)[0]?.id||null;XL.player=STRATEGY.player;renderStrategy(XL.open);}
+ if(t.id==='strategy-scope'){const selected=strategyPlayer()?.id;STRATEGY.scope=t.value;const pool=strategyPlayerPool(t.value);STRATEGY.player=pool.find(p=>String(p.id)===String(selected))?.id||pool[0]?.id||null;XL.player=STRATEGY.player;renderStrategy(XL.open);}
  const usage={'usage-period':'period','usage-position':'position','usage-sort':'sort','usage-leaders':'leaders'};if(usage[t.id]){STRATEGY[usage[t.id]]=t.value;updateOpportunityResults();if(t.id==='usage-period')renderStrategyHome();}
  if(['home-outlook-scope','home-share-scope'].includes(t.id)){STRATEGY.homeScope=t.value;STRATEGY.homePlayer=null;renderStrategyHome();}
  if(['home-outlook-player','home-share-player'].includes(t.id)){STRATEGY.homePlayer=t.value;if(tradeRoster(getTeam()).some(p=>String(p.id)===t.value)){currentPlayerId=t.value;drawRoster(getTeam());drawProfile(getTeam());}else renderStrategyHome();}

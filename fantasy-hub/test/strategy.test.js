@@ -4,12 +4,12 @@ import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 const read=name=>readFileSync(new URL('../public/'+name,import.meta.url),'utf8');
 function setup(){
- let html='';const nodes=new Map();const el=id=>{if(!nodes.has(id))nodes.set(id,{markup:'',writes:0,get innerHTML(){return this.markup},set innerHTML(value){this.markup=value;this.writes++},addEventListener(){},add(){}});return nodes.get(id)};
- const c=vm.createContext({document:{addEventListener(){}},sourceName:()=>"Exhibition",el,Option:class{},setExplorer:s=>{html=s},heading:(title,copy)=>`<div><h3>${title}</h3><p>${copy}</p></div>`,currentWeek:6,currentPlayerId:'allen',XL:{player:null},normalizeNFLAbbr:x=>x,esc:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;'),labFormat:(v,d=1)=>v==null?'—':Number(v).toFixed(d),labPct:v=>v==null?'—':Number(v).toFixed(1)+'%',nameKey:v=>String(v).toLowerCase().replace(/[^a-z0-9]/g,''),expandTable:(headers,rows)=>`<table>${headers.join('|')}${rows.join('')}</table>`});
+ let html='';const handlers=new Map(),nodes=new Map();const el=id=>{if(!nodes.has(id))nodes.set(id,{markup:'',writes:0,get innerHTML(){return this.markup},set innerHTML(value){this.markup=value;this.writes++},addEventListener(){},add(){}});return nodes.get(id)};
+ const c=vm.createContext({document:{addEventListener(type,fn){handlers.set(type,[...(handlers.get(type)||[]),fn])}},sourceName:()=>"Exhibition",el,Option:class{},setExplorer:s=>{html=s},heading:(title,copy)=>`<div><h3>${title}</h3><p>${copy}</p></div>`,currentWeek:6,currentPlayerId:'allen',XL:{player:null},normalizeNFLAbbr:x=>x,esc:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;'),labFormat:(v,d=1)=>v==null?'—':Number(v).toFixed(d),labPct:v=>v==null?'—':Number(v).toFixed(1)+'%',nameKey:v=>String(v).toLowerCase().replace(/[^a-z0-9]/g,''),expandTable:(headers,rows)=>`<table>${headers.join('|')}${rows.join('')}</table>`});
  const script=read('script.js');vm.runInContext(script.slice(script.indexOf('function makeDemo()'),script.indexOf('function updateUI()')),c);
  vm.runInContext("var model=makeDemo();var currentTeamId='1';var getTeam=()=>model.teams.find(t=>t.id===currentTeamId);var findTeam=id=>model.teams.find(t=>t.id===id);var getPool=()=>Object.values(model.players);var rowsFor=t=>t.playerIds.map(id=>model.players[id]);var teamName=t=>t?.name||'No team';",c);
  vm.runInContext(read('analytics-math.js'),c);vm.runInContext(read('strategy.js'),c);
- return {run:code=>vm.runInContext(code,c),html:()=>html,node:el};
+ return {run:code=>vm.runInContext(code,c),html:()=>html,node:el,change:(id,value)=>{for(const fn of handlers.get('change')||[])fn({target:{id,value,dataset:{}}})}};
 }
 test('all strategy reports render with the real exhibition model',()=>{
  const h=setup();for(const route of ['outlook','opportunity','trade']){h.run(`renderStrategy('${route}')`);assert.ok(h.html().length>500);assert.ok(!h.html().includes('NaN'));assert.ok(!h.html().includes('undefined'));}
@@ -117,4 +117,11 @@ test('share bars open the selected player and week; chart whitespace does nothin
 });
 test('workload metrics and share bars reveal definitions without a yellow TD card',()=>{
  const h=setup();h.run("renderStrategy('opportunity')");assert.match(h.html(),/<details class="strategy-metric metric-disclosure"/);assert.match(h.html(),/<details class="strategy-share share-blue share-disclosure"/);assert.ok(!h.html().includes('td-estimate'));assert.ok(!h.html().includes('15+ pts'));
+});
+
+test('franchise filters retain the selected player when they remain in scope',()=>{
+ const h=setup();h.run("renderStrategy('opportunity');STRATEGY.player='cook';XL.player='cook';XL.open='opportunity';STRATEGY.period='week:3'");
+ h.change('strategy-scope','active');assert.equal(h.run('STRATEGY.player'),'cook');
+ h.change('strategy-scope','all');assert.equal(h.run('STRATEGY.player'),'cook');assert.equal(h.run('STRATEGY.period'),'week:3');
+ h.change('strategy-scope','2');assert.equal(h.run("strategyPlayerPool('2').some(p=>p.id===STRATEGY.player)"),true);
 });

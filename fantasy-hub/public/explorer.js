@@ -3,7 +3,7 @@
 const XL = {
   open:null, player:null, free:[], offset:0, freeLoaded:false, freeBusy:false, freeError:'',
   advanced:new Map(), importedColumns:[], demoSeeded:false, positionRowsVisible:new Map(),
-  graph:{x:'total',y:'avg',pos:'ALL',scope:'ALL',minimum:0,showLabels:false,trend:true,search:'',color:'pos'},
+  graph:{x:'total',y:'avg',pos:'ALL',scope:'ALL',minimum:0,showLabels:true,trend:true,search:'',color:'pos'},
   agent:{pos:'ALL',search:'',sort:'projected'}, positionComparePos:'ALL', positionCompareWeek:'all', positionComparisonView:'position', positionComparisonPool:'ROSTERED', positionComparisonSort:'GRADE', leagueComparisonPos:'ALL', leagueComparisonView:'week', graphStatFocus:null, graphAutoSource:null, graphUserSelected:false, graphNotice:'',
   standingsSort:'rank', viewTeamId:null, lineupScenarios:new Map(), viewWeek:null, franchiseWeek:null, franchiseWeekTeam:null, selectedPoint:null, news:new Map(), overview:new Map(), history:[], future:[], focusedSeries:null, focusTarget:null, positionWeek:"all", positionFocusPlayer:null, positionSharePos:'LEADING', playerLogRange:'all', playerArchiveAll:false, opponentScouting:new Map(), scoutingPending:new Set(),
 };
