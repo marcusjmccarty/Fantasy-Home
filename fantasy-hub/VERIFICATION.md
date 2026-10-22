@@ -15,7 +15,7 @@ Not verified: production deployment in your Cloudflare account; a private ESPN i
 
 - JavaScript syntax checks: passed for workspace.js and explorer.js.
 - Navigation regression tests: 7 passed, exercising production workspace code and
-  openExplorer with a minimal DOM fixture. Covers all 12 report routes, modal/inline
+  openExplorer with a minimal DOM fixture. Covers all 15 report routes, modal/inline
   transitions, delayed close events, preference validation and blocked storage,
   keyboard navigation, and player drilldowns.
 - Existing Worker unit tests: 14 passed.
@@ -23,5 +23,19 @@ Not verified: production deployment in your Cloudflare account; a private ESPN i
 - Browser visual QA was unavailable: the execution environment refused a local
   HTTP listener and the browser URL policy refused file URLs. These unit tests do
   not verify rendered layout, native browser focus, or responsive appearance.
-- The Cloudflare runtime integration test was not rerun; this update changes only
-  frontend UI, release metadata, documentation, and navigation tests.
+- The Cloudflare runtime integration test was not rerun; the Worker itself is unchanged.
+
+
+### Fieldhouse / strategy expansion
+
+- 28 Node tests passed: 14 existing Worker checks, 7 navigation checks, 7 analytics
+  checks. Analytics cover look-ahead exclusion, projection anchoring, missing/zero/
+  negative scores, flex eligibility, unique assignments, and package completeness.
+- 5 Python aggregation tests passed: red-zone boundaries, complete team
+  denominators, duplicate plays and excluded play types, missing yardlines, and
+  identity/team transitions.
+- The new data workflow has not been verified against live nflverse downloads in
+  this restricted local environment. The first successful GitHub Actions run is
+  required before live Opportunity data is available.
+- Responsive CSS is implemented; visual QA is still unverified locally due to the
+  preview restrictions documented above.

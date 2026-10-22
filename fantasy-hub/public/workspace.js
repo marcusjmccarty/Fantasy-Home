@@ -12,6 +12,9 @@ const WORKSPACE_TABS = [
   ['positions','Usage','ANALYSIS / POSITION ALLOCATION'],
   ['position-compare','Player pool','ANALYSIS / POSITION COMPARISON'],
   ['league-contributions','League trends','ANALYSIS / WEEKLY CONTRIBUTIONS'],
+  ['outlook','Defensive outlook','STRATEGY / MATCHUP & RANGE'],
+  ['opportunity','Opportunity','STRATEGY / TOUCHES & SHARE'],
+  ['trade','Trade desk','STRATEGY / ROSTER IMPACT'],
   ['graph','Variable lab','ANALYSIS / CUSTOM GRAPHER'],
 ];
 const WORKSPACE_STORAGE='gridiron86-workspace-v1';
@@ -34,6 +37,7 @@ function syncWorkspaceTab(type){
   el('workspace-section').textContent=report[2];
   if(document.body.dataset.layout==='tabbed'){
     el('explore-content').setAttribute('aria-labelledby',`workspace-tab-${type}`);
+    el('explore-dialog').scrollIntoView?.({block:'start',behavior:'instant'});
     const active=el(`workspace-tab-${type}`);
     // Reveal overflowed tabs without moving the page or report scroll position.
     if(active.offsetLeft<workspaceTabs.scrollLeft)workspaceTabs.scrollLeft=active.offsetLeft;
@@ -42,7 +46,7 @@ function syncWorkspaceTab(type){
 }
 function activateWorkspace(type){
   if(type===XL.open)return;
-  const player=['profile','player-analytics'].includes(type)?(XL.player||currentPlayerId||rowsFor(getTeam())[0]?.id):null;
+  const player=['profile','player-analytics','outlook','opportunity'].includes(type)?(XL.player||currentPlayerId||rowsFor(getTeam())[0]?.id):null;
   openExplorer(type,player);
 }
 function setWorkspaceLayout(layout){
@@ -60,7 +64,7 @@ function setWorkspaceLayout(layout){
   if(tabbed){
     report.setAttribute('role','region');report.removeAttribute('aria-modal');
     el('explore-content').setAttribute('role','tabpanel');el('explore-content').tabIndex=0;
-    openExplorer(previous,['profile','player-analytics'].includes(previous)?(XL.player||currentPlayerId||rowsFor(getTeam())[0]?.id):null);
+    openExplorer(previous,['profile','player-analytics','outlook','opportunity'].includes(previous)?(XL.player||currentPlayerId||rowsFor(getTeam())[0]?.id):null);
   }else{
     report.removeAttribute('role');
     el('explore-content').removeAttribute('role');el('explore-content').removeAttribute('aria-labelledby');el('explore-content').removeAttribute('tabindex');

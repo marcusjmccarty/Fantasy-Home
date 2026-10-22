@@ -4,17 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#dfded6">
-  <title>GRIDIRON 86 / Fantasy Team Terminal</title>
+  <title>GRIDIRON 86 / Your Fantasy Front Office</title>
   <link rel="stylesheet" href="style.css">
   <script src="script.js" defer></script>
   <script src="explorer.js" defer></script>
+  <script src="analytics-math.js" defer></script>
+  <script src="strategy.js" defer></script>
   <script src="workspace.js" defer></script>
   <link rel="stylesheet" href="workspace.css">
 </head>
 <body>
   <div class="desktop" id="desktop">
     <header class="menu-bar">
-      <div class="menu-left"><span class="system-glyph" aria-hidden="true">▦</span><b>GRIDIRON/86</b><span class="menu-divider"></span><span>Fantasy Team Terminal</span></div>
+      <div class="menu-left"><span class="system-glyph" aria-hidden="true">▦</span><b>GRIDIRON/86</b><span class="menu-divider"></span><span>Your fantasy front office</span></div>
       <div class="menu-right"><span id="system-clock"></span><button id="about-button" class="menu-action">ABOUT</button><button id="open-data" class="menu-action highlighted">+ LOAD DATA</button></div>
     </header>
 
@@ -25,7 +27,7 @@
     </div>
 
     <div class="team-strip">
-      <div class="team-headline"><div class="tiny-label">FANTASY FOOTBALL / CLUB DOSSIER</div><h1 id="team-name">THE GRIDIRON CLUB</h1><span id="team-owner">Example franchise · Select a team to inspect</span></div>
+      <div class="team-headline"><div class="tiny-label">FANTASY FOOTBALL / FIELDHOUSE</div><h1 id="team-name">THE GRIDIRON CLUB</h1><span id="team-owner">Example franchise · Select a team to inspect</span></div>
       <div class="team-header-stats">
         <div><span class="tiny-label">CURRENT WEEK</span><b id="header-current-week">—</b></div>
         <div><span class="tiny-label">RECORD</span><b id="header-record">4–2</b></div>
@@ -45,6 +47,11 @@
       <div id="workspace-tabs" class="workspace-tabs" role="tablist" aria-label="Reports"></div>
       <div class="workspace-tab-context"><span id="workspace-section">TEAM / OVERVIEW</span><span>FULL REPORTS <span aria-hidden="true">↗</span></span></div>
     </nav>
+    <section class="strategy-launchpad" aria-label="Strategy tools">
+      <button data-strategy-open="outlook"><small>01 / PREPARE</small><strong>Defensive outlook <span>↗</span></strong><p>Find the matchup. Explore the floor and ceiling.</p></button>
+      <button data-strategy-open="opportunity"><small>02 / SCOUT</small><strong>Touches & share <span>↗</span></strong><p>Follow the volume, from targets to the goal line.</p></button>
+      <button data-strategy-open="trade"><small>03 / NEGOTIATE</small><strong>Trade Desk <span>↗</span></strong><p>Build a deal. Measure the impact on both rosters.</p></button>
+    </section>
     <main class="window-grid" aria-label="Fantasy football dashboard">
       <section class="win summary-window expandable" data-explore="summary" tabindex="0" aria-label="Open expanded summary statistics" aria-labelledby="title-summary">
         <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-summary">CLUB OVERVIEW</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>

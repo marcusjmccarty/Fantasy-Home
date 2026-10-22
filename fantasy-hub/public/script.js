@@ -48,7 +48,8 @@ function makeDemo(){
     ['tucker','Justin Tucker','K','BAL',[8,11,7.6,10,9,9]],
     ['dal','Dallas Defense','DEF','DAL',[12,9,8,13,9,11]],
     ['deebo','Deebo Samuel','WR','SF',[15,17,11,13,14,12.4]],
-    ['cook','James Cook','RB','BUF',[12.2,13.6,10.2,14,12.4,14.6]]
+    ['cook','James Cook','RB','BUF',[12.2,13.6,10.2,14,12.4,14.6]],
+    ['demo-flex','Jordan Vale','WR','CHI',[9,15,7,11,16,12]]
   ];
   const players=Object.fromEntries(p.map(([id,name,pos,nfl,weeks])=>[id,{id,name,pos,nfl,status:'ACTIVE',scores:Object.fromEntries(weeks.map((v,i)=>[i+1,v]))}]));
   players.deebo.status='QUESTIONABLE';
@@ -60,6 +61,16 @@ function makeDemo(){
     history:i===0?scores.map((points,index)=>({week:index+1,points,oppPoints:against[index],opponentId:String(index%7+2),
       starters:Object.fromEntries(p.slice(0,6).map(x=>[x[0],x[4][index]]))}))
       :scores.map((v,j)=>({week:j+1,points:Math.round((v*(.8+i*.035)+(j%3)*5)*10)/10,oppPoints:null,opponentId:null,starters:{}}))}));
+  // Fictional opponent rosters let the Trade Desk be explored before connecting.
+  const demoNames=['Riley Park','Drew Palmer','Avery Knight','Cameron Stone','Miles Sutton','Alex Reed','Sam Brooks','Taylor Hayes','Casey Ward','Logan Ellis','Morgan West','Blake Quinn'];
+  const demoPositions=['QB','RB','RB','WR','WR','TE','WR','K','DEF','RB','WR','QB'];
+  for(let i=1;i<teams.length;i++){
+    teams[i].playerIds=demoPositions.map((pos,j)=>{
+      const id=`demo-${i}-${j}`,baseline=pos==='QB'?18:pos==='K'||pos==='DEF'?7:10;
+      players[id]={id,name:demoNames[(j+i)%demoNames.length]+' '+String(i),pos,nfl:['CHI','GB','DET','MIN','BUF','KC'][j%6],status:'ACTIVE',scores:Object.fromEntries(Array.from({length:6},(_,w)=>[w+1,Math.round((baseline+(i+j+w)%7-2)*10)/10]))};
+      return id;
+    });
+  }
   return {source:'demo',leagueId:null,league:'Exhibition League',season:2026,scoring:'PPR',weeks:[1,2,3,4,5,6],
     teams,players, liveWeek:null, description:'FICTIONAL EXAMPLE · not league results'};
 }

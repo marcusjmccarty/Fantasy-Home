@@ -180,12 +180,53 @@ Use the **Dashboard / Tabbed** selector beneath the team header:
 - **Dashboard** keeps the original tiles and expanded modal reports.
 - **Tabbed** shows full reports directly on the page, without dashboard tiles or
   individual player cards. The scrollable report tabs remain visible while reading.
-- Twelve tabs cover Overview, Matchup, Roster, Weekly, Standings, Player file,
-  Game logs, Free agents, Usage, Player pool, League trends, and Variable lab.
+- Fifteen tabs cover Overview, Matchup, Roster, Weekly, Standings, Player file,
+  Game logs, Free agents, Usage, Player pool, League trends, Defensive outlook, Opportunity, Trade Desk, and Variable lab.
 - Layout and last report are remembered in this browser. Tab focus supports
   Left/Right arrows and Home/End. Player drilldowns update the selected tab.
 - Both layouts share the existing reports, filters, team data, and ESPN connection.
 
-Defensive Outlook, expanded share volumes, and Trade Calculator remain future work.
+### Defensive Outlook
+
+Player projections are paired with a scenario floor/ceiling using the 20th/80th
+percentiles of up to eight prior recorded scores, shifted around the provider
+projection (or historical mean). At least four observations are required. These
+are scenario estimates, not calibrated prediction intervals. Opponent ranks show
+NFL scoring/points allowed from completed games, not positional fantasy defense.
+
+### Opportunity pipeline
+
+`Refresh NFL opportunity data` in GitHub Actions builds a compact public dataset
+from nflverse play-by-play and the roster ID crosswalk. It runs on the pipeline's
+initial push, on manual dispatch, and daily at 11:25 UTC. The workflow commits
+only `fantasy-hub/public/data/usage-*.json` to main; the existing Cloudflare Git
+integration deploys those public assets. No fantasy cookies or private league
+information enters this workflow.
+
+The pipeline needs GitHub Actions enabled and permission to push to main. If a
+branch rule prevents this, the last dataset remains intact and the workflow
+reports failure. Until a successful first build, live Opportunity displays an
+explicit unavailable state; demonstration mode contains labeled synthetic values.
+Check the workflow's result before relying on live red-zone coverage.
+
+Counts cover carries, targets, receptions, red-zone opportunities, inside-10 and
+inside-5 opportunities. Shares use complete NFL team play denominators during the
+player's recorded weeks; they do not use only fantasy-rostered players. Null-play
+penalties, kneels, spikes and two-point attempts are excluded. Player matching uses
+ESPN IDs when present, otherwise unique exact normalized full names.
+
+### Trade Desk
+
+Select a partner, players on both sides, scoring basis, and starter format.
+The tool compares weekly scoring estimates, roster counts, and the optimal legal
+lineup before/after both sides using a bitmask assignment algorithm. Each player
+can fill only one slot; FLEX and SUPERFLEX eligibility are explicit. Formats are
+user-selected assumptions. Missing estimates stay unavailable. This is a scoring
+scenario calculator, not dynasty pricing or a rest-of-season recommendation.
+No roster changes or trade submissions occur.
+
+Additional checks:
+`node --test test/analytics.test.js test/workspace.test.js test/worker.test.js`
+and `python3 -m unittest discover -s test -p 'test_usage.py'`.
 
 Navigation regression checks: `node --test test/workspace.test.js`.
