@@ -15,7 +15,7 @@ function setup(hash=''){
   addEventListener(k,fn){(this.listeners[k]??=[]).push(fn)}
   fire(k,extra={}){const e={target:this,prevented:false,preventDefault(){this.prevented=true},stopImmediatePropagation(){},...extra};for(const fn of this.listeners[k]||[])fn(e);return e}
   focus(){active=this}
-  closest(sel){if(sel==='[data-workspace]')return this.dataset.workspace?this:null;if(['.win','.menu-title','.menu-list button','.menu-list','.menu-group'].includes(sel))return null;return this}
+  closest(sel){return sel==='[data-workspace]'?(this.dataset.workspace?this:null):sel==='.win'?null:this}
   matches(sel){return sel===':modal'?this.modal:false}
   getBoundingClientRect(){return {top:200-scrollY}}
   querySelectorAll(){return this.children}
@@ -44,17 +44,17 @@ function setup(hash=''){
  get('explore-dialog').addEventListener('close',()=>{if(get('explore-dialog').open)return;XL.open=null;XL.viewWeek=null;XL.history=[];XL.future=[];XL.viewTeamId=null;XL.lineupScenarios.clear()});
  vm.runInContext(source,context);
  const tab=id=>get(`workspace-tab-${id}`);
- return {get,body,XL,renders,history,location,tab,run:code=>vm.runInContext(code,context),flush(){while(queue.length)queue.shift()()},active:()=>active,click:id=>get('.menu-bar').fire('click',{target:tab(id)})};
+ return {get,body,XL,renders,history,location,tab,run:code=>vm.runInContext(code,context),flush(){while(queue.length)queue.shift()()},active:()=>active,click:id=>get('workspace-tabs').fire('click',{target:tab(id)})};
 }
 const current=h=>h.get('workspace-tabs').children.filter(t=>t.attributes['aria-current']==='page').map(t=>t.dataset.workspace);
 
-test('the dashboard is the default view and the menu bar lists it first',()=>{
+test('the dashboard is the default view and the report bar lists it first',()=>{
  const h=setup();
  assert.equal(h.body.dataset.layout,'dashboard');assert.equal(h.get('explore-dialog').open,false);
  assert.equal(h.get('workspace-tabs').children[0].dataset.workspace,'dashboard');
  assert.deepEqual(current(h),['dashboard']);
 });
-test('every report opens inline from the menus with exactly one current item',()=>{
+test('every report opens inline from the report bar with exactly one current item',()=>{
  const h=setup();
  for(const button of h.get('workspace-tabs').children.slice(1)){
   h.click(button.dataset.workspace);
@@ -87,6 +87,14 @@ test('browser Back and Forward walk reports, drilldowns and the dashboard in ord
 test('a #/report address opens that report on load; unknown addresses stay on the dashboard',()=>{
  assert.equal(setup('#/standings').XL.open,'standings');
  assert.equal(setup('#/nope').body.dataset.layout,'dashboard');
+});
+test('arrow keys move focus along the report bar without opening reports',()=>{
+ const h=setup(),tabs=h.get('workspace-tabs').children;
+ const press=(target,key)=>h.get('workspace-tabs').fire('keydown',{target,key});
+ assert.equal(press(tabs[0],'ArrowLeft').prevented,true);assert.equal(h.active(),tabs.at(-1));
+ press(tabs.at(-1),'ArrowRight');assert.equal(h.active(),tabs[0]);
+ press(tabs[0],'End');assert.equal(h.active(),tabs.at(-1));press(tabs.at(-1),'Home');assert.equal(h.active(),tabs[0]);
+ assert.equal(h.XL.open,null);
 });
 test('the report franchise selector changes the active franchise, including team drilldowns',()=>{
  const h=setup();h.run("openExplorer('summary')");

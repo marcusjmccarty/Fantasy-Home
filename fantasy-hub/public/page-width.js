@@ -24,20 +24,18 @@
  }
  try{apply(localStorage.getItem(KEY)||100,{save:false});}catch{apply(100,{save:false});}
 
- // The toggle lives in the View menu, which closes on click: anchor to the visible View title.
- const anchor=()=>toggle.offsetParent?toggle:(document.getElementById('menu-title-view')||toggle);
  function place(){
-  const r=anchor().getBoundingClientRect(),w=panel.offsetWidth||260;
+  const r=toggle.getBoundingClientRect(),w=panel.offsetWidth||260;
   panel.style.top=`${Math.round(r.bottom+6)}px`;
   panel.style.left=`${Math.round(Math.min(window.innerWidth-w-8,Math.max(8,r.right-w)))}px`;
  }
  function open(){panel.hidden=false;toggle.setAttribute('aria-expanded','true');place();slider.focus();}
- function close({restore=true}={}){if(panel.hidden)return;panel.hidden=true;toggle.setAttribute('aria-expanded','false');if(restore)anchor().focus();}
- toggle.addEventListener('click',()=>requestAnimationFrame(()=>panel.hidden?open():close()));
+ function close({restore=true}={}){if(panel.hidden)return;panel.hidden=true;toggle.setAttribute('aria-expanded','false');if(restore)toggle.focus();}
+ toggle.addEventListener('click',()=>panel.hidden?open():close());
  window.addEventListener('scroll',()=>{if(!panel.hidden)close({restore:false});},{passive:true});
- document.addEventListener('pointerdown',event=>{if(!panel.hidden&&!panel.contains(event.target)&&!toggle.contains(event.target)&&!anchor().contains(event.target))close({restore:false});});
+ document.addEventListener('pointerdown',event=>{if(!panel.hidden&&!panel.contains(event.target)&&!toggle.contains(event.target))close({restore:false});});
  panel.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();close();}});
- panel.addEventListener('focusout',event=>{if(!panel.hidden&&event.relatedTarget&&!panel.contains(event.relatedTarget)&&event.relatedTarget!==toggle&&event.relatedTarget!==anchor())close({restore:false});});
+ panel.addEventListener('focusout',event=>{if(!panel.hidden&&event.relatedTarget&&!panel.contains(event.relatedTarget)&&event.relatedTarget!==toggle)close({restore:false});});
 
  // Page Up/Down move a full 10% (the native step is 10% of the range, i.e. 4%).
  slider.addEventListener('keydown',event=>{if(event.key==='PageUp'||event.key==='PageDown'){event.preventDefault();apply(Number(slider.value)+(event.key==='PageUp'?10:-10));}});
