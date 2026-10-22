@@ -1733,6 +1733,7 @@ function graphPreviewSvg(rows){
 }
 function renderGraphHome(){
  const host=el('graph-teaser');if(!host)return;
+ const active=document.activeElement,focusedMetric=host.contains(active)?active.closest('[data-home-stat]')?.dataset.homeStat:null;
  ensureGraphAxes();
  const x=el('home-graph-x'),y=el('home-graph-y');
  for(const [box,key] of [[x,'x'],[y,'y']]){
@@ -1744,6 +1745,7 @@ function renderGraphHome(){
  el('home-graph-labels').checked=XL.graph.showLabels;
  const rows=graphData(),stats=graphStatistics(rows);
  host.innerHTML=graphPreviewSvg(rows)+`<div class="graph-home-stats" aria-label="Graph statistics">${[['n','MATCHED',String(stats.n)],['r','PEARSON r',labFormat(stats.r,2)],['r2','R²',labFormat(stats.r2,2)],['slope','SLOPE',labFormat(stats.slope,2)]].map(([id,title,v])=>`${statHelpTile(title,v,GRAPH_STAT_EXPLAIN[id][1],'graph-stat-chip','up').replace('class="',`data-home-stat="${id}" class="`)}`).join('')}</div>`;
+ if(focusedMetric&&!active.isConnected&&document.activeElement===document.body)host.querySelector(`[data-home-stat="${CSS.escape(focusedMetric)}"]`)?.focus({preventScroll:true});
 }
 let graphResizeFrame=null;window.addEventListener('resize',()=>{if(graphResizeFrame)cancelAnimationFrame(graphResizeFrame);graphResizeFrame=requestAnimationFrame(()=>{graphResizeFrame=null;if(el('graph-teaser')?.getClientRects().length)renderGraphHome();if(XL.open==='graph')fitGraphScreen()});});
 function explorerUpdate(){const host=el('fa-summary');if(!host)return;

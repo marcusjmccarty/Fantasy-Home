@@ -213,3 +213,17 @@ test('home AI button routes its selected player without opening the parent tile'
  await page.locator('#fixture-ai').click();
  assert.deepEqual(await page.evaluate(()=>aiCalls),[expected]);assert.equal(await page.evaluate(()=>XL.open),null);
 });
+for(const opened of [false,true])test('home graph resize preserves metric identity after '+(opened?'card dismissal':'direct focus'),async()=>{
+ const metric=page.locator('#graph-teaser [data-home-stat="r2"]');await metric.scrollIntoViewIfNeeded();await settle();
+ if(opened)await metric.click();else await metric.focus();
+ await page.setViewportSize({width:1400,height:980});await settle();
+ assert.equal(await page.locator('.metric-popover').count(),0);
+ assert.equal(await page.evaluate(()=>document.activeElement.dataset.homeStat),'r2');
+ assert.equal(await metric.evaluate(n=>n===document.activeElement),true);
+});
+test('home graph resize never reclaims focus moved to another control',async()=>{
+ const metric=page.locator('#graph-teaser [data-home-stat="r2"]');await metric.scrollIntoViewIfNeeded();await settle();await metric.click();
+ await page.locator('#about-button').focus();await page.setViewportSize({width:1400,height:980});await settle();
+ assert.equal(await page.evaluate(()=>document.activeElement.id),'about-button');
+ assert.equal(await page.locator('.metric-popover').count(),0);
+});

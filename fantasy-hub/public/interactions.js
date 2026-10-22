@@ -32,5 +32,10 @@ document.addEventListener('keydown',event=>{
  if(event.defaultPrevented||event.isComposing||event.keyCode===229||event.repeat||event.ctrlKey||event.metaKey||event.altKey||event.getModifierState('AltGraph')||event.shiftKey)return;
  if(openMetricHelp&&event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();closeStatHelp(true);}
 },true);
-document.addEventListener('scroll',event=>{if(openMetricHelp&&!openMetricHelp.card.contains(event.target))closeStatHelp();},true);
-window.addEventListener('resize',()=>closeStatHelp());
+// A queued scroll/resize can arrive after the card opens. Restore its focus
+// only while it still owns focus; never pull focus back from another control.
+function closeStatHelpForViewportChange(){
+ if(openMetricHelp)closeStatHelp(openMetricHelp.card.contains(document.activeElement));
+}
+document.addEventListener('scroll',event=>{if(openMetricHelp&&!openMetricHelp.card.contains(event.target))closeStatHelpForViewportChange();},true);
+window.addEventListener('resize',closeStatHelpForViewportChange);

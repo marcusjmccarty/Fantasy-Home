@@ -237,3 +237,38 @@ owner's exact combined candidate, especially shared debounce and Escape ordering
 and record that candidate's full SHA. No more independent keyboard changes are
 planned until that feedback arrives. Native Safari/Firefox, physical IME and
 screen-reader verification remain explicitly unperformed environmental checks.
+
+## Metric-focus race investigation
+
+The manager saw a one-off failure at verify-shortcuts.cjs line 72 on published
+bf1b103. Ten full instrumented isolated reruns passed, so the exact original
+occurrence cannot be conclusively attributed without its event trace. The
+original assertion and script remain unchanged; this is not dismissed as a flake.
+
+A controlled native-scroll ordering reproduced the same focus failure reliably:
+queue a real instant browser scroll, activate the metric in the same JavaScript
+task, then await the scroll event. The card initially owns focus and its trigger
+remains connected. The existing scroll listener called closeStatHelp() without
+restoration, removed the focused card, and left focus on BODY. Native resize
+also failed to restore focus on a stable report metric.
+
+The fix restores the trigger on viewport dismissal only if the card still owns
+focus. If focus has already moved to another control, dismissal preserves that
+new focus. Existing dismiss-on-scroll behavior and Escape assertions are retained.
+Only interactions.js changes application behavior; graph rendering is untouched.
+
+New regression: `scripts/verify-metric-dismissal.cjs`. It awaits actual scroll
+or resize dismissal, covers owned and moved focus, and uses a stable Touches &
+share metric for resize. Against a static export of exact bf1b103, the scroll
+regression fails 3/3; after the fix it passes 3/3. The unchanged original shortcut
+suite passes 3/3; audit-shortcuts and verify-keyboard-gates pass, and all 75 Node
+tests pass. Runtime remains Chromium 154.0.8037.57 / Playwright 1.62.1 / Node 24.19.0.
+
+Separate combined-integration gate: the original script's first metric is a home
+graph chip. Resizing can redraw and replace that trigger after it was restored,
+losing focus again on this keyboard-only branch. That renderer-owned path remains
+assigned to the performance owner; no graph edit was attempted. Reproduce by
+opening the first home metric, resizing the viewport, and checking the currently
+rendered chip's focus after the redraw frame. The stable-report resize regression
+does not claim coverage of graph-trigger replacement. This second mechanism is
+also not proven to be the manager's original uninstrumented occurrence.
