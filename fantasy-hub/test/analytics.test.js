@@ -100,3 +100,12 @@ test('trade batches reuse baseline work and fresh batches pick up changed scores
  assert.equal(M.createTradeEvaluator(own,their,['RB'],6,'projection')(['b'],['c']).before.total,30);
  assert.equal(M.createTradeEvaluator(own,their,['RB'],5,'history')(['b'],['c']).before.total,10);
 });
+
+test('trade percentages distinguish exchanged value from actual lineup improvement',()=>{
+ const a={ready:true,sent:{total:20},received:{total:30},before:{total:100},theirBefore:{total:80},impact:5,theirImpact:-4};
+ assert.deepEqual(M.tradeSignals(a),{yourShare:60,theirShare:40,yourChange:5,theirChange:-5});
+ assert.equal(M.tradeSignals({...a,sent:{total:-2}}).yourShare,null);
+ assert.equal(M.tradeSignals({...a,before:{total:0}}).yourChange,null);
+ assert.equal(M.tradeSignals({...a,ready:false}).theirChange,null);
+ assert.equal(M.tradeSignals({...a,impact:null}).yourChange,null);
+});

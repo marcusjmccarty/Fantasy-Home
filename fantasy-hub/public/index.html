@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="workspace.css">
   <link rel="stylesheet" href="readability.css">
+  <link rel="stylesheet" href="refinements.css">
   <script src="script.js" defer></script>
   <script src="explorer.js" defer></script>
   <script src="analytics-math.js" defer></script>
@@ -83,17 +84,17 @@
 
       <section class="win positions-window expandable" data-explore="positions" tabindex="0" aria-label="Open expanded positions statistics" aria-labelledby="title-positions">
         <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-positions">POSITION ALLOCATION</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
-        <div class="win-inner"><div class="window-topline"><span>STARTER POINTS BY POSITION</span><span id="positions-note">6 WEEKS</span></div><div id="position-chart" class="position-chart"></div><div class="muted-note" id="position-caption">Actual starting-lineup contribution.</div></div>
+        <div class="win-inner"><div class="window-topline"><span>STARTER POINTS BY POSITION</span><label class="week-label">PERIOD <select id="home-position-week" aria-label="Position allocation period"><option value="all">Season</option></select></label></div><div id="position-chart" class="position-chart"></div><div class="muted-note" id="position-caption">Actual starting-lineup contribution.</div></div>
       </section>
 
       <section class="win matchup-window expandable" data-explore="matchup" tabindex="0" aria-label="Open Matchup Center" aria-labelledby="title-matchup">
         <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-matchup">MATCHUP CENTER</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
-        <div class="win-inner"><div class="window-topline"><span>SELECT LIVE OR PAST WEEK</span><label class="week-label">WEEK <select id="week-select" aria-label="Select matchup week"></select></label></div><div id="matchup-panel" class="matchup-panel"></div><div class="tiny-caption" id="matchup-comment">Scores reflect selected week.</div></div>
+        <div class="win-inner"><div class="window-topline"><span>WEEKLY MATCHUP</span><label class="week-label">WEEK <select id="week-select" aria-label="Select matchup week"></select></label></div><div id="matchup-panel" class="matchup-panel"></div><div class="tiny-caption" id="matchup-comment">Scores reflect selected week.</div></div>
       </section>
 
       <section class="win profile-window expandable" data-explore="profile" tabindex="0" aria-label="Open expanded profile statistics" aria-labelledby="title-profile">
         <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-profile">PLAYER TERMINAL</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
-        <div class="win-inner"><div class="window-topline"><span>SELECTED PLAYER</span><span id="player-pos-top">—</span></div><div class="profile-heading"><strong id="profile-name">SELECT A PLAYER</strong><span id="profile-team">—</span></div><div class="profile-figures"><div><span>TOTAL PTS</span><b id="profile-total">—</b></div><div><span>LAST WK</span><b id="profile-last">—</b></div><div><span>AVG/WK</span><b id="profile-average">—</b></div></div><div class="home-player-charts"><div class="home-points-history"><div class="window-topline"><b>FANTASY PTS / WEEK</b></div><div id="player-spark" class="mini-chart" aria-label="Selected player weekly scoring"></div></div><div id="player-share-spark"></div></div><div class="tiny-caption" id="player-caption">Click a roster player to inspect their history.</div></div>
+        <div class="win-inner"><div class="window-topline"><span>SELECTED PLAYER</span><span id="player-pos-top">—</span></div><div class="profile-heading"><strong id="profile-name">SELECT A PLAYER</strong><span id="profile-team">—</span></div><div class="profile-figures"><div><span id="profile-estimate-label">NEXT WEEK</span><b id="profile-total">—</b></div><div><span>LAST WK</span><b id="profile-last">—</b></div><div><span>LAST 3 AVG</span><b id="profile-average">—</b></div></div><div class="home-player-charts"><div class="home-points-history"><div class="window-topline"><b>FANTASY PTS / WEEK</b></div><div id="player-spark" class="mini-chart" aria-label="Selected player weekly scoring"></div></div><div id="player-share-spark"></div></div><div class="tiny-caption" id="player-caption">Click a roster player to inspect their history.</div></div>
       </section>
 
 
@@ -143,7 +144,7 @@
       <div class="explore-content" id="explore-content"></div>
       <footer class="explore-footer"><span id="explore-source">Data source: demo</span><span>ESC TO CLOSE · CLICK A PLAYER TO INSPECT</span></footer>
     </dialog>
-    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.9.1</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
+    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.10</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
   </div>
 
   <dialog id="data-dialog" aria-labelledby="dialog-title">

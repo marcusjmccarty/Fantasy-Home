@@ -1,0 +1,106 @@
+/* v9.10 — more chart, clearer choices, quieter paper. */
+.title-bar .chrome{width:20px;height:20px;min-width:20px;min-height:20px;border:0;box-shadow:none;background:transparent;font-size:16px;line-height:20px}
+.title-bar .chrome:hover{background:#fff}
+.explore-history-controls .explore-back{width:32px;height:32px;min-width:32px;min-height:32px;font-size:21px;line-height:1}
+#explore-close{height:34px;min-height:34px;min-width:90px;padding:5px 10px;font-size:13px;line-height:22px}
+.window-topline,.home-player-ribbon label,.home-trade-controls label,.home-trade-side label,.lab-controls label,.strategy-ribbon label{font-size:12px}
+.lab-table,.dense-table,.lab-controls select,.strategy-ribbon select{font-size:14px}
+.lab-table small,.dense-table th,.strategy-window .compact-range summary>span{font-size:12px}
+.lab-intro p:empty,.tiny-caption:empty,.muted-note:empty,.lab-note:empty{display:none!important}
+.strategy-heading .lab-intro p:empty{display:none}.strategy-source{font-size:11px}
+.strategy-home-action{margin-top:6px;padding-top:4px;border-top:1px solid #c4c9bf}
+/* Short, deliberate disclosure tiles replace permanent explanatory copy. */
+.metric-disclosure{display:block!important;position:relative;min-width:0;background:#f8f9f5;border:1px solid #bac3b6;text-align:left}
+.metric-disclosure summary{display:flex;flex-direction:column;gap:7px;min-height:67px;list-style:none;cursor:pointer;padding-right:11px}
+.metric-disclosure summary::-webkit-details-marker,.share-disclosure summary::-webkit-details-marker,.trade-favor summary::-webkit-details-marker{display:none}
+.metric-disclosure summary>span{font:12px/1.3 'Courier New',monospace;color:#47554a;min-height:31px}
+.metric-disclosure summary>strong{font:bold 26px/1.1 'Courier New',monospace;color:#22372e}
+.metric-disclosure summary>i{position:absolute;right:6px;top:5px;font:14px 'Courier New',monospace;color:#758177}
+.metric-disclosure[open]{grid-column:span 2;background:#fff;border-color:#50655a;box-shadow:2px 2px 0 #c4cbbf}
+.metric-disclosure[open] summary>i{transform:rotate(45deg)}
+.metric-disclosure p,.share-disclosure p,.trade-favor p{margin:10px 0 2px;border-top:1px solid #d2d9d0;padding-top:9px;font:14px/1.5 Arial,sans-serif;color:#3c4d42}
+.usage-metrics .td-estimate,.home-usage-metrics .td-estimate{background:inherit;border-color:inherit}
+.share-disclosure{min-width:0;align-self:start}.share-disclosure summary{display:block;cursor:pointer;list-style:none}
+.share-bar-label{display:flex;justify-content:space-between;gap:8px;font:14px/1.4 'Courier New',monospace;margin-bottom:5px;color:#32483d}
+.share-bar-label b{white-space:nowrap}.share-disclosure .strategy-share-track{display:block;height:18px}
+.share-disclosure[open]{grid-column:span 2;border:1px solid #788a7c;padding:9px;background:#fff;box-shadow:2px 2px 0 #c4cbbf}
+.strategy-home-share-grid .share-bar-label{font-size:12px;margin-bottom:3px}.strategy-home-share-grid .strategy-share-track{height:7px}
+.home-usage-metrics .metric-disclosure summary{min-height:59px;gap:4px}.home-usage-metrics .metric-disclosure summary>span{font-size:12px;min-height:30px}.home-usage-metrics .metric-disclosure summary>strong{font-size:23px}
+.share-history-panel{cursor:default}.share-week{justify-content:flex-end;cursor:default}
+.share-week-bar{display:block;flex-shrink:0;width:86%;max-width:45px;min-height:2px;padding:0;border:1px solid #694580;border-bottom:0;border-radius:0;background:#9266b1;cursor:pointer;appearance:none}
+.share-week:nth-child(even) .share-week-bar{background:#657fa4;border-color:#485f80}
+.share-week-bar:hover,.share-week-bar:focus-visible{filter:brightness(1.12);outline:2px solid #33483d;outline-offset:1px}
+.share-week-value,.share-week-label{pointer-events:none}.dense-weeks .share-week:has(.share-week-bar:hover) .share-week-value,.dense-weeks .share-week:focus-within .share-week-value{visibility:visible}
+.league-contribution-week:hover .league-contribution-bar{outline:none}.league-contribution-bar:hover,.league-contribution-bar:focus-visible{outline:2px solid #326b96;outline-offset:1px}
+.league-contribution-franchise,.league-contribution-week,.league-contribution-team-label{cursor:default!important}.league-contribution-team-label{border:0;background:transparent;pointer-events:none}
+/* Six substantial position bars, with one compact period control. */
+.position-chart{display:grid;gap:9px;margin-top:11px}.position-row{grid-template-columns:32px minmax(0,1fr) 62px;gap:10px;min-height:30px}
+.position-row .meter-track{height:27px;border:1px solid #acb8ad;background:#ebefe8}
+.position-row .meter-fill{display:block;height:100%;min-width:3px;border:0;border-right:1px solid #64796d;padding:0;cursor:pointer}
+.position-row .meter-fill:hover{filter:brightness(1.12)}.position-row b{font-size:15px;line-height:1.15}.position-row b small{display:block;font:11px 'Courier New',monospace;color:#627064;margin-top:3px}
+#home-position-week{font-size:12px;min-height:28px}
+/* Matchup score ribbon and two independently scrolling roster lists. */
+.matchup-panel{padding:0;background:#f9faf6;border-color:#9ca79c}
+.matchup-score-strip{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:7px;align-items:center;padding:8px;background:#e5e9df;border-bottom:1px solid #9ca79c}
+.matchup-score-strip>div{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 6px}
+.matchup-score-strip b{font:12px/1.3 'Courier New',monospace;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.matchup-score-strip small{font:11px 'Courier New',monospace;color:#566451;grid-column:1}
+.matchup-score-strip strong{font:bold 24px/1.1 'Courier New',monospace;grid-column:2;grid-row:1/3;letter-spacing:-1px}
+.matchup-result{font:bold 10px 'Courier New',monospace;writing-mode:vertical-rl;max-height:50px;letter-spacing:1px;color:#60725e}
+.matchup-roster-pair{display:grid;grid-template-columns:1fr 1fr;gap:0}.matchup-roster-pair>*+*{border-left:1px solid #b4beb0}
+.matchup-roster-scroll{height:226px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:2px 4px}
+.matchup-roster-player{width:100%;display:grid;grid-template-columns:25px minmax(0,1fr) 38px;gap:4px;align-items:center;background:transparent;border:0;border-bottom:1px solid #d6ddd1;text-align:left;padding:9px 3px;font:12px 'Courier New',monospace;cursor:pointer}
+.matchup-roster-player>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:normal}.matchup-roster-player>span{font-size:11px;color:#566b58}.matchup-roster-player>strong{text-align:right;font-size:14px}.matchup-roster-player:hover{background:#e6eee3}.matchup-roster-player.is-bench{color:#65715f}
+/* A viewport-sized graph stage; data tools are below the fold in a disclosure. */
+body:not([data-layout=tabbed]) .explore-dialog:has(.graph-screen){height:calc(100dvh - 2 * var(--window-gutter));max-height:calc(100dvh - 2 * var(--window-gutter))}
+body:not([data-layout=tabbed]) .explore-dialog:has(.graph-screen) .explore-content{flex:1;max-height:none}
+.graph-screen{display:flex;flex-direction:column;gap:8px;height:calc(100dvh - 150px);min-height:390px;overflow:visible}
+.graph-screen>.lab-intro,.graph-screen>.graph-control-deck{flex-shrink:0}.graph-screen .lab-intro h3{font-size:24px!important}
+.graph-screen .lab-graph-layout{flex:1;min-height:0;display:flex;flex-direction:column;gap:7px}
+.graph-screen .lab-graph-panel{flex:1;min-height:180px;display:flex;flex-direction:column;gap:4px;padding:7px 9px}
+.graph-plot{flex:1;min-height:0;overflow:visible}.graph-plot .lab-scatter-svg{width:100%;height:100%;min-height:0;max-height:none}
+.graph-screen .lab-graph-top h4{font-size:13px}.graph-screen .lab-graph-top>span{display:none}
+.graph-screen .lab-graph-aside{flex-shrink:0;padding:6px 8px}.graph-stat-heading{display:none}.graph-screen .graph-stat-grid{grid-template-columns:repeat(9,minmax(0,1fr));margin:0;gap:5px}
+.graph-screen .graph-stat-chip{min-height:54px;padding:5px}.graph-screen .graph-stat-chip small{font-size:11px}.graph-screen .graph-stat-chip b{font-size:22px}
+.graph-screen .lab-label{opacity:0;pointer-events:none;font:13px 'Courier New',monospace;paint-order:stroke;stroke:#fff;stroke-width:4px;fill:#263d36}
+.graph-screen .label-visible .lab-label,.graph-screen .lab-dot:hover .lab-label,.graph-screen .lab-dot:focus-visible .lab-label{opacity:1}
+.graph-screen .lab-dot{pointer-events:none}.graph-screen .lab-dot circle{pointer-events:all}
+.graph-tools{border:1px solid #9da99b;padding:10px;background:#f0f2e9}.graph-tools>summary{cursor:pointer;font:bold 13px 'Courier New',monospace}.graph-tools[open] .graph-enrichment-panel{margin-top:10px}
+/* Trade desk — three readable instruments, two simple package pickers. */
+.trade-desk{display:flex;flex-direction:column;gap:12px;min-width:0}.trade-desk .strategy-heading{margin:0}.trade-desk .trade-controls{margin:0;padding:8px;background:#e5e8de}
+.trade-desk .trade-controls label{min-width:120px;flex:1}.trade-desk .trade-controls label:first-child{flex:1.2}.trade-desk .trade-controls select{width:100%;max-width:none;font-size:14px}
+.trade-desk .trade-verdict{padding:0;border:1px solid #879586;background:#fff;box-shadow:2px 2px 0 #c1c7ba}
+.trade-desk .trade-verdict-heading{padding:8px 12px;background:#f2f4ed;border-bottom:1px solid #bac4b4;font:12px 'Courier New',monospace;gap:12px}
+.trade-verdict-heading>b{font-size:14px;font-weight:bold}
+.trade-dashboard{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:stretch}
+.trade-impact-card{padding:14px 17px;display:flex;flex-direction:column;text-align:left;gap:5px;min-width:0}
+.trade-impact-card>span{font:12px 'Courier New',monospace;color:#536653}.trade-impact-card>h4{font:22px/1.2 Georgia,serif;margin:0 0 7px;border:0;padding:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trade-impact-card>strong{font:bold clamp(28px,3.1vw,43px)/1.1 'Courier New',monospace;color:#4d6256}
+.trade-impact-card.positive>strong{color:#38795e}.trade-impact-card.negative>strong{color:#a54f56}
+.trade-impact-points{font:14px 'Courier New',monospace}.trade-before-after{display:flex;justify-content:space-between;gap:8px;border-top:1px solid #c9d1c2;margin-top:auto;padding-top:12px;font:11px 'Courier New',monospace}
+.trade-before-after b{font-size:17px;display:block;margin-top:4px}
+.trade-center-card{display:flex;flex-direction:column;align-items:center;padding:12px 16px;border-left:1px solid #c6d0c0;border-right:1px solid #c6d0c0;background:#f8faf4;gap:12px}
+.trade-balance-ring{--balance:0%;width:122px;height:122px;flex-shrink:0;border-radius:50%;padding:8px;background:conic-gradient(#477864 var(--balance),#dce4d6 0);display:grid;place-items:center;border:1px solid #859e8a}
+.trade-balance-ring>span{width:100%;height:100%;border-radius:50%;background:#fcfdf8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border:1px solid #c0cdb7}
+.trade-balance-ring b{font:bold 31px 'Courier New',monospace;color:#365c49}.trade-balance-ring small{font:11px 'Courier New',monospace;letter-spacing:1px}
+.trade-favor{width:100%;min-width:0}.trade-favor summary{display:block;cursor:pointer;list-style:none}.trade-favor-title{display:block;font:11px 'Courier New',monospace;color:#596d59;margin-bottom:6px}.trade-favor-title i{font-style:normal}
+.trade-favor-labels{display:flex;justify-content:space-between;gap:5px;font:12px 'Courier New',monospace;margin-bottom:5px}.trade-favor-labels b:first-child{color:#356c83}.trade-favor-labels b:last-child{color:#936242}
+.trade-favor-track{display:block;height:11px;background:#bd895e;border:1px solid #687e73;position:relative}.trade-favor-track i{display:block;height:100%;background:#467e9b}.trade-favor-track:after{content:'';position:absolute;left:50%;top:-3px;bottom:-3px;border-left:1px solid #273d34}.trade-favor-track.is-empty{opacity:.35}
+.trade-builder-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.trade-desk .trade-side{padding:0!important;overflow:hidden;background:#fff;border:1px solid #9ba99a}
+.trade-side.give{border-top:3px solid #8d6650}.trade-side.get{border-top:3px solid #426b83}
+.trade-desk .trade-side-heading{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;padding:10px 12px;background:#f3f5ee;border-bottom:1px solid #b3c0ad}
+.trade-side-heading>span{font:12px 'Courier New',monospace}.trade-desk .trade-side-heading>strong{font:22px Georgia,serif;grid-column:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trade-side-heading>b{grid-column:2;grid-row:1/3;font: bold 24px 'Courier New',monospace;text-align:right}.trade-side-heading>b small{display:block;font:11px 'Courier New',monospace;color:#637362}
+.trade-picker-heading{padding:7px 10px;display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #d2dbca;font:12px 'Courier New',monospace}.trade-picker-heading label{display:flex;gap:6px;align-items:center}.trade-picker-heading input{min-width:0;width:160px;font:13px 'Courier New',monospace;padding:5px;border:1px solid #9cac96}
+.trade-desk .trade-player-list{max-height:276px;padding:0 5px;scrollbar-width:thin}.trade-desk .trade-player{border:0;border-bottom:1px solid #dce2d6;min-height:43px;gap:9px;padding:5px 7px;font-size:14px;box-shadow:none;background:#fff}
+.trade-desk .trade-player.selected{background:#e7eee1;box-shadow:inset 3px 0 #4d775d}.trade-desk .trade-player:hover{background:#edf2e8}.trade-player[hidden]{display:none!important}
+.trade-desk .trade-player b{font-size:14px}.trade-desk .trade-player small{font-size:12px}.trade-desk .trade-player>strong{font-size:17px}
+.trade-details{border:1px solid #a4b29c;background:#f4f6ef;padding:0 10px}.trade-details>summary{padding:11px 0;cursor:pointer;font:bold 14px 'Courier New',monospace}.trade-details>summary>span{float:right;font:12px 'Courier New',monospace;color:#52644e;margin-left:12px}.trade-details[open]>summary{border-bottom:1px solid #b9c6b2;margin-bottom:10px}
+.trade-desk .trade-counteroffers{background:#f1f4eb;border-color:#a6b49e}.trade-counteroffers .strategy-section-title{margin-bottom:0}.trade-counteroffers h4{border:0;margin:0;padding:0}
+.trade-alternatives:empty{display:none}.trade-alternatives{margin-top:10px;gap:10px}.trade-alternatives article{background:#fff;box-shadow:2px 2px 0 #c9d3c1;padding:12px;border:1px solid #93a58b}.trade-alternatives article>span{font:11px 'Courier New',monospace;color:#62745d}.trade-alternatives article>b{font:19px Georgia,serif;margin:4px 0 9px;display:block}.trade-alternatives .alternative-balance{display:flex;align-items:center;justify-content:flex-start;gap:9px;margin-bottom:7px}.alternative-balance>strong{font:bold 27px 'Courier New',monospace;color:#47735c}.alternative-balance>span{font:12px 'Courier New',monospace}.trade-alternatives .lab-action{width:100%;margin-top:10px;background:#edf3e7;color:#355743}
+.home-trade-dashboard{display:flex;align-items:center;gap:14px;padding:12px 0}.home-trade-dashboard .trade-balance-ring{width:87px;height:87px;padding:6px}.home-trade-dashboard .trade-balance-ring b{font-size:25px}.home-trade-dashboard .trade-balance-ring small{font-size:10px;letter-spacing:.5px}.home-trade-dashboard .trade-favor{flex:1}.home-trade-dashboard .trade-favor-labels{font-size:11px}
+#trade-preview .strategy-home-metrics{border:1px solid #bec8b5;background:#f5f8ee;margin-bottom:8px}.strategy-home-metrics>div{border:0;background:transparent;padding:7px}.home-trade-picks button{font-size:13px;padding:5px}.home-trade-footer{font-size:12px}
+@media(max-width:1000px){.usage-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}.graph-screen .graph-stat-grid{grid-template-columns:repeat(5,minmax(0,1fr))}.trade-impact-card{padding:12px}.trade-impact-card>h4{font-size:19px}.trade-center-card{padding:10px}.trade-picker-heading input{width:130px}}
+@media(max-width:730px){.graph-screen{min-height:540px}.graph-screen .graph-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.graph-screen .graph-stat-chip{min-height:48px}.graph-screen .graph-stat-chip b{font-size:19px}.strategy-share-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.trade-dashboard{grid-template-columns:1fr 1fr}.trade-center-card{grid-column:1/-1;grid-row:1;border:0;border-bottom:1px solid #c6d0c0;flex-direction:row;gap:18px;padding:12px 18px}.trade-balance-ring{width:96px;height:96px}.trade-impact-card+.trade-impact-card{border-left:1px solid #c6d0c0}.trade-impact-card>h4{font-size:18px}.trade-impact-card>strong{font-size:28px}.trade-builder-grid{grid-template-columns:1fr}.trade-desk .trade-side-heading>strong{font-size:21px}.trade-details>summary>span{float:none;display:block;margin:5px 0 0}.trade-desk .trade-verdict-heading{flex-wrap:wrap}.trade-favor-labels{font-size:12px}.matchup-score-strip strong{font-size:23px}.trade-alternatives{grid-template-columns:1fr}}
+.position-week-col{cursor:default}.position-week-pillar{padding:0;cursor:pointer;appearance:none;background:transparent}.position-week-col:hover .position-week-pillar{outline:none}.position-week-pillar:hover,.position-week-pillar:focus-visible{outline:2px solid #315c79;outline-offset:1px}.position-week-col b,.position-week-col small{font-size:12px}
+.league-contribution-franchise:is(:hover,:focus-visible){outline:none}.lab-graph-legend{font-size:12px}.lab-note,#explore-content .lab-note{font-size:13px}

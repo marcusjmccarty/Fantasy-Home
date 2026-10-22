@@ -100,5 +100,10 @@
  function tradeAnalysis(own,their,giveIds,getIds,slots,week,mode='balanced',drops={give:[],get:[]}){
   return createTradeEvaluator(own,their,slots,week,mode)(giveIds,getIds,drops);
  }
- root.FantasyMath={numeric,quantile,outlook,scoringHistory,value,packageValue,bestLineup,weeklyShares,touchdownEstimate,tradeAnalysis,createTradeEvaluator};
+ function tradeSignals(a){
+  const sent=a.sent?.total,received=a.received?.total,valid=a.ready&&sent>=0&&received>=0&&sent+received>0;
+  const change=(before,impact)=>before&&Math.abs(before.total)>0&&impact!==null?impact/Math.abs(before.total)*100:null;
+  return {yourShare:valid?received/(sent+received)*100:null,theirShare:valid?sent/(sent+received)*100:null,yourChange:a.ready?change(a.before,a.impact):null,theirChange:a.ready?change(a.theirBefore,a.theirImpact):null};
+ }
+ root.FantasyMath={numeric,quantile,outlook,scoringHistory,value,packageValue,bestLineup,weeklyShares,touchdownEstimate,tradeAnalysis,createTradeEvaluator,tradeSignals};
 })(globalThis);

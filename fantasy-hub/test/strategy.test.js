@@ -15,7 +15,7 @@ test('all strategy reports render with the real exhibition model',()=>{
  const h=setup();for(const route of ['outlook','opportunity','trade']){h.run(`renderStrategy('${route}')`);assert.ok(h.html().length>500);assert.ok(!h.html().includes('NaN'));assert.ok(!h.html().includes('undefined'));}
 });
 test('trade picks produce modeled comparisons and survive rendering',()=>{
- const h=setup();h.run("renderStrategy('trade');STRATEGY.trade.give=['cook'];STRATEGY.trade.get=['demo-1-1'];renderTrade()");assert.ok(!h.html().includes('Build both sides'));assert.match(h.html(),/Your lineup change/);assert.match(h.html(),/checked/);
+ const h=setup();h.run("renderStrategy('trade');STRATEGY.trade.give=['cook'];STRATEGY.trade.get=['demo-1-1'];renderTrade()");assert.ok(!h.html().includes('Build both sides'));assert.match(h.html(),/YOUR LINEUP CHANGE/);assert.match(h.html(),/checked/);
 });
 test('opportunity filters and external player selection render safely',()=>{
  const h=setup();h.run("renderStrategy('opportunity');STRATEGY.player='usage:allen';STRATEGY.period='recent';STRATEGY.position='QB';STRATEGY.search='Josh';renderOpportunity()");assert.match(h.html(),/Josh Allen/);assert.match(h.html(),/3 recorded weeks/);assert.ok(!h.html().includes('NaN'));
@@ -78,7 +78,7 @@ test('TD estimate is hidden for unavailable players and data coverage stays expl
 test('trade workbench compares lineups and counteroffers without changing league rosters',()=>{
  const h=setup();const roster=h.run('getTeam().playerIds.join()');
  h.run("renderStrategy('trade');STRATEGY.trade.give=['cook'];STRATEGY.trade.get=['demo-1-1'];renderTrade();findTradeAlternatives()");
- assert.match(h.html(),/STARTING LINEUP/);assert.match(h.html(),/COUNTEROFFER WORKBENCH/);assert.ok(!h.html().includes('ROSTER FIT'));
+ assert.match(h.html(),/STARTING LINEUP/);assert.match(h.html(),/BALANCE THE DEAL/);assert.ok(!h.html().includes('ROSTER FIT'));
  assert.equal(h.run('getTeam().playerIds.join()'),roster);
 });
 test('counteroffers prioritize filling the starting lineup over package balance alone',()=>{
@@ -100,4 +100,21 @@ test('trade edits preserve unrelated home panels and counteroffers share one eva
  assert.deepEqual(ids.map(id=>h.node(id).writes),writes);
  h.run('var batches=0;var makeEvaluator=FantasyMath.createTradeEvaluator;FantasyMath.createTradeEvaluator=(...args)=>{batches++;return makeEvaluator(...args)};findTradeAlternatives()');
  assert.equal(h.run('batches'),1);assert.deepEqual(ids.map(id=>h.node(id).writes),writes);
+});
+
+test('weekly share periods aggregate only the selected week and keep future weeks out',()=>{
+ const h=setup();h.run("STRATEGY.period='week:2'");
+ const totals=h.run("usageTotals({weeks:{1:{carries:100},2:{carries:5,targets:3,receptions:2,team_totals:{carries:20,targets:30}},7:{carries:999}}},{through_week:7})");
+ assert.equal(totals.touches,7);assert.equal(totals.opportunities,8);assert.equal(totals.weeks,1);assert.equal(totals.opportunity_share,16);
+ h.run("renderStrategy('opportunity')");assert.match(h.html(),/value="week:2" selected/);assert.ok(!h.html().includes('value="week:7"'));
+ h.run("STRATEGY.period='week:5'");assert.equal(h.run("usageTotals({weeks:{2:{carries:5}}},{through_week:6})"),null);
+});
+test('share bars open the selected player and week; chart whitespace does nothing',()=>{
+ const h=setup();h.run("var opened=null;var openExplorer=(...args)=>{opened=args};openShareHistory({target:{closest:()=>null},stopPropagation(){}})");assert.equal(h.run('opened'),null);
+ h.run("openShareHistory({target:{closest:()=>({dataset:{shareWeek:'3',sharePlayer:'cook'}})},stopPropagation(){}})");
+ assert.equal(h.run('STRATEGY.period'),'week:3');assert.equal(h.run('STRATEGY.player'),'cook');assert.equal(h.run('opened.join()'),'opportunity,cook');
+ const chart=h.run('shareHistoryChart(model.players.cook)');assert.match(chart,/class="share-week-bar"/);assert.ok(!chart.includes('data-open-share'));assert.ok(!chart.includes('0–'));
+});
+test('workload metrics and share bars reveal definitions without a yellow TD card',()=>{
+ const h=setup();h.run("renderStrategy('opportunity')");assert.match(h.html(),/<details class="strategy-metric metric-disclosure"/);assert.match(h.html(),/<details class="strategy-share share-blue share-disclosure"/);assert.ok(!h.html().includes('td-estimate'));assert.ok(!h.html().includes('15+ pts'));
 });

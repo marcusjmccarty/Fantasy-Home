@@ -117,7 +117,8 @@ function trendBars(items,colorFn=()=>COLORS.QB,maximum=null){
  const max=maximum||Math.max(1,...items.map(v=>Math.max(0,labNum(v.v)||0)));
  return `<div class="lab-histogram">${items.map((v,i)=>`<div class="lab-hist-col" title="${esc(v.label)} · ${labFormat(v.v)}"><strong>${labFormat(v.v,0)}</strong><button type="button" class="lab-hist-bar ${v.week?'player-week-bar':''}" ${v.week?`data-player-week="${v.week}" aria-label="Open Week ${v.week} starter contributions"`: 'disabled'} style="height:${Math.max(2,(labNum(v.v)||0)/max*135)}px;background:${colorFn(v,i)}"></button><small>${esc(v.short??v.label)}</small></div>`).join('')}</div>`;
 }
-function setExplorer(html){el('explore-content').innerHTML=html;el('explore-source').textContent=sourceName();}
+var graphResizeObserver=null;
+function setExplorer(html){graphResizeObserver?.disconnect();el('explore-content').innerHTML=html;el('explore-source').textContent=sourceName();}
 function explorerClubHeader(type,playerId=null){
  const host=el('explore-club');if(!host)return;
  const id=String(explorerTeam().id);
@@ -133,7 +134,7 @@ function openExplorer(type,arg=null,options={}){
    XL.lineupScenarios.clear();
    XL.history=[];XL.future=[];XL.viewWeek=null;
  }else if(!options.fromBack&&!options.fromForward){
-   XL.history.push({type:XL.open,player:XL.player,week:XL.viewWeek,franchiseWeek:XL.franchiseWeek,focus:XL.focusTarget,team:XL.viewTeamId,positionWeek:XL.positionWeek,positionFocusPlayer:XL.positionFocusPlayer,positionComparisonView:XL.positionComparisonView,leagueComparisonView:XL.leagueComparisonView});
+   XL.history.push({type:XL.open,player:XL.player,week:XL.viewWeek,franchiseWeek:XL.franchiseWeek,focus:XL.focusTarget,team:XL.viewTeamId,positionWeek:XL.positionWeek,positionFocusPlayer:XL.positionFocusPlayer,positionComparisonView:XL.positionComparisonView,leagueComparisonView:XL.leagueComparisonView,strategyPeriod:typeof STRATEGY!=='undefined'?STRATEGY.period:null});
    XL.future=[];
  }
  if(options.teamId!==undefined)XL.viewTeamId=String(options.teamId);
@@ -177,14 +178,14 @@ function openPlayerPositionContributions(playerId,week){
 
 function exploreBack(){
  const previous=XL.history.pop();if(!previous)return;
- XL.future.push({type:XL.open,player:XL.player,week:XL.viewWeek,franchiseWeek:XL.franchiseWeek,focus:XL.focusTarget,team:XL.viewTeamId,positionWeek:XL.positionWeek,positionFocusPlayer:XL.positionFocusPlayer,positionComparisonView:XL.positionComparisonView,leagueComparisonView:XL.leagueComparisonView});
- XL.viewTeamId=previous.team;XL.viewWeek=previous.week;XL.franchiseWeek=previous.franchiseWeek;XL.player=previous.player;XL.positionWeek=previous.positionWeek||'all';XL.positionFocusPlayer=previous.positionFocusPlayer||null;XL.positionComparisonView=previous.positionComparisonView||'position';XL.leagueComparisonView=previous.leagueComparisonView||'week';
+ XL.future.push({type:XL.open,player:XL.player,week:XL.viewWeek,franchiseWeek:XL.franchiseWeek,focus:XL.focusTarget,team:XL.viewTeamId,positionWeek:XL.positionWeek,positionFocusPlayer:XL.positionFocusPlayer,positionComparisonView:XL.positionComparisonView,leagueComparisonView:XL.leagueComparisonView,strategyPeriod:typeof STRATEGY!=='undefined'?STRATEGY.period:null});
+ XL.viewTeamId=previous.team;XL.viewWeek=previous.week;XL.franchiseWeek=previous.franchiseWeek;XL.player=previous.player;if(typeof STRATEGY!=='undefined'){STRATEGY.player=XL.player;if(previous.strategyPeriod)STRATEGY.period=previous.strategyPeriod;}XL.positionWeek=previous.positionWeek||'all';XL.positionFocusPlayer=previous.positionFocusPlayer||null;XL.positionComparisonView=previous.positionComparisonView||'position';XL.leagueComparisonView=previous.leagueComparisonView||'week';
  openExplorer(previous.type,previous.player,{fromBack:true,focus:previous.focus,...(previous.type==='summary'&&Number.isFinite(previous.franchiseWeek)?{week:previous.franchiseWeek}:{})});
 }
 function exploreForward(){
  const next=XL.future.pop();if(!next)return;
- XL.history.push({type:XL.open,player:XL.player,week:XL.viewWeek,franchiseWeek:XL.franchiseWeek,focus:XL.focusTarget,team:XL.viewTeamId,positionWeek:XL.positionWeek,positionFocusPlayer:XL.positionFocusPlayer,positionComparisonView:XL.positionComparisonView,leagueComparisonView:XL.leagueComparisonView});
- XL.viewTeamId=next.team;XL.viewWeek=next.week;XL.franchiseWeek=next.franchiseWeek;XL.player=next.player;XL.positionWeek=next.positionWeek||'all';XL.positionFocusPlayer=next.positionFocusPlayer||null;XL.positionComparisonView=next.positionComparisonView||'position';XL.leagueComparisonView=next.leagueComparisonView||'week';
+ XL.history.push({type:XL.open,player:XL.player,week:XL.viewWeek,franchiseWeek:XL.franchiseWeek,focus:XL.focusTarget,team:XL.viewTeamId,positionWeek:XL.positionWeek,positionFocusPlayer:XL.positionFocusPlayer,positionComparisonView:XL.positionComparisonView,leagueComparisonView:XL.leagueComparisonView,strategyPeriod:typeof STRATEGY!=='undefined'?STRATEGY.period:null});
+ XL.viewTeamId=next.team;XL.viewWeek=next.week;XL.franchiseWeek=next.franchiseWeek;XL.player=next.player;if(typeof STRATEGY!=='undefined'){STRATEGY.player=XL.player;if(next.strategyPeriod)STRATEGY.period=next.strategyPeriod;}XL.positionWeek=next.positionWeek||'all';XL.positionFocusPlayer=next.positionFocusPlayer||null;XL.positionComparisonView=next.positionComparisonView||'position';XL.leagueComparisonView=next.leagueComparisonView||'week';
  openExplorer(next.type,next.player,{fromForward:true,focus:next.focus,...(next.type==='summary'&&Number.isFinite(next.franchiseWeek)?{week:next.franchiseWeek}:{})});
 }
 function refreshMatchupHeader(){
@@ -745,7 +746,7 @@ function detailPositions(){
  const weeklyChart=weekly.map(w=>{
   const groups=POS_ORDER.map(pos=>({pos,val:labSum(all.filter(r=>r.week===w&&r.pos===pos).map(r=>r.points))})).filter(r=>r.val>0);
   const sum=labSum(groups.map(g=>g.val));
-  return `<button class="position-week-col ${wk===String(w)?'selected':''}" type="button" data-position-week="${w}" title="Week ${w}: ${labFormat(sum,2)} recorded starter points. Click for Starting Lineup" aria-label="Open Week ${w} starting lineup"><b>${labFormat(sum,0)}</b><span class="position-week-pillar" style="height:${Math.max(3,sum/maxWeek*152).toFixed(1)}px">${groups.map(g=>`<i style="height:${(g.val/sum*100).toFixed(2)}%;background:${COLORS[g.pos]||COLORS['?']}" title="${g.pos}: ${labFormat(g.val,2)}"></i>`).join('')}</span><small>W${String(w).padStart(2,'0')}</small></button>`;
+  return `<div class="position-week-col ${wk===String(w)?'selected':''}"><b>${labFormat(sum,0)}</b><button class="position-week-pillar" type="button" data-position-week="${w}" aria-label="Open Week ${w} starting lineup" title="Week ${w}: ${labFormat(sum,2)} starter points" style="height:${Math.max(3,sum/maxWeek*152).toFixed(1)}px">${groups.map(g=>`<i style="height:${(g.val/sum*100).toFixed(2)}%;background:${COLORS[g.pos]||COLORS['?']}" title="${g.pos}: ${labFormat(g.val,2)}"></i>`).join('')}</button><small>W${String(w).padStart(2,'0')}</small></div>`;
  }).join('');
  const positionList=positions.map(pos=>{
   const arr=byPos[pos],points=labSum(arr.map(r=>r.points)),games=arr.length;
@@ -1050,14 +1051,14 @@ function detailLeagueContributions(){
  const controls=`<div class="lab-controls league-weekly-filters"><div class="compare-mode-toggle" role="group" aria-label="Group weekly scoring comparisons"><button type="button" class="${mode==='week'?'selected':''}" data-league-view="week" aria-pressed="${mode==='week'}">BY WEEK</button><button type="button" class="${mode==='team'?'selected':''}" data-league-view="team" aria-pressed="${mode==='team'}">BY FRANCHISE</button></div><label>SHOW POSITION <select id="league-compare-position">${['ALL',...POS_ORDER].map(z=>`<option value="${z}" ${z===pos?'selected':''}>${z==='ALL'?'ALL POSITIONS':z==='DEF'?'D/ST':z}</option>`).join('')}</select></label><span class="position-comparison-note">One shared point scale · gray indicates official totals with no positional split</span></div>`;
  const bar=x=>{
   const active=x.total!==null;const height=active?Math.max(2,Math.max(0,x.total)/max*168):2;
-  return `<div class="league-contribution-week ${x.neutral?'total-only':''}" title="${esc(teamName(x.team))} · W${x.week} · ${active?labFormat(x.total,2)+' PTS':'score unavailable'}"><b>${labFormat(x.total,0)}</b><button type="button" class="league-contribution-bar league-contribution-bar-hit" data-league-week="${x.week}" data-league-team="${esc(String(x.team.id))}" style="height:${height.toFixed(1)}px" aria-label="Open ${esc(teamName(x.team))} week ${x.week} Starting Lineup">${x.neutral?'<i style="height:100%;background:#9aa5a4"></i>':x.byPos.map(g=>`<i style="height:${(g.points/Math.max(x.total||0,.01)*100).toFixed(2)}%;background:${COLORS[g.pos]}"></i>`).join('')}</button><button type="button" class="league-contribution-team-label" data-league-label-week="${x.week}" data-league-label-team="${esc(String(x.team.id))}" title="${esc(teamName(x.team))} — open week ${x.week} lineup">${mode==='week'?esc(teamName(x.team)):String(x.week).padStart(2,'0')}</button></div>`;
+  return `<div class="league-contribution-week ${x.neutral?'total-only':''}" title="${esc(teamName(x.team))} · W${x.week} · ${active?labFormat(x.total,2)+' PTS':'score unavailable'}"><b>${labFormat(x.total,0)}</b><button type="button" class="league-contribution-bar league-contribution-bar-hit" data-league-week="${x.week}" data-league-team="${esc(String(x.team.id))}" style="height:${height.toFixed(1)}px" aria-label="Open ${esc(teamName(x.team))} week ${x.week} Starting Lineup">${x.neutral?'<i style="height:100%;background:#9aa5a4"></i>':x.byPos.map(g=>`<i style="height:${(g.points/Math.max(x.total||0,.01)*100).toFixed(2)}%;background:${COLORS[g.pos]}"></i>`).join('')}</button><span class="league-contribution-team-label">${mode==='week'?esc(teamName(x.team)):String(x.week).padStart(2,'0')}</span></div>`;
  };
  const groups=mode==='week'?weeks.map(w=>({week:w,items:model.teams.map(t=>point(t,w))})):model.teams.map(team=>({team,items:weeks.map(w=>point(team,w))}));
  const panels=groups.map(group=>{
   const items=group.items,available=items.filter(x=>x.total!==null),sum=labSum(available.map(x=>x.total));
   const title=mode==='week'?`WEEK ${String(group.week).padStart(2,'0')}`:teamName(group.team);
   const name=`<strong>${esc(title)}</strong>`;
-  return `<section class="lab-panel league-contribution-franchise" tabindex="0" data-league-panel-${mode==='week'?'week':'team'}="${mode==='week'?group.week:esc(String(group.team.id))}" title="Open ${mode==='week'?'your selected franchise for week '+group.week:esc(title)+' most recently reported week'} starting lineup"><div class="league-contribution-franchise-heading">${name}<span>${available.length} / ${items.length} REPORTED · ${labFormat(available.length?sum:null,1)} PTS</span></div><div class="league-contribution-scroll"><div class="league-contribution-bars ${mode==='week'?'league-bars-by-week':''}">${items.map(bar).join('')}</div></div></section>`;
+  return `<section class="lab-panel league-contribution-franchise"><div class="league-contribution-franchise-heading">${name}<span>${available.length} / ${items.length} REPORTED · ${labFormat(available.length?sum:null,1)} PTS</span></div><div class="league-contribution-scroll"><div class="league-contribution-bars ${mode==='week'?'league-bars-by-week':''}">${items.map(bar).join('')}</div></div></section>`;
  }).join('');
  const leg=POS_ORDER.filter(p=>pos==='ALL'||p===pos).map(p=>`<span><i style="background:${COLORS[p]}"></i>${p==='DEF'?'D/ST':p}</span>`).join('')+(pos==='ALL'?'<span><i style="background:#9aa5a4"></i>OFFICIAL TOTAL ONLY</span>':'');
  setExplorer(heading('League / weekly scoring comparison',mode==='week'?'Each week compares all franchises at the same scale; switch to By Franchise for scoring history.':'Each franchise shows its recorded weekly position contributions. Switch to By Week for head-to-head comparisons.')+controls+`<div class="position-legend league-comparison-legend">${leg}</div><div class="league-comparison-grid ${mode==='week'?'league-grouped-by-week':''}">${panels||'<p class="lab-note">No reported weekly team scores have been supplied.</p>'}</div><p class="lab-note">Colored segments represent recorded starting-player contributions. Neutral totals are official fantasy team scores where the position breakdown is unavailable. A bar opens that week’s Starting Lineup; missing totals are never set to zero.</p>`);
@@ -1267,7 +1268,7 @@ function detailPlayer(playerId){const p=model.players[playerId]||XL.free.find(z=
  const statusColor=/OUT|INJURED|IR|SUSPENDED/i.test(p.status)?'negative-text':'positive-text';
  setExplorer(heading(playerTitle(p),`${esc(p.status||'UNKNOWN')} · ${teamForPlayer(p)?'Rostered: '+teamName(teamForPlayer(p)):'Free agent / not on current team'} · ${model.season}`)+
  playerRankingMetrics(p)+
- `<div class="lab-two player-terminal-top"><div class="lab-panel player-chart-pair"><div class="player-weekly-panel" data-open-positions tabindex="0" role="button" aria-label="Open Position Allocation; select a week bar for starter contributions"><h4>WEEKLY POINTS</h4><div class="player-weekly-chart">${games.length?trendBars(games.map(g=>({label:'Week '+g.week,short:'W'+g.week,v:g.points,week:g.week})),(v,i)=>['#487ebb','#399676','#9466bc','#b85d70','#d39b43'][i%5]):'<p>No reported scoring weeks.</p>'}</div><p class="lab-note player-chart-hint">BAR → WEEK CONTRIBUTIONS · PANEL → POSITION ALLOCATION</p></div><div id="player-share-history">${shareHistoryChart(p)}</div></div>${scoutingFile(p)}</div>`+
+ `<div class="lab-two player-terminal-top"><div class="lab-panel player-chart-pair"><div class="player-weekly-panel" data-chart-surface><h4>WEEKLY POINTS</h4><div class="player-weekly-chart">${games.length?trendBars(games.map(g=>({label:'Week '+g.week,short:'W'+g.week,v:g.points,week:g.week})),(v,i)=>['#487ebb','#399676','#9466bc','#b85d70','#d39b43'][i%5]):'<p>No reported scoring weeks.</p>'}</div></div><div id="player-share-history">${shareHistoryChart(p)}</div></div>${scoutingFile(p)}</div>`+
  `<div class="lab-panel player-complete-log" data-open-player-analytics tabindex="0" role="button" aria-label="Expand complete player statistical archive"><h4>COMPLETE FANTASY GAME LOG <span class="player-log-open">OPEN COMPLETE STATISTICAL FILE ↗</span></h4>${expandTable(['WK','FANTASY POINTS','ESPN PROJECTION','DIFFERENCE','AVAILABLE STATLINE'],allweeks.map(w=>{const actual=labNum(p.scores?.[w]),proj=labNum(p.projections?.[w]);return `<tr class="lab-clickable player-gamelog-row" data-gamelog-week="${w}" tabindex="0" role="button" title="Open Week ${w} starting lineup"><td>W${w}</td><td><strong>${labFormat(actual,2)}</strong></td><td>${labFormat(proj,2)}</td><td class="${actual!==null&&proj!==null?(actual>=proj?'positive-text':'negative-text'):''}">${actual!==null&&proj!==null?labFormat(actual-proj,2):'—'}</td><td class="lab-statline">${esc(describeStatline(p,w))}</td></tr>`}).concat([`<tr class="player-log-total"><td><b>TOTAL · ${reportedWeeks.length} WK</b></td><td><b>${labFormat(logActual,2)}</b></td><td>${labFormat(logProj,2)}</td><td>${logDiff===null?'—':labFormat(logDiff,2)}</td><td class="lab-statline">${rawTotalCell(logStats)}</td></tr>`]))}<p class="lab-note">Scoring is taken from the connected fantasy league. NFL box-score fields appear only when ESPN returned their underlying stat categories.</p></div>`+
  `<div class="lab-two player-terminal-context" id="player-editorial-anchor"><div class="player-terminal-left"><section class="lab-panel player-terminal-stats"><h4>BOX SCORE / ADVANCED STATISTICS</h4>${extras.length?`<div class="player-compact-boxscore">${extras.map(([k,v])=>`<div class="player-boxscore-metric" title="${esc(META[k]?.name||k)}"><span>${esc(META[k]?.name||k)}</span><b>${labFormat(v,2)}</b></div>`).join('')}</div>`:'<p class="lab-note">Raw NFL statistics unavailable. ESPN or advanced CSV data can provide more detail.</p>'}</section><section class="lab-panel player-terminal-outlook"><h4>PLAYER OUTLOOK / PERFORMANCE & NEXT MATCHUP</h4><div id="lab-player-outlook">${playerContextSections(XL.overview.get(String(p.espnId||p.id)),p).outlookHTML}</div><div id="lab-next-matchup" class="next-matchup-line">Next-week opponent: looking up NFL schedule…</div><div class="ai-outlook-action"><button type="button" class="lab-action" id="lab-generate-ai" data-ai-player="${esc(String(p.id))}">GENERATE AI OUTLOOK ↗</button><span id="lab-ai-status">On demand · server API key required</span></div><div id="lab-ai-outlook" class="ai-outlook-result"></div></section></div><section class="lab-panel player-terminal-news"><h4>VERIFIED PLAYER NEWS</h4><div id="lab-player-news">${playerContextSections(XL.overview.get(String(p.espnId||p.id)),p).newsHTML}</div><button class="lab-action" id="lab-fetch-news" data-news-id="${esc(p.espnId||p.id)}">REFRESH SOURCED NEWS ↻</button></section></div>`);
  void hydrateNextMatchup(p);void hydrateAIStatus(p);if(p.espnId)void hydrateProfileEditorial(p);
@@ -1553,11 +1554,11 @@ function graphStatButtons(stats){
  const defs=[['n','MATCHED',String(stats.n)],['r','PEARSON r',labFormat(stats.r,3)],['r2','R²',labFormat(stats.r2,3)],['spearman','SPEARMAN ρ',labFormat(stats.spearman,3)],['slope','SLOPE',labFormat(stats.slope,3)],['intercept','INTERCEPT',labFormat(stats.intercept,2)],['rmse','RMSE',labFormat(stats.rmse,2)],['meanX','MEAN X',labFormat(stats.meanX,2)],['meanY','MEAN Y',labFormat(stats.meanY,2)]];
  return defs.map(([key,name,value])=>`<button type="button" class="graph-stat-chip ${XL.graphStatFocus===key?'selected':''}" data-graph-stat="${key}" aria-pressed="${XL.graphStatFocus===key}" aria-label="Explain ${name}"><small>${name}</small><b>${value}</b></button>`).join('');
 }
-function scatterSVG(rows){
+function scatterSVG(rows,dimensions={}){
  const mobile=window.innerWidth<=650;
  // Use the available pixels instead of scaling a fixed canvas to a wide screen.
- const W=Math.max(320,Math.round(window.innerWidth-(mobile?70:140)));
- const H=Math.max(200,Math.min(460,window.innerHeight-480));// bounded in both workspace modes
+ const W=Math.max(240,Math.round(dimensions.width||window.innerWidth-(mobile?70:140)));
+ const H=Math.max(180,Math.round(dimensions.height||window.innerHeight-350));
  const m=mobile?{l:47,t:18,r:16,b:42}:{l:62,t:18,r:22,b:45};
  const w=W-m.l-m.r,h=H-m.t-m.b;
  if(!rows.length)return '<div class="lab-no-data"><b>NO COMPARABLE DATA POINTS</b><p>Choose two metrics present in this dataset, adjust the position filter, or import an advanced CSV.</p></div>';
@@ -1567,7 +1568,14 @@ function scatterSVG(rows){
  const tx=v=>m.l+(v-xmin)/(xmax-xmin||1)*w,ty=v=>m.t+h-(v-ymin)/(ymax-ymin||1)*h;
  const ticks=(axis)=>Array.from({length:6},(_,i)=>{const v=(axis==='x'?xmin:ymin)+(axis==='x'?xmax-xmin:ymax-ymin)*i/5;return axis==='x'?`<line x1="${tx(v)}" y1="${m.t}" x2="${tx(v)}" y2="${m.t+h}" stroke="#e6e8e6"/><text x="${tx(v)}" y="${m.t+h+15}" text-anchor="middle">${labFormat(v,1)}</text>`:`<line x1="${m.l}" y1="${ty(v)}" x2="${m.l+w}" y2="${ty(v)}" stroke="#e6e8e6"/><text x="${m.l-8}" y="${ty(v)+4}" text-anchor="end">${labFormat(v,1)}</text>`}).join('');
  const fit=graphCorrelations(rows);let regression='';if(XL.graph.trend&&fit&&fit.slope!==null){const y1=fit.intercept+fit.slope*xmin,y2=fit.intercept+fit.slope*xmax;regression=`<line x1="${tx(xmin)}" y1="${ty(y1)}" x2="${tx(xmax)}" y2="${ty(y2)}" stroke="#b3515b" stroke-width="2" stroke-dasharray="8 5" clip-path="url(#graphclip)"/>`}
- const circles=rows.map((d,i)=>`<g class="lab-dot" tabindex="0" role="button" data-graph-point="${i}" aria-label="Inspect ${esc(d.p.name)}"><circle cx="${tx(d.x)}" cy="${ty(d.y)}" r="${XL.selectedPoint===d.p.id?8:5.8}" stroke="#fff" stroke-width="1.4" fill="${XL.graph.color==='pos'?playerColor(d.p):'#487ebb'}" opacity=".87"><title>${esc(d.p.name)} / ${META[XL.graph.x].name}: ${labFormat(d.x)} / ${META[XL.graph.y].name}: ${labFormat(d.y)}</title></circle>${XL.graph.showLabels?`<text class="lab-label" x="${tx(d.x)+9}" y="${ty(d.y)-7}">${esc(d.p.name)}</text>`:''}</g>`).join('');
+ const occupied=[];
+ const circles=rows.map((d,i)=>{
+  const x=tx(d.x),y=ty(d.y),name=String(d.p.name),labelWidth=Math.min(W-m.l-m.r,name.length*7.2+14);
+  const lx=Math.max(m.l+4,x+labelWidth+12>W-m.r?x-labelWidth-9:x+9),ly=y<30?y+22:y-10;
+  const visible=XL.graph.showLabels&&!occupied.some(k=>lx<k.x+k.w+6&&lx+labelWidth>k.x-6&&ly>k.y-18&&ly<k.y+18);
+  if(visible)occupied.push({x:lx,y:ly,w:labelWidth});
+  return `<g class="lab-dot ${visible?'label-visible':''}" tabindex="0" role="button" data-graph-point="${i}" aria-label="Open ${esc(name)} Player Terminal"><circle cx="${x}" cy="${y}" r="${XL.selectedPoint===d.p.id?8:6}" stroke="#fff" stroke-width="1.4" fill="${XL.graph.color==='pos'?playerColor(d.p):'#487ebb'}"/><text class="lab-label" x="${lx}" y="${ly}">${esc(name)}</text></g>`;
+ }).join('');
  return `<svg class="lab-scatter-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Scatter plot: ${esc(META[XL.graph.x].name)} against ${esc(META[XL.graph.y].name)}"><defs><clipPath id="graphclip"><rect x="${m.l}" y="${m.t}" width="${w}" height="${h}"/></clipPath></defs><rect x="${m.l}" y="${m.t}" width="${w}" height="${h}" fill="#fff" stroke="#a5aaa8"/>${ticks('x')}${ticks('y')}${regression}${circles}<text x="${m.l+w/2}" y="${H-5}" text-anchor="middle" class="lab-axis-title">${esc(META[XL.graph.x].name)}</text><text x="15" y="${m.t+h/2}" transform="rotate(-90 15 ${m.t+h/2})" text-anchor="middle" class="lab-axis-title">${esc(META[XL.graph.y].name)}</text></svg>`;
 }
 function metricSelect(which,counts){return `<select id="graph-${which}">${METRICS.map(([key,name,unit,source])=>`<option value="${key}" ${XL.graph[which]===key?'selected':''}>${esc(name)}${counts[key]===0?' · not loaded':''}</option>`).join('')}</select>`}
@@ -1575,20 +1583,34 @@ function detailGraph(){
  ensureGraphAxes();
  const cands=graphCandidates(),counts=activeMetricOptions(cands),rows=graphData(),stats=graphStatistics(rows),avail=METRICS.filter(([k])=>counts[k]>0);
  const presets=[['avg','std','CONSISTENCY'],['avg','total','VOLUME'],['targets','rec_yds','WR TARGETS'],['rush_att','rush_yds','RB CARRIES'],['pass_yds','pass_td','QB VOLUME'],['epa','avg','EPA vs FPTS']];
- setExplorer(heading('Variable Lab / Statistical Plotter','')+
+ setExplorer('<section class="graph-screen">'+heading('Variable Lab','')+
  `<div class="graph-control-deck"><div class="lab-controls graph-unified-toolbar" aria-label="Variable Lab filters and axes"><label class="graph-pool">POOL <select id="graph-scope">${[['ALL','All available'],['TEAM','Selected team'],['LEAGUE','League rosters'],['FREE','Free agents']].map(([v,n])=>`<option value="${v}" ${XL.graph.scope===v?'selected':''}>${n}</option>`).join('')}</select></label><label class="graph-position">POSITION <select id="graph-pos">${['ALL',...POS_ORDER].map(v=>`<option ${XL.graph.pos===v?'selected':''}>${v}</option>`).join('')}</select></label><label class="graph-x">X AXIS ${metricSelect('x',counts)}</label><button id="graph-swap" class="lab-action graph-swap" title="Swap graph axes">⇄</button><label class="graph-y">Y AXIS ${metricSelect('y',counts)}</label><label class="graph-games">MIN GAMES <select id="graph-minimum">${[0,1,2,3,5].map(n=>`<option ${XL.graph.minimum===n?'selected':''}>${n}</option>`).join('')}</select></label><label class="graph-search">SEARCH <input id="graph-search" placeholder="Player name" value="${esc(XL.graph.search)}"></label><label class="graph-toggle"><input id="graph-trend" type="checkbox" ${XL.graph.trend?'checked':''}><span>TREND</span></label><label class="graph-toggle"><input id="graph-labels" type="checkbox" ${XL.graph.showLabels?'checked':''}><span>LABELS</span></label></div>
  <div class="graph-preset-ribbon"><b>QUICK PLOTS</b>${presets.map(([x,y,n])=>`<button type="button" class="graph-preset ${XL.graph.x===x&&XL.graph.y===y?'active':''}" data-preset="${x},${y}" ${graphPresetAvailable(x,y)?'':`disabled title="Requires recorded ${esc(META[x].name)} and ${esc(META[y].name)}; load NFL data or choose another preset"`}>${n}</button>`).join('')}<span class="graph-preset-hint">Select axes above or use a preset.</span></div></div>`+
- `<div class="lab-graph-layout"><section class="lab-panel lab-graph-panel"><div class="lab-graph-top"><h4>${esc(META[XL.graph.y].name)} BY ${esc(META[XL.graph.x].name)}</h4><div class="lab-graph-legend">${POS_ORDER.map(pos=>`<span><i style="background:${COLORS[pos]}"></i>${pos}</span>`).join('')}</div><span>${rows.length} MATCHED PAIRS / ${cands.length} CANDIDATES</span></div>${scatterSVG(rows)}</section>
- <aside class="lab-graph-aside"><div class="graph-stat-heading"><h4>GRAPH STATISTICS</h4><span>CLICK A STAT TO EXPLAIN · COMPLETE X/Y PAIRS ONLY</span></div><div class="graph-stat-grid">${graphStatButtons(stats)}</div><div id="graph-stat-detail" class="graph-stat-detail" aria-live="polite" ${XL.graphStatFocus?'':'hidden'}>${XL.graphStatFocus?graphStatExplanation(XL.graphStatFocus):''}</div><div id="lab-point-info" class="lab-point-info" hidden></div></aside></div>`+
- `<div class="lab-controls graph-enrichment-panel"><label>ENRICH WITH NFL DATA <input id="graph-import" type="file" accept=".csv,text/csv"></label><button class="lab-action" id="graph-load-nflverse">LOAD NFLverse ADVANCED METRICS ↻</button><button class="lab-action" id="graph-export">EXPORT PLOT DATA CSV ↓</button><button class="lab-action" id="graph-export-svg">SAVE SVG GRAPH ↓</button><button class="lab-action" id="graph-clear-import">CLEAR IMPORTED METRICS</button></div>`+
- `<div class="lab-panel"><h4>DATA DICTIONARY / PROVENANCE</h4><p class="lab-note">ESPN fantasy scores use the league's scoring system. NFL box-score fields and advanced CSVs are included only when supplied. Advanced measurements may use different time periods; compare only compatible periods. Imports are matched by player name, and unavailable fields remain blank.</p><div class="lab-dictionary">${METRICS.map(([k,n,u,source])=>`<div><span>${esc(n)}</span><b class="${counts[k]?'positive-text':''}">${counts[k]} players</b><small>${esc(source)}</small></div>`).join('')}</div></div>`);
- const svg=el('explore-content').querySelector('.lab-scatter-svg');
- if(svg)svg.querySelectorAll('[data-graph-point]').forEach(dot=>{
-  const choose=e=>{if(e)e.stopPropagation();const r=rows[Number(dot.dataset.graphPoint)];if(!r)return;XL.selectedPoint=String(r.p.id);openExplorer('profile',String(r.p.id));};
-  dot.addEventListener('click',choose);
-  dot.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose(e);}});
- });
+ `<div class="lab-graph-layout"><section class="lab-panel lab-graph-panel"><div class="lab-graph-top"><h4>${esc(META[XL.graph.y].name)} BY ${esc(META[XL.graph.x].name)}</h4><div class="lab-graph-legend">${POS_ORDER.map(pos=>`<span><i style="background:${COLORS[pos]}"></i>${pos}</span>`).join('')}</div><span>${rows.length} MATCHED PAIRS / ${cands.length} CANDIDATES</span></div><div class="graph-plot">${scatterSVG(rows)}</div></section>
+ <aside class="lab-graph-aside"><div class="graph-stat-heading"><h4>GRAPH STATISTICS</h4></div><div class="graph-stat-grid">${graphStatButtons(stats)}</div><div id="graph-stat-detail" class="graph-stat-detail" aria-live="polite" ${XL.graphStatFocus?'':'hidden'}>${XL.graphStatFocus?graphStatExplanation(XL.graphStatFocus):''}</div><div id="lab-point-info" class="lab-point-info" hidden></div></aside></div>`+
+ `</section><details class="graph-tools strategy-method"><summary>Data sources & export</summary><div class="lab-controls graph-enrichment-panel"><label>ENRICH WITH NFL DATA <input id="graph-import" type="file" accept=".csv,text/csv"></label><button class="lab-action" id="graph-load-nflverse">LOAD NFLverse ADVANCED METRICS ↻</button><button class="lab-action" id="graph-export">EXPORT PLOT DATA CSV ↓</button><button class="lab-action" id="graph-export-svg">SAVE SVG GRAPH ↓</button><button class="lab-action" id="graph-clear-import">CLEAR IMPORTED METRICS</button></div>`+
+ `<div class="lab-panel"><h4>DATA DICTIONARY / PROVENANCE</h4><p class="lab-note">ESPN fantasy scores use the league's scoring system. NFL box-score fields and advanced CSVs are included only when supplied. Advanced measurements may use different time periods; compare only compatible periods. Imports are matched by player name, and unavailable fields remain blank.</p><div class="lab-dictionary">${METRICS.map(([k,n,u,source])=>`<div><span>${esc(n)}</span><b class="${counts[k]?'positive-text':''}">${counts[k]} players</b><small>${esc(source)}</small></div>`).join('')}</div></div></details>`);
+ const plot=el('explore-content').querySelector('.graph-plot');
+ if(plot){
+  const choose=event=>{const dot=event.target.closest('[data-graph-point]');if(!dot)return;event.stopPropagation();const r=rows[Number(dot.dataset.graphPoint)];if(r){XL.selectedPoint=String(r.p.id);openExplorer('profile',String(r.p.id));}};
+  plot.addEventListener('click',choose);
+  const foreground=event=>{const dot=event.target.closest('.lab-dot');if(dot&&dot!==dot.parentElement.lastElementChild)dot.parentElement.append(dot);};
+  plot.addEventListener('pointerover',foreground);plot.addEventListener('focusin',foreground);
+  plot.addEventListener('keydown',event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();choose(event);}});
+  const redraw=()=>{if(!plot.isConnected)return;const r=plot.getBoundingClientRect();plot.innerHTML=scatterSVG(rows,{width:r.width,height:r.height});};
+  requestAnimationFrame(()=>{fitGraphScreen();redraw();});
+  graphResizeObserver=new ResizeObserver(redraw);graphResizeObserver.observe(plot);
+ }
 }
+function fitGraphScreen(){
+ const screen=el('explore-content').querySelector('.graph-screen');if(!screen)return;
+ const content=el('explore-content'),tabbed=document.body.dataset.layout==='tabbed';
+ const top=screen.getBoundingClientRect().top+(tabbed?window.scrollY:content.scrollTop);
+ const footer=tabbed?0:el('explore-dialog').querySelector('.explore-footer').getBoundingClientRect().height;
+ const gutter=tabbed?12:Math.min(38,Math.max(16,window.innerWidth*.022));
+ screen.style.height=Math.max(window.innerWidth<730?680:390,window.innerHeight-top-footer-gutter-12)+'px';
+}
+
 async function loadNFLverse(){
  const b=el('graph-load-nflverse');if(!b)return;b.disabled=true;b.textContent='FETCHING NFLverse…';
  try{const resp=await fetch('/api/nflverse/advanced?season='+encodeURIComponent(model.season));const data=await resp.json();if(!resp.ok)throw Error(data.error||'Data not available');let matched=0;const keys=new Set(getPool().map(p=>nameKey(p.name)));
@@ -1691,7 +1713,7 @@ function renderGraphHome(){
  const rows=graphData(),stats=graphStatistics(rows);
  host.innerHTML=graphPreviewSvg(rows)+`<div class="graph-home-stats" aria-label="Graph statistics">${[['n','MATCHED',String(stats.n)],['r','PEARSON r',labFormat(stats.r,2)],['r2','R²',labFormat(stats.r2,2)],['slope','SLOPE',labFormat(stats.slope,2)]].map(([id,title,v])=>`<button type="button" data-home-stat="${id}" title="Open explanation of ${esc(title)}"><b>${v}</b><span>${title}</span></button>`).join('')}</div>`;
 }
-let graphResizeFrame=null;window.addEventListener('resize',()=>{if(graphResizeFrame)cancelAnimationFrame(graphResizeFrame);graphResizeFrame=requestAnimationFrame(()=>{graphResizeFrame=null;renderGraphHome()});});
+let graphResizeFrame=null;window.addEventListener('resize',()=>{if(graphResizeFrame)cancelAnimationFrame(graphResizeFrame);graphResizeFrame=requestAnimationFrame(()=>{graphResizeFrame=null;renderGraphHome();if(XL.open==='graph')fitGraphScreen()});});
 function explorerUpdate(){const host=el('fa-summary');if(!host)return;
  if(model.source==='demo'&&!XL.demoSeeded)seedDemoStats();
  if(model.source!=='demo'&&XL.demoSeeded){XL.advanced.clear();XL.importedColumns=[];XL.demoSeeded=false;}
@@ -1749,13 +1771,13 @@ dialog.addEventListener('click',e=>{
  if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();
 });
 document.querySelectorAll('.expandable').forEach(box=>{
- box.addEventListener('click',e=>{if(e.target.closest('select,input,a,.lab-link,[data-player],[data-team],.home-fa-controls,.home-graph-controls,.range-help,.home-trade-controls,.home-trade-builder,.home-trade-footer'))return;openExplorer(box.dataset.explore,['outlook','opportunity'].includes(box.dataset.explore)?homePlayer()?.id:box.dataset.explore==='profile'?currentPlayerId:null)});
+ box.addEventListener('click',e=>{if(e.target.closest('select,input,a,details,[data-chart-surface],[data-share-chart],.lab-link,[data-player],[data-team],.home-fa-controls,.home-graph-controls,.range-help,.home-trade-controls,.home-trade-builder,.home-trade-footer'))return;openExplorer(box.dataset.explore,['outlook','opportunity'].includes(box.dataset.explore)?homePlayer()?.id:box.dataset.explore==='profile'?currentPlayerId:null)});
  box.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target===box){e.preventDefault();openExplorer(box.dataset.explore,['outlook','opportunity'].includes(box.dataset.explore)?homePlayer()?.id:box.dataset.explore==='profile'?currentPlayerId:null)}});
 });
 // The small homepage chart offers the same direct week-to-lineup path as
 // its expanded comparative chart. All other space still expands Weekly Production.
 el('weekly-chart').addEventListener('click',event=>{
- const bar=event.target.closest('[data-home-week]');if(!bar)return;
+ event.stopPropagation();const bar=event.target.closest('[data-home-week]');if(!bar)return;
  event.preventDefault();event.stopPropagation();
  openExplorer('summary',null,{teamId:String(currentTeamId),week:Number(bar.dataset.homeWeek),focus:'franchise-lineup'});
 });
@@ -1765,7 +1787,7 @@ el('player-spark').addEventListener('click',event=>{
  const bar=event.target.closest('button[data-home-player-week]');
  event.stopPropagation();
  if(bar){if(!bar.disabled)openPlayerPositionContributions(currentPlayerId,Number(bar.dataset.homePlayerWeek));}
- else openExplorer('positions',null,{teamId:String(currentTeamId)});
+
 });
 el('weekly-chart').addEventListener('keydown',event=>{
  const bar=event.target.closest('[data-home-week]');if(!bar||!['Enter',' '].includes(event.key))return;
@@ -1781,10 +1803,7 @@ playerDossiers.addEventListener('click',e=>{
  if(bar){e.stopPropagation();openPlayerPositionContributions(id,Number(bar.dataset.dossierWeek));return;}
  if(e.target.closest('.dossier-news-panel')){if(e.target.closest('a[href]')){e.stopPropagation();return;}e.preventDefault();e.stopPropagation();openExplorer('profile',id,{focus:'player-editorial'});return;}
  if(e.target.closest('a,select,input'))return;
- if(e.target.closest('[data-dossier-chart]')){
-  e.stopPropagation();const p=model.players[id]||XL.free.find(x=>String(x.id)===id);const t=p?teamForPlayer(p):null;
-  openExplorer('positions',null,{teamId:String(t?.id??currentTeamId)});return;
- }
+ if(e.target.closest('[data-dossier-chart]')){e.stopPropagation();return;}
  openExplorer('profile',id);
 });
 playerDossiers.addEventListener('keydown',e=>{
@@ -1916,7 +1935,7 @@ el('explore-content').addEventListener('click',async e=>{
  if(weeklyBar){e.stopPropagation();openExplorer('summary',null,{teamId:weeklyBar.dataset.weeklyBarTeam,week:Number(weeklyBar.dataset.weeklyBarWeek),focus:'franchise-lineup'});return;}
  const playerWeek=e.target.closest('[data-player-week]');
  if(playerWeek){e.stopPropagation();openPlayerPositionContributions(XL.player,Number(playerWeek.dataset.playerWeek));return;}
- if(e.target.closest('[data-open-positions]')){e.stopPropagation();openExplorer('positions');return;}
+ if(e.target.closest('[data-chart-surface]')){e.stopPropagation();return;}
  // Clicking the non-player surface of Starting Lineup opens the expanded roster.
  // Player rows still open dossiers, and slot buttons still open what-if substitutions.
  const lineupSurface=e.target.closest('.franchise-week-panel');
@@ -1974,22 +1993,6 @@ el('explore-content').addEventListener('click',async e=>{
  if(positionMode){XL.positionComparisonView=positionMode.dataset.positionView;recordFilterDiagnostic('view',XL.positionComparisonView);schedulePositionRender();return;}
  const leagueMode=e.target.closest('[data-league-view]');
  if(leagueMode){XL.leagueComparisonView=leagueMode.dataset.leagueView;renderExplorer();return;}
- const leagueLabel=e.target.closest('[data-league-label-week][data-league-label-team]');
- if(leagueLabel){e.stopPropagation();openExplorer('summary',null,{teamId:leagueLabel.dataset.leagueLabelTeam,week:Number(leagueLabel.dataset.leagueLabelWeek),focus:'franchise-lineup'});return;}
- const leaguePanel=e.target.closest('.league-contribution-franchise[data-league-panel-week],.league-contribution-franchise[data-league-panel-team]');
- if(leaguePanel&&!e.target.closest('button,a,select,input,[data-league-week]')){
-   e.stopPropagation();
-   if(leaguePanel.dataset.leaguePanelWeek){
-     openExplorer('summary',null,{teamId:String(explorerTeam().id),week:Number(leaguePanel.dataset.leaguePanelWeek),focus:'franchise-lineup'});
-   }else{
-     const t=findTeam(leaguePanel.dataset.leaguePanelTeam);
-     if(t){const recorded=[...(t.history||[]).filter(h=>labNum(h.points)!==null).map(h=>Number(h.week)),Number(t.currentMatchup?.week)||0].filter(w=>w>0);
-      const w=Math.max(...recorded,Number(model.currentWeek||currentWeek||1));
-      openExplorer('summary',null,{teamId:String(t.id),week:w,focus:'franchise-lineup'});
-     }
-   }
-   return;
- }
  const contribution=e.target.closest('[data-league-week][data-league-team]');
  if(contribution){e.stopPropagation();openExplorer('summary',null,{teamId:contribution.dataset.leagueTeam,week:Number(contribution.dataset.leagueWeek),focus:'franchise-lineup'});return;}
  const button=e.target.closest('button,[data-ledger-team],[data-open-player],[data-set-team],[data-open-match],[data-open-weekly],[data-open-weekly-table],[data-matchup-team]');if(!button)return;
@@ -2045,8 +2048,6 @@ el('explore-content').addEventListener('keydown',e=>{
   openExplorer('summary',null,{teamId:String(team?.id??XL.viewTeamId??currentTeamId),week:Number(row.dataset.gamelogWeek),focus:'franchise-lineup'});return;
  }
  if((e.key==='Enter'||e.key===' ')&&e.target.closest('[data-player-rank]')){e.preventDefault();togglePlayerRanking(Number(e.target.closest('[data-player-rank]').dataset.playerRank));return;}
- const leaguePanel=e.target.closest('.league-contribution-franchise[data-league-panel-week],.league-contribution-franchise[data-league-panel-team]');
- if(leaguePanel&&e.target===leaguePanel&&['Enter',' '].includes(e.key)){e.preventDefault();leaguePanel.click();return;}
  const matchupPanel=e.target.closest('[data-matchup-team]');
  if(matchupPanel&&(e.key==='Enter'||e.key===' ')&&e.target===matchupPanel){e.preventDefault();openExplorer('summary',null,{teamId:matchupPanel.dataset.matchupTeam,week:XL.viewWeek,focus:'franchise-lineup'});return;}
  const agentRow=e.target.closest('tr[data-open-player]');

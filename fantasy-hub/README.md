@@ -1,4 +1,4 @@
-# Fantasy Hub — GRIDIRON/86 v9.9.1, Cloudflare edition
+# Fantasy Hub — GRIDIRON/86 v9.10, Cloudflare edition
 
 Live site: https://fantasy-home.fantasy-hub.workers.dev/
 
@@ -214,3 +214,12 @@ Trade counteroffers share player valuations and the two starting-lineup baseline
 Home trade edits update only the trade tile. Unchanged strategy markup retains its existing controls, focus and open explanations. Opportunity reports no longer calculate the leader table twice, and player matching reuses the dataset index.
 
 The reproducible 19-counteroffer benchmark fell from 163.81ms to 91.87ms (44% lower median computation time on the same host). This measures analytics, not network or full-page load speed. See [optimization verification](docs/verification-9.9.1.md).
+
+
+## v9.10 — clearer charts and the trade desk
+
+- Variable Lab uses the available report viewport for the plot; data sources and exports move into a disclosure below it. Labels avoid collisions and appear immediately on dot hover or keyboard focus.
+- Touches & Share supports individual weeks. Clicking a weekly share bar opens that player's selected-week workload report. Metric cards and share bars reveal definitions on demand.
+- The home Position Allocation gains a period picker and larger bars; Matchup Center pairs a compact scoreboard with scrolling player lists.
+- Trade Calculator centers package balance, exchanged-value shares and each team's percentage lineup change, with searchable roster pickers and expandable lineup details. Percentages describe modeled scoring, not acceptance probabilities.
+- Chart backgrounds and labels no longer behave like oversized bar links. Navigation buttons keep square arrow controls and compact window ornaments.
