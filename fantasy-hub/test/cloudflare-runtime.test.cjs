@@ -53,7 +53,13 @@ test('Cloudflare runtime shares public cold reads without forwarding caller cook
     const pending=Array.from({length:12},(_,i)=>mf.dispatchFetch('https://hub.example/api/nfl/game-status?season=2031&week=7',{headers:{Cookie:'fixture-user='+i,Authorization:'Bearer fixture-'+i}}));
     await ready;await new Promise(r=>setTimeout(r,30));assert.equal(calls,1);release();
     const results=await Promise.all(pending);assert.ok(results.every(r=>r.status===200));
-    const bodies=await Promise.all(results.map(r=>r.json()));assert.ok(bodies.every(b=>b.season===2031&&b.week===7));
+    assert.notEqual(results[0],results[1]);
+    const first=await results[0].json();first.opponents.injected='caller-only';
+    assert.equal(results[1].bodyUsed,false);
+    const bodies=await Promise.all(results.slice(1).map(r=>r.json()));assert.ok(bodies.every(b=>b.season===2031&&b.week===7));
+    assert.ok(bodies.every(b=>b.opponents.injected===undefined));
+    const warm=await mf.dispatchFetch('https://hub.example/api/nfl/game-status?season=2031&week=7');
+    assert.equal((await warm.json()).opponents.injected,undefined);
     assert.equal(calls,1);
   }finally{release();await mf.dispose();}
 });

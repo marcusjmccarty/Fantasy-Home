@@ -78,3 +78,39 @@ test('public overview keys distinguish both player ID and caller-supplied displa
   assert.deepEqual(bodies.map(b=>[b.playerId,b.playerName]),pairs);
  }finally{globalThis.fetch=original}
 });
+
+test('32 tracked public keys plus 100 same-key overflow callers perform 132 upstream loads',async()=>{
+ const worker=await fresh(),original=globalThis.fetch,gate=deferred();let calls=0;
+ globalThis.fetch=async()=>{calls++;await gate.promise;return Response.json({events:[]})};
+ const read=season=>worker.fetch(req(`/api/nfl/game-status?season=${season}&week=1`),{});
+ try{
+  const admitted=Array.from({length:32},(_,i)=>read(2018+i));
+  await new Promise(r=>setImmediate(r));assert.equal(calls,32);
+  const shared=read(2018),overflow=Array.from({length:100},()=>read(2100));
+  await new Promise(r=>setImmediate(r));assert.equal(calls,132);
+  gate.resolve();const responses=await Promise.all([...admitted,shared,...overflow]);
+  assert.equal(responses.length,133);assert.ok(responses.every(r=>r.status===200));
+  await read(2100);assert.equal(calls,132);
+ }finally{gate.resolve();globalThis.fetch=original}
+});
+
+test('shared public timeout releases all waiters, permits unrelated progress and retries',async()=>{
+ const worker=await fresh(),original=globalThis.fetch,timeout=AbortSignal.timeout,controllers=[],durations=[];
+ let calls=0,stall=true;
+ AbortSignal.timeout=ms=>{durations.push(ms);const controller=new AbortController();controllers.push(controller);return controller.signal};
+ globalThis.fetch=async(url,options)=>{
+  calls++;
+  if(!stall||String(url).includes('week=8'))return Response.json({events:[]});
+  return new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(options.signal.reason),{once:true}));
+ };
+ try{
+  const waiting=Array.from({length:8},()=>worker.fetch(req(path),{}));
+  await new Promise(r=>setImmediate(r));assert.equal(calls,1);assert.deepEqual(durations,[23000]);
+  assert.equal((await worker.fetch(req(path.replace('week=7','week=8')),{})).status,200);assert.equal(calls,2);
+  controllers[0].abort(new DOMException('Fixture deadline','TimeoutError'));
+  const responses=await Promise.all(waiting);assert.ok(responses.every(r=>r.status===502));
+  const bodies=await Promise.all(responses.map(r=>r.json()));assert.ok(bodies.every(b=>/could not be reached/.test(b.error)));
+  stall=false;assert.equal((await worker.fetch(req(path),{})).status,200);assert.equal(calls,3);
+  assert.deepEqual(durations,[23000,23000,23000]);
+ }finally{controllers.forEach(c=>c.abort());AbortSignal.timeout=timeout;globalThis.fetch=original}
+});

@@ -74,3 +74,15 @@ All upstream responses were local fictional fixtures. No production endpoint was
 4. **Residual limits:** in-flight sharing is per Worker isolate; concurrent requests in different isolates still fetch independently. At 32 distinct pending keys, new distinct work is deliberately not retained/coalesced. Existing fallback/error-to-empty behavior, cache TTLs and capacity eviction are unchanged. Miniflare results do not prove provider acceptance or production load behavior.
 
 The branch is ready for review, not publication. Preserve new UI handlers and release asset versioning when integrating. Recheck main immediately before any later integration/publication action.
+
+## Bounded verification follow-up after focus commit 334595a
+
+No application implementation changes were made in this follow-up. Cache implementation remains `3170f2ed9740f46f7f657a8c5ddd82536540514e`; private and AI paths remain unchanged.
+
+- Exact saturation fixture through the Worker: 32 distinct held public keys + 100 callers for the same untracked overflow key = **132 upstream loads**. One extra caller for an admitted key shares its load (133 client responses total). All return 200; a subsequent warm overflow-key read adds zero loads. The bound is **tracked pending keys only, not upstream concurrency**. Internal helper results share object references; it does not clone them.
+- Deterministic timeout fixture asserts `AbortSignal.timeout(23000)` for public upstream loads, manually aborts that signal, observes eight shared callers returning 502, confirms unrelated-key progress while they wait, then verifies successful retry. This tests abort handling and cleanup with a controlled signal, not elapsed 23-second timing or production timeout behavior. The unchanged 28-second AI deadline was not newly exercised.
+- Actual Miniflare HTTP dispatch confirms distinct Response instances and independent body consumption. Parsing and mutating the first response before consuming the others changes neither their parsed payloads nor a later cached HTTP response. This verifies the serialization boundary, not internal object immutability.
+- Seven focus regressions added at `334595a` bring the existing browser suite to 24 passing tests (last executed at that commit). This test/documentation-only follow-up does not change frontend bytes.
+- Full JS suite after the added checks: 87 passed, 0 failed. Existing Python suite: 7 passed.
+- GitHub main was rechecked as `e8eb5af937c4ab298713f815ee95c18633c86356`.
+- Combined keyboard integration remains blocked: its Library archive download failed twice with no bytes. No further transfer attempts or combined-validation claims.
