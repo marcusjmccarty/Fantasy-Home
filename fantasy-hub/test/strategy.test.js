@@ -8,6 +8,7 @@ function setup(){
  const c=vm.createContext({window:{addEventListener(){}},document:{addEventListener(type,fn){handlers.set(type,[...(handlers.get(type)||[]),fn])}},sourceName:()=>"Exhibition",el,Option:class{},setExplorer:s=>{html=s},heading:(title,copy)=>`<div><h3>${title}</h3><p>${copy}</p></div>`,currentWeek:7,number:v=>typeof v==='number'&&Number.isFinite(v)?v:null,nfmt:(v,d=1)=>v==null?'—':Number(v).toFixed(d),sum:xs=>xs.reduce((a,b)=>a+b,0),currentPlayerId:'allen',XL:{player:null},normalizeNFLAbbr:x=>x,esc:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;'),labFormat:(v,d=1)=>v==null?'—':Number(v).toFixed(d),labPct:v=>v==null?'—':Number(v).toFixed(1)+'%',nameKey:v=>String(v).toLowerCase().replace(/[^a-z0-9]/g,''),expandTable:(headers,rows)=>`<table>${headers.join('|')}${rows.join('')}</table>`});
  const script=read('script.js');vm.runInContext(script.slice(script.indexOf('function makeDemo()'),script.indexOf('function updateUI()')),c);
  vm.runInContext("var model=makeDemo();var currentTeamId='1';var getTeam=()=>model.teams.find(t=>t.id===currentTeamId);var findTeam=id=>model.teams.find(t=>t.id===id);var getPool=()=>Object.values(model.players);var rowsFor=t=>t.playerIds.map(id=>model.players[id]);var teamName=t=>t?.name||'No team';",c);
+ vm.runInContext(script.slice(script.indexOf('function lineupSlotLabel('),script.indexOf('function homeMatchupRoster(')),c);
  vm.runInContext(script.slice(script.indexOf('function playerQuickStats('),script.indexOf('function drawProfile(')),c);vm.runInContext(read('analytics-math.js'),c);vm.runInContext(read('interactions.js'),c);vm.runInContext(read('strategy.js'),c);
  return {run:code=>vm.runInContext(code,c),html:()=>html,node:el,change:(id,value)=>{for(const fn of handlers.get('change')||[])fn({target:{id,value,dataset:{}}})}};
 }
@@ -180,4 +181,22 @@ test('active week drives historical projections and the three player quick stats
 test('lineup assessment uses comparable prior evidence and never treats a short pool as a firm tier',()=>{
  const h=setup();h.run("model.players.cook.status='OUT'");assert.equal(h.run('lineupRead(model.players.cook).label'),'Bench · unavailable');
  h.run("getPool=()=>[model.players.allen]");assert.equal(h.run('lineupRead(model.players.allen).label'),'Role uncertain');assert.match(h.run('lineupRead(model.players.allen).summary'),/too small/);
+});
+
+test('Outlook surfaces route to the selected player while nested help remains separate',()=>{
+ const h=setup();h.run("STRATEGY.player='cook';renderDefensiveOutlook()");
+ assert.match(h.html(),/prior-scoring report-link[^>]*data-report-open="player-analytics"[^>]*data-report-player="cook"/);
+ assert.match(h.html(),/strategy-range report-link[^>]*data-report-open="profile"[^>]*data-report-player="cook"/);
+ assert.match(h.html(),/data-stat-help=/);assert.ok(!h.html().includes('Player file ↗'));
+ h.run("STRATEGY.defense.set(model.season+':7',{opponents:{BUF:'DAL'}});renderDefensiveOutlook()");
+ assert.match(h.html(),/data-opponent-archive="DAL"/);assert.equal(h.run("findOpponentDefense('DAL').id"),'dal');h.run("XL.open='outlook';var archiveRoute=null;var openExplorer=(...args)=>archiveRoute=args;openOpponentArchive('DAL')");assert.equal(h.run("archiveRoute.join(',')"),'player-analytics,dal');assert.equal(h.run("findOpponentDefense('XYZ')"),undefined);
+});
+test('trade roster follows starting slots before bench and home balance has an explicit empty state',()=>{
+ const h=setup();h.run("currentWeek=6;getTeam().history.find(h=>h.week===6).lineup=[{id:'cook',slot:23,starter:true},{id:'tucker',slot:17,starter:true},{id:'allen',slot:0,starter:true},{id:'dal',slot:16,starter:true},{id:'chase',slot:4,starter:true},{id:'cmc',slot:2,starter:true},{id:'kelce',slot:6,starter:true}]");
+ assert.equal(h.run("tradeRoster(getTeam()).slice(0,7).map(p=>p.id).join(',')"),'allen,cmc,chase,kelce,cook,dal,tucker');
+ h.run("renderStrategy('trade')");assert.match(h.html(),/data-trade-club="1"/);assert.match(h.html(),/data-trade-player="cook"/);assert.match(h.html(),/trade-position">FLEX/);
+ const home=h.node('trade-preview').innerHTML;assert.match(home,/trade-balance-ring/);assert.match(home,/ADD PLAYERS/);assert.ok(!home.includes('No players selected'));assert.ok(!home.includes('>—<'));
+});
+test('TD methodology is visible without expanding a disclosure',()=>{
+ const h=setup();h.run("renderStrategy('opportunity')");assert.match(h.html(),/<section class="strategy-method lab-panel"><h4>TD ESTIMATE/);assert.ok(!h.html().includes('<details class="strategy-method"'));
 });

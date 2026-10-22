@@ -23,7 +23,7 @@ test('expanded graph limits overlapping labels and scales to measured plot dimen
 test('home matchup retains all starters, excludes bench and preserves missing scores',()=>{
  const players={a:{name:'Starter A',pos:'RB',scores:{}},b:{name:'Bench B',pos:'WR',scores:{}},c:{name:'Starter C',pos:'QB',scores:{}}};
  const c=vm.createContext({model:{players,currentWeek:6},currentWeek:6,esc:String,teamName:t=>t.name,number:n=>typeof n==='number'?n:null,nfmt:n=>n==null?'—':String(n)});
- vm.runInContext(section(read('script.js'),'function homeMatchupRoster(',"el('matchup-panel').addEventListener"),c);
+ vm.runInContext(section(read('script.js'),'function lineupSlotLabel(',"el('matchup-panel').addEventListener"),c);
  c.team={name:'Test',wins:3,losses:2,history:[{week:1,lineup:[{id:'b',starter:false,points:20},{id:'a',starter:true,points:0},{id:'c',starter:true,points:null}]}]};
  const html=vm.runInContext('homeMatchupRoster(team,1)',c);assert.match(html,/Starter A/);assert.match(html,/Starter C/);assert.ok(!html.includes('Bench B'));assert.match(html,/<strong>0<\/strong>/);assert.match(html,/<strong>—<\/strong>/);
 });
@@ -34,5 +34,16 @@ test('active week selectors stay synchronized and reject unavailable weeks',()=>
  vm.runInContext(section(read('script.js'),'function availableActiveWeeks(','function drawMatchup('),c);vm.runInContext('var updateUI=()=>updateWeekMenu(getTeam());updateUI();setActiveWeek(2)',c);
  assert.equal(el('header-current-week').value,'2');assert.equal(el('week-select').value,'2');assert.equal(vm.runInContext('currentWeek',c),2);
  vm.runInContext('setActiveWeek(18)',c);assert.equal(vm.runInContext('currentWeek',c),2);
- assert.ok(el('week-select').options.some(o=>o.value==='7'));
+ assert.ok(el('week-select').options.some(o=>o.value==='7'));assert.equal(el('header-current-week').options.find(o=>o.value==='7').text,'07');
+});
+
+test('home lineup respects actual slots, keeps FLEX after TE and D/ST before K',()=>{
+ const positions=['K','WR','RB','DEF','TE','QB','WR','RB','WR','QB'];
+ const slots=[17,23,2,16,6,0,4,2,4,20];
+ const players=Object.fromEntries(positions.map((pos,i)=>[String(i),{id:String(i),name:'Player '+i,pos,scores:{}}]));
+ const c=vm.createContext({model:{players,currentWeek:7},currentWeek:7,esc:String,teamName:t=>t.name,number:n=>typeof n==='number'?n:null,nfmt:n=>n==null?'—':String(n)});
+ vm.runInContext(section(read('script.js'),'function lineupSlotLabel(',"el('matchup-panel').addEventListener"),c);
+ c.team={name:'Slots',history:[{week:7,lineup:slots.map((slot,i)=>({id:String(i),slot,starter:slot!==20,points:i}))}]};
+ assert.equal(vm.runInContext("teamLineupEntries(team,7).filter(e=>e.starter).map(lineupSlotLabel).join(',')",c),'QB,RB,RB,WR,WR,TE,FLEX,D/ST,K');
+ const html=vm.runInContext('homeMatchupRoster(team,7)',c);assert.ok(html.indexOf('Player 1')>html.indexOf('Player 4'));assert.ok(!html.includes('Player 9'));
 });
