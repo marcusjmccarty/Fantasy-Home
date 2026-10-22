@@ -273,7 +273,8 @@ function drawProfile(team){
   if(typeof renderStrategyHome==='function')renderStrategyHome();
   if(!p||!model.weeks.length){el('player-spark').innerHTML='<div class="empty-chart">NO PLAYER HISTORY</div>';return;}
   const values=model.weeks.map(w=>number(p.scores?.[w])),max=Math.max(1,...values.map(v=>v??0));
-  el('player-spark').innerHTML=values.map((v,i)=>`<div class="home-player-week" title="Week ${model.weeks[i]}: ${nfmt(v)}"><span class="home-player-value">${v===null?'—':nfmt(v,1)}</span><button type="button" class="mini-bar ${v===null?'is-blank':''}" data-home-player-week="${model.weeks[i]}" ${v===null?'disabled':''} aria-label="Week ${model.weeks[i]}: ${nfmt(v)}. View starter contributions" style="height:${v===null?'8':Math.max(2,100*v/max)}%"></button></div>`).join('');
+  el('player-spark').classList.toggle('dense-weeks',values.length>12);
+  el('player-spark').innerHTML=values.map((v,i)=>`<div class="home-player-week" title="Week ${model.weeks[i]}: ${nfmt(v)}"><span class="home-player-value">${v===null?'—':nfmt(v,1)}</span><button type="button" class="mini-bar ${v===null?'is-blank':''}" data-home-player-week="${model.weeks[i]}" ${v===null?'disabled':''} aria-label="Week ${model.weeks[i]}: ${nfmt(v)}. View starter contributions" style="height:${v===null?'8':Math.max(2,100*v/max)}%"></button><small class="home-point-week">${model.weeks[i]}</small></div>`).join('');
   el('player-caption').textContent=model.source==='sleeper'?'League-scored weekly points, including weeks with other teams. Missing weeks are blank.':model.source==='demo'?'EXAMPLE WEEKLY POINTS · NOT REAL SCORES':'Weekly points provided in the imported dataset.';
 }
 

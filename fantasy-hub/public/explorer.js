@@ -1557,7 +1557,7 @@ function scatterSVG(rows){
  const mobile=window.innerWidth<=650;
  // Use the available pixels instead of scaling a fixed canvas to a wide screen.
  const W=Math.max(320,Math.round(window.innerWidth-(mobile?70:140)));
- const H=Math.max(220,Math.min(460,Math.round(window.innerHeight*.43)));// bounded in both workspace modes
+ const H=Math.max(200,Math.min(460,window.innerHeight-480));// bounded in both workspace modes
  const m=mobile?{l:47,t:18,r:16,b:42}:{l:62,t:18,r:22,b:45};
  const w=W-m.l-m.r,h=H-m.t-m.b;
  if(!rows.length)return '<div class="lab-no-data"><b>NO COMPARABLE DATA POINTS</b><p>Choose two metrics present in this dataset, adjust the position filter, or import an advanced CSV.</p></div>';
