@@ -1,1 +1,124 @@
-/* Keyboard navigation styles (focus, command palette, shortcut help). */
+/* GRIDIRON/86 — keyboard.css
+   Focus, skip links, key caps, the command palette, the shortcut help and the
+   "G…" go-to hint. Loaded after terminal.css; uses the same paper/ink palette. */
+:root{--focus:#1f5fa8;--focus-soft:#dbe8f7;--kbd-bg:#f9f9f4;--kbd-edge:#5f625c}
+
+/* ---------- helpers ---------- */
+.visually-hidden{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+
+/* ---------- key caps ---------- */
+kbd{display:inline-block;min-width:1.7em;padding:1px 5px 0;border:1px solid var(--kbd-edge);border-bottom-width:2px;background:var(--kbd-bg);color:var(--ink);font:600 11.5px/1.45 var(--mono);text-align:center;letter-spacing:0;white-space:nowrap;vertical-align:baseline;box-shadow:inset 0 -1px 0 #d9d8cf}
+.kbd-plus{margin:0 2px;color:#5d605a;font:12px var(--mono)}
+.kbd-then,.kbd-or{margin:0 6px;color:#5d605a;font:italic 11.5px var(--sans)}
+
+/* ---------- skip links: hidden until focused ---------- */
+.skip-links{position:absolute;top:0;left:0;z-index:1000}
+.skip-link{position:absolute;left:12px;top:-60px;padding:10px 14px;background:var(--ink);color:#fff!important;font:700 13px var(--mono);letter-spacing:.4px;text-decoration:none;border:2px solid #fff;box-shadow:3px 3px 0 #5d605c;white-space:nowrap}
+.skip-link:focus{top:10px;outline:3px solid #9cc2ff;outline-offset:2px}
+
+/* ---------- one strong, consistent focus ring ---------- */
+:where(button,select,input,a,summary,[tabindex]):focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+input[type=checkbox]:focus-visible,input[type=radio]:focus-visible{outline-offset:1px}
+/* Dashboard windows: the ▣ open button is the window's single tab stop; the whole
+   window lights up while it has focus so the position in the grid is obvious. */
+.win:has(> .title-bar .chrome:focus-visible){outline:3px solid var(--focus);outline-offset:3px;box-shadow:2px 2px 0 var(--shadow),0 0 0 6px #1f5fa826}
+.win > .title-bar .chrome:focus-visible{outline:2px solid var(--focus);outline-offset:1px;background:var(--focus);color:#fff;border-color:var(--focus)}
+.win:has(> .title-bar .chrome:focus-visible) > .title-bar{background:#c9d8e8}
+.win.expandable:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+/* Clickable table rows: the native row stays a row; one real button carries focus. */
+.row-link{all:unset;box-sizing:border-box;cursor:pointer;color:inherit;font:inherit;text-align:left;display:inline}
+.row-link:focus-visible{outline:none}
+.row-link-empty{display:inline-block;min-width:16px;text-align:center;color:#5d605a;font:12px var(--mono)}
+tr.has-row-link{cursor:pointer}
+tr.has-row-link:has(.row-link:focus-visible){outline:3px solid var(--focus);outline-offset:-3px}
+tr.has-row-link:has(.row-link:focus-visible)>*{background:var(--focus-soft)!important}
+tr.has-row-link:has(.row-link:focus-visible) .row-link{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:3px}
+/* Scrollable regions reached with Tab. */
+[data-scroll-region]:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+/* Report bar: a thicker inset ring so it survives the tab's own border. */
+.report-bar button:focus-visible{outline:3px solid var(--focus);outline-offset:-5px}
+.dialog-tabs [role=tab]:focus-visible{outline:3px solid var(--focus);outline-offset:-3px;z-index:1;position:relative}
+.menu-bar :focus-visible{outline-color:#9cc2ff}
+
+/* ---------- menu-bar palette launcher ---------- */
+.palette-launch{display:inline-flex;align-items:center;gap:6px}
+.palette-launch kbd{min-width:0;padding:0 4px;background:transparent;color:#d9dcd3;border-color:#8b8e86;box-shadow:none;font-size:10.5px;line-height:1.5}
+.palette-launch:hover kbd{color:#fff}
+@media (max-width:560px){.palette-launch kbd{display:none}}
+
+/* ---------- "G…" pending chip ---------- */
+.key-chip{position:fixed;left:50%;bottom:18px;z-index:900;transform:translateX(-50%);width:min(760px,calc(100vw - 24px));padding:10px 14px;background:#232523;color:#f2f1ea;border:1px solid #000;box-shadow:4px 4px 0 #5d605c;font:12.5px/1.7 var(--mono)}
+.key-chip[hidden]{display:none}
+.key-chip b{display:block;margin-bottom:3px;letter-spacing:.8px}
+.key-chip span{display:block;color:#d6d8d0}
+.key-chip kbd{background:#f2f1ea;font-size:11px;padding:0 4px;min-width:1.5em}
+.key-chip i{font-style:normal;color:#7d8079}
+
+/* ---------- command palette ---------- */
+.command-palette{width:min(640px,calc(100vw - 20px));max-height:min(620px,calc(100dvh - 40px));margin:min(12vh,90px) auto auto;padding:0;display:none;flex-direction:column;border:2px solid #242622;box-shadow:6px 6px 0 #4b504d;background:var(--panel);color:var(--ink);font-family:var(--mono)}
+.command-palette[open]{display:flex}
+.command-palette::backdrop{background:rgba(28,30,29,.5)}
+.palette-bar{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#242622;color:#fff;font:600 12px var(--mono);letter-spacing:.5px}
+.palette-bar b{flex:1}
+.palette-mode{padding:1px 7px;border:1px solid #c9ccc2;color:#fff;font:700 11px var(--mono);letter-spacing:.6px}
+.palette-mode[hidden]{display:none}
+.palette-esc{font:12px var(--mono);color:#cfd2c9}
+.palette-esc kbd{background:#f2f1ea}
+.palette-field{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--ink);background:var(--white)}
+.palette-field span{font:700 18px var(--mono);color:#3f6b5e}
+.palette-field input{flex:1;border:0!important;background:transparent!important;padding:6px 0!important;font:15px var(--mono)!important;color:var(--ink)}
+.palette-field input:focus,.palette-field input:focus-visible{outline:none}
+.palette-field:focus-within{box-shadow:inset 0 -3px 0 var(--focus)}
+.palette-list{flex:1;min-height:80px;overflow-y:auto;overscroll-behavior:contain;padding:4px 0 8px}
+.palette-group{padding:10px 14px 4px;font:700 11px var(--mono);letter-spacing:1px;color:#555852}
+.palette-option{display:grid;grid-template-columns:22px minmax(0,1fr) auto auto;align-items:center;gap:10px;min-height:36px;padding:5px 14px;border-left:4px solid transparent;cursor:pointer;font-size:13.5px}
+.palette-option[aria-selected=true]{background:#1f3a5c;color:#fff;border-left-color:#9cc2ff}
+.palette-option[aria-selected=true] .palette-detail,.palette-option[aria-selected=true] small{color:#d7e5f5}
+.palette-option[aria-selected=true] .palette-kind{border-color:#d7e5f5;color:#fff}
+.palette-kind{display:inline-grid;place-items:center;width:20px;height:20px;border:1px solid #868a81;font:700 11px var(--mono);color:#454943}
+.palette-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.palette-label small{font-weight:400;color:#555852;font-size:12px}
+.palette-detail{min-width:0;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#555852;font-size:12.5px;text-align:right}
+.palette-hint{display:flex;gap:3px}
+.palette-hint kbd{font-size:11px;padding:0 4px;min-width:1.5em}
+.palette-empty{margin:0;padding:22px 16px;color:#555852;font:13px var(--sans)}
+.palette-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:8px 12px;border-top:1px solid #9b9d95;background:#e6e5dd;font:12px var(--mono);color:#454943}
+.palette-foot kbd{font-size:10.5px;padding:0 4px;min-width:1.4em}
+@media (max-width:560px){
+ .command-palette{margin-top:12px}
+ .palette-option{grid-template-columns:20px minmax(0,1fr);row-gap:0}
+ .palette-detail{grid-column:2;text-align:left;max-width:none}
+ .palette-hint{display:none}
+ #palette-help{display:none}
+}
+
+/* ---------- keyboard shortcut help ---------- */
+.shortcuts-dialog{width:min(760px,calc(100vw - 20px));max-height:calc(100dvh - 30px)}
+.shortcuts-dialog[open]{display:flex;flex-direction:column}
+.shortcuts-dialog .dialog-title{font-size:12.5px}
+.shortcuts-dialog .dialog-inner{display:flex;flex-direction:column;min-height:0;flex:1;padding:16px 18px 14px}
+.shortcuts-dialog p.shortcuts-lead{margin:0 0 12px;font:13px/1.55 var(--sans);max-width:none}
+.shortcuts-tools{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+.shortcuts-filter-label{font:700 11px var(--mono);letter-spacing:.8px}
+.shortcuts-tools input{flex:1;max-width:340px;font:13px var(--mono)!important;padding:7px 9px!important}
+.shortcuts-count{font:12px var(--mono);color:#555852}
+.shortcuts-list{flex:1;min-height:120px;overflow-y:auto;border:1px solid #9b9d95;background:var(--white);padding:4px 14px 12px;columns:2 320px;column-gap:28px}
+.shortcut-group{break-inside:avoid;padding-top:10px}
+.shortcut-group h3{margin:0 0 6px;padding-bottom:4px;border-bottom:1px solid var(--ink);font:700 12px var(--mono);letter-spacing:1px;text-transform:uppercase}
+.shortcut-group table{width:100%;border-collapse:collapse}
+.shortcut-group th,.shortcut-group td{padding:5px 0;border-bottom:1px dotted #c8c9c0;vertical-align:top;text-align:left}
+.shortcut-group th{width:1%;padding-right:12px;white-space:nowrap;font-weight:400}
+.shortcut-group td{font:13px/1.45 var(--sans);color:#262925}
+.shortcut-group tr.is-off td,.shortcut-group tr.is-off th{opacity:.55}
+.shortcut-off{font:italic 12px var(--sans)}
+.shortcuts-empty{font:13px var(--sans);color:#555852;padding:16px 0}
+.shortcuts-pref{margin-top:12px;padding-top:10px;border-top:1px solid #b9bab2}
+.shortcuts-pref label{display:inline-flex;align-items:center;gap:8px;font:700 12.5px var(--mono);cursor:pointer}
+.shortcuts-pref input{width:auto!important;margin:0;transform:scale(1.15)}
+.shortcuts-dialog .shortcuts-pref p.dialog-hint{margin:6px 0 0;font:12px/1.5 var(--sans);color:#454943;max-width:none}
+@media (max-width:560px){.shortcuts-list{columns:1;padding:4px 10px 10px}.shortcut-group th{white-space:normal}.shortcuts-dialog .dialog-inner{padding:12px}}
+
+/* Report bar buttons show their go-to letter on keyboard focus. */
+.report-bar button[data-go]::after{content:attr(data-go);position:absolute;right:2px;top:1px;font:600 9px/1 var(--mono);color:#6b6e67;opacity:0;pointer-events:none}
+body:not(.single-keys-off) .report-bar:focus-within button[data-go]::after{opacity:1}
+.shortcut-group th{white-space:normal;width:38%;max-width:170px}.shortcut-group th kbd{white-space:nowrap}

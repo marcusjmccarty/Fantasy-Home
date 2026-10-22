@@ -354,7 +354,7 @@ function requestTradeRecommendations(){
  tradeSearch.worker?.terminate();tradeSearch.key=key;tradeSearch.result=null;tradeSearch.visible=24;tradeSearch.error='';
  if(typeof Worker==='undefined'){tradeSearch.error='Automatic comparisons need browser worker support.';renderTradeRecommendations();return;}
  try{
-  const worker=new Worker('trade-search-worker.js?v=9.17.0');tradeSearch.worker=worker;
+  const worker=new Worker('trade-search-worker.js?v=9.18.0');tradeSearch.worker=worker;
   worker.onmessage=event=>{if(tradeSearch.key!==key)return;tradeSearch.result=event.data;worker.terminate();tradeSearch.worker=null;renderTradeRecommendations();};
   worker.onerror=()=>{if(tradeSearch.key!==key)return;worker.terminate();tradeSearch.worker=null;tradeSearch.error='Trade search could not finish. Change a team to retry.';renderTradeRecommendations();};
   worker.postMessage({own,their,slots,week,mode});
@@ -461,7 +461,8 @@ document.addEventListener('change',event=>{
  if(t.id==='strategy-player'){STRATEGY.player=t.value;XL.player=t.value;renderStrategy(XL.open);}
  if(t.id==='strategy-scope'){const selected=strategyPlayer()?.id;STRATEGY.scope=t.value;const pool=strategyPlayerPool(t.value);STRATEGY.player=pool.find(p=>String(p.id)===String(selected))?.id||pool[0]?.id||null;XL.player=STRATEGY.player;renderStrategy(XL.open);}
  const usage={'usage-period':'period','usage-position':'position','usage-sort':'sort','usage-leaders':'leaders'};if(usage[t.id]){STRATEGY[usage[t.id]]=t.value;updateOpportunityResults();if(t.id==='usage-period')renderStrategyHome();}
- if(t.id&&el(t.id))el(t.id).focus?.({preventScroll:true});
+ // Restore focus only to a control that a re-render replaced; never pull focus back on blur.
+ if(t.id&&el(t.id)&&el(t.id)!==t&&(!document.activeElement||document.activeElement===document.body))el(t.id).focus?.({preventScroll:true});
 });
 // Ignore stale report instances and respect focus moves during the debounce.
 el('explore-content').addEventListener('input',event=>{if(event.target.id==='usage-search'){const text=event.target.value,pos=event.target.selectionStart;STRATEGY.search=text;deferRender('usage',()=>{if(XL.open!=='opportunity'||event.target!==el('usage-search'))return;const ownsFocus=document.activeElement===el('usage-search');updateOpportunityResults();const input=el('usage-search');if(ownsFocus){input?.focus({preventScroll:true});input?.setSelectionRange(pos,pos);}});}});
