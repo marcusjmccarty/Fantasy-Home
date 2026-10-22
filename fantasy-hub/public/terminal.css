@@ -256,3 +256,8 @@ svg text.weekly-data-label{paint-order:stroke fill;stroke:#fff;stroke-width:3px;
 .share-week-bar{background:#5f8a73!important;border-color:#45695a!important}
 /* Matchup rows: "FINAL" is said once in the score header; live statuses still show per player. */
 .matchup-roster-player strong[title=FINAL] small{display:none}
+
+/* Report chrome: the page header already names the team and season, so the
+   report's dark bar is just navigation — back, forward, title, close. */
+body[data-layout=tabbed] #explore-club,body[data-layout=tabbed] #explore-context{display:none}
+body[data-layout=tabbed] .explore-title-bar{position:sticky;top:40px;z-index:20}
