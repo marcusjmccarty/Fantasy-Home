@@ -41,11 +41,13 @@ export function unitComparisons(units,team,side){
 // Give the analyst a focused evidence file rather than duplicate stat tables.
 export function focusMatchupFacts(facts){
  const defense=['DEF','D/ST'].includes(facts.position),runner=facts.position==='RB';
- const keys=defense?['sackRate','turnoversPerGame','epaPerPlay']:runner?['rushYardsPerPlay','successRate','explosiveRate']:['netPassYardsPerPlay','sackRate','explosiveRate'];
- const pick=source=>source?Object.fromEntries(keys.filter(k=>source[k]!=null).map(k=>[k,source[k]])):null;
- facts.opponentVsLeague=pick(facts.opponentVsLeague);facts.ownUnitVsLeague=pick(facts.ownUnitVsLeague);
+ const keys=defense?['sackRate','turnoversPerGame','epaPerPlay']:runner?['rushYardsPerPlay']:['netPassYardsPerPlay','sackRate'];
+ const pick=(source,includeValue)=>source?Object.fromEntries(keys.filter(k=>source[k]!=null).map(k=>[k,{...(includeValue?{observed:source[k].value}:{}),comparisonToLeague:Math.abs(source[k].differenceFromMean)<.01?'near the unweighted league team average':source[k].differenceFromMean>0?'above the unweighted league team average':'below the unweighted league team average'}])):null;
+ facts.opponentVsLeague=pick(facts.opponentVsLeague,true);facts.ownUnitVsLeague=pick(facts.ownUnitVsLeague,false);
  // The comparisons already contain the underlying observed value and mean.
  delete facts.opponentPlayByPlay;delete facts.ownPlayByPlay;
+ facts.interpretationLimits='No guaranteed future touches or workload, no player workload rankings, and no positional fantasy-points-allowed data. Matchup team rates are not opponent-adjusted. A recent role can change. A low receiving target count is not an observed target-share percentage.';
+ if(facts.opponentScoring)facts.opponentScoring={pointsPerGame:facts.opponentScoring[defense?'offensePPG':'defenseAllowedPPG'],meaning:defense?'NFL points scored by opposing offense':'NFL points allowed by opposing defense'};
  const workload=facts.playerWorkload;
  if(workload){
   facts.playerWorkload={recordedWeeks:workload.recordedWeeks,seasonCarriesPerWeek:workload.seasonCarriesPerWeek,seasonTargetsPerWeek:workload.seasonTargetsPerWeek,recentThree:workload.recentThree,inside5CarriesPerWeek:workload.inside5Carries/workload.recordedWeeks,redzoneCarriesPerWeek:workload.redzoneCarries/workload.recordedWeeks,redzoneTargetsPerWeek:workload.redzoneTargets/workload.recordedWeeks,basis:workload.basis};

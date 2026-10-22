@@ -29,7 +29,7 @@ test('matchup AI verifies opponent units server-side and requests a multi-paragr
  try{
   const response=await worker.fetch(request('/api/ai/outlook',post({report:'matchup',player:{id:'chi',name:'Chicago Defense',pos:'DEF',nfl:'CHI',season:2024,week:2,opponent:'FAKE',opponentPlayByPlay:{sacks:999},floor:2,ceiling:12}})),env);
   assert.equal(response.status,200);const data=await response.json(),facts=JSON.parse(prompt.contents[0].parts[0].text);
-  assert.equal(facts.verifiedNFLopponent,'DET');assert.equal(facts.opponentUnit,'offense');assert.equal(facts.opponentVsLeague.sackRate.value,20);assert.equal(facts.opponentPlayByPlay,undefined);assert.equal(facts.range.floor,2);
+  assert.equal(facts.verifiedNFLopponent,'DET');assert.equal(facts.opponentUnit,'offense');assert.equal(facts.opponentVsLeague.sackRate.observed,20);assert.equal(facts.opponentPlayByPlay,undefined);assert.equal(facts.range.floor,2);
   assert.match(prompt.systemInstruction.parts[0].text,/2–3 substantial/);assert.equal(data.outlook.split('\n\n').length,3);assert.equal(prompt.generationConfig.maxOutputTokens,1300);
  }finally{globalThis.fetch=original;}
 });
