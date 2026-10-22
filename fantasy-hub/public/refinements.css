@@ -106,3 +106,9 @@ body:not([data-layout=tabbed]) .explore-dialog:has(.graph-screen) .explore-conte
 .position-week-col{cursor:default}.position-week-pillar{padding:0;cursor:pointer;appearance:none;background:transparent}.position-week-col:hover .position-week-pillar{outline:none}.position-week-pillar:hover,.position-week-pillar:focus-visible{outline:2px solid #315c79;outline-offset:1px}.position-week-col b,.position-week-col small{font-size:12px}
 .league-contribution-franchise:is(:hover,:focus-visible){outline:none}.graph-screen .lab-graph-top .lab-graph-legend span{font-size:12px}.lab-note,#explore-content .lab-note{font-size:13px}
 @media(max-width:650px){.explore-title-bar .explore-history-controls{width:64px}.explore-title-bar b#explore-title{padding-left:72px;font-size:11px}}
+
+/* Narrow reports scroll rather than scaling chart text into a compressed plot. */
+@media(max-width:730px){
+ .graph-screen .lab-graph-panel{flex:none}
+ .graph-screen .graph-plot{flex:none;height:260px;min-height:260px}
+}

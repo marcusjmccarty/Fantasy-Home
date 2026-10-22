@@ -27,3 +27,8 @@ test('resize preserves focused graph player',async()=>{
  await page.setViewportSize({width:1400,height:980});await settle();
  assert.equal(await page.evaluate(()=>document.activeElement.dataset.graphPoint),'0');
 });
+test('mobile graph labels retain at least 12 rendered CSS pixels',async()=>{
+ await page.setViewportSize({width:390,height:844});await page.evaluate(()=>setWorkspaceLayout('tabbed'));await open();
+ const px=await page.locator('.lab-label').first().evaluate(n=>parseFloat(getComputedStyle(n).fontSize)*n.closest('svg').getScreenCTM().a);
+ assert.ok(px>=12,`Rendered label size ${px}px`);
+});

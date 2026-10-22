@@ -1627,6 +1627,7 @@ function detailGraph(){
 }
 function fitGraphScreen(){
  const screen=el('explore-content').querySelector('.graph-screen');if(!screen)return;
+ if(window.innerWidth<=730){screen.style.height='auto';return;}
  const content=el('explore-content'),tabbed=document.body.dataset.layout==='tabbed';
  const top=screen.getBoundingClientRect().top+(tabbed?window.scrollY:content.scrollTop);
  const footer=tabbed?0:el('explore-dialog').querySelector('.explore-footer').getBoundingClientRect().height;
