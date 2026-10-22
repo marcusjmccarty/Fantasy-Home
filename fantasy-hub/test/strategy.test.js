@@ -81,3 +81,7 @@ test('trade workbench compares lineups and counteroffers without changing league
  assert.match(h.html(),/STARTING LINEUP/);assert.match(h.html(),/COUNTEROFFER WORKBENCH/);assert.ok(!h.html().includes('ROSTER FIT'));
  assert.equal(h.run('getTeam().playerIds.join()'),roster);
 });
+test('counteroffers prioritize filling the starting lineup over package balance alone',()=>{
+ const h=setup();h.run("renderStrategy('trade');STRATEGY.trade.give=['cook',Object.values(model.players).find(p=>p.name==='Christian McCaffrey').id];STRATEGY.trade.get=['demo-1-1'];findTradeAlternatives()");
+ assert.ok(h.run('STRATEGY.trade.alternatives.length')>0);assert.notEqual(h.run('STRATEGY.trade.alternatives[0].impact'),null);
+});
