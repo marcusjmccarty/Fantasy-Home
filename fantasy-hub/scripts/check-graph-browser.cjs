@@ -135,3 +135,17 @@ test('pending search from a closed graph cannot replace or focus the reopened gr
  assert.equal(await page.evaluate(()=>reopenedPoint.isConnected),true);
  assert.equal(await page.evaluate(()=>document.activeElement===reopenedPoint),true);
 });
+test('integrated home graph stat cards explain in place and chart headings keep their new destinations',async()=>{
+ await page.locator('#graph-teaser [data-home-stat]').first().scrollIntoViewIfNeeded();await settle();
+ await page.locator('#graph-teaser [data-home-stat]').first().click();
+ assert.equal(await page.evaluate(()=>XL.open),null);assert.equal(await page.locator('.metric-popover').count(),1);
+ await page.keyboard.press('Escape');
+ await page.locator('.home-points-history .window-topline').click();assert.equal(await page.evaluate(()=>XL.open),'player-analytics');
+ await page.locator('#explore-close').click();await settle();
+ await page.locator('.home-share-history .share-history-link').click();assert.equal(await page.evaluate(()=>XL.open),'opportunity');
+ await page.locator('#explore-close').click();await settle();
+ for(const type of ['outlook','opportunity','trade']){
+  await page.locator(`.expandable[data-explore="${type}"] .title-bar`).click();assert.equal(await page.evaluate(()=>XL.open),type);
+  await page.locator('#explore-close').click();await settle();
+ }
+});
