@@ -1485,7 +1485,8 @@ function nflSearchText(code){const abbr=String(code||'').trim().toUpperCase();re
 function agentList(){let list=XL.free;const a=XL.agent;
  if(a.pos!=='ALL')list=list.filter(p=>a.pos==='DEF'?['DEF','D/ST'].includes(p.pos):p.pos===a.pos);
  if(a.search){const query=a.search.trim().toLowerCase();const exactTeamCode=query.toUpperCase();list=list.filter(p=>Object.hasOwn(NFL_SEARCH_TEAMS,exactTeamCode)?String(p.nfl||'').toUpperCase()===exactTeamCode:(String(p.name||'')+' '+nflSearchText(p.nfl)).includes(query));}
- list=[...list].sort((x,y)=>{const k=a.sort;return (metricValue(y,k)??-Infinity)-(metricValue(x,k)??-Infinity)});return list;
+ // Values live only for this render; metric overrides and updated data stay fresh.
+ return list.map(p=>({player:p,value:metricValue(p,a.sort)??-Infinity})).sort((x,y)=>y.value-x.value).map(row=>row.player);
 }
 function detailAgents(){const list=agentList();const count=XL.free.length;
  setExplorer(heading('Free agent scouting terminal','View the league-specific available-player pool. No adds, drops, or waiver claims are made by this read-only tool.')+
