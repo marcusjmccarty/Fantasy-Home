@@ -1579,7 +1579,7 @@ function scatterSVG(rows,dimensions={}){
   const lx=Math.max(m.l+4,x+labelWidth+12>W-m.r?x-labelWidth-9:x+9),ly=y<30?y+22:y-10;
   const visible=XL.graph.showLabels&&!occupied.some(k=>lx<k.x+k.w+6&&lx+labelWidth>k.x-6&&ly>k.y-18&&ly<k.y+18);
   if(visible)occupied.push({x:lx,y:ly,w:labelWidth});
-  return `<g class="lab-dot ${visible?'label-visible':''}" tabindex="0" role="button" data-graph-point="${i}" aria-label="Open ${esc(name)} Player Terminal"><circle cx="${x}" cy="${y}" r="${XL.selectedPoint===d.p.id?8:6}" stroke="#fff" stroke-width="1.4" fill="${XL.graph.color==='pos'?playerColor(d.p):'#487ebb'}"/><text class="lab-label" x="${lx}" y="${ly}">${esc(name)}</text></g>`;
+  return `<g class="lab-dot ${visible?'label-visible':''}" tabindex="0" role="button" data-graph-point="${i}" data-graph-player="${esc(String(d.p.id))}" aria-label="Open ${esc(name)} Player Terminal"><circle cx="${x}" cy="${y}" r="${XL.selectedPoint===d.p.id?8:6}" stroke="#fff" stroke-width="1.4" fill="${XL.graph.color==='pos'?playerColor(d.p):'#487ebb'}"/><text class="lab-label" x="${lx}" y="${ly}">${esc(name)}</text></g>`;
  }).join('');
  return `<svg class="lab-scatter-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Scatter plot: ${esc(META[XL.graph.x].name)} against ${esc(META[XL.graph.y].name)}"><defs><clipPath id="graphclip"><rect x="${m.l}" y="${m.t}" width="${w}" height="${h}"/></clipPath></defs><rect x="${m.l}" y="${m.t}" width="${w}" height="${h}" fill="#fff" stroke="#a5aaa8"/>${ticks('x')}${ticks('y')}${regression}${circles}<text x="${m.l+w/2}" y="${H-5}" text-anchor="middle" class="lab-axis-title">${esc(META[XL.graph.x].name)}</text><text x="15" y="${m.t+h/2}" transform="rotate(-90 15 ${m.t+h/2})" text-anchor="middle" class="lab-axis-title">${esc(META[XL.graph.y].name)}</text></svg>`;
 }
@@ -2165,7 +2165,30 @@ el('explore-content').addEventListener('change',async e=>{
  const fields={'graph-x':'x','graph-y':'y','graph-pos':'pos','graph-scope':'scope','graph-minimum':'minimum','graph-labels':'showLabels','graph-trend':'trend'};
  if(t.id in fields){XL.graph[fields[t.id]]=t.type==='checkbox'?t.checked:t.id==='graph-minimum'?Number(t.value):t.value;XL.graphUserSelected=true;XL.graphNotice='';renderExplorer();return;}
 });
-el('explore-content').addEventListener('input',e=>{const t=e.target;if(t.id==='agent-search'){XL.agent.search=t.value;deferRender('agent',()=>{const start=t.selectionStart;renderExplorer();const input=el('agent-search');input?.focus();input?.setSelectionRange(start,start)})}if(t.id==='graph-search'){XL.graph.search=t.value;deferRender('graph',()=>{if(XL.open!=='graph'||!t.isConnected)return;const start=t.selectionStart;renderExplorer();const input=el('graph-search');input?.focus();input?.setSelectionRange(start,start)})}});
+function renderSearchResults(input,report){
+ if(XL.open!==report||!input.isConnected)return;
+ const active=document.activeElement,inside=el('explore-content').contains(active);
+ const selection=active===input?[input.selectionStart,input.selectionEnd,input.selectionDirection]:null;
+ const attribute=['data-graph-player','data-preset','data-open-player','data-graph-stat'].find(name=>active?.hasAttribute(name));
+ const selector=active?.id?'#'+CSS.escape(active.id):attribute?`[${attribute}="${CSS.escape(active.getAttribute(attribute))}"]`:null;
+ renderExplorer();
+ // Leave focus outside this replaced subtree alone; the user may have moved on.
+ if(!inside||active.isConnected)return;
+ const renderedInput=el(input.id),afterRender=document.activeElement;
+ const restore=()=>{
+  if(XL.open!==report||el(input.id)!==renderedInput||document.activeElement!==afterRender)return;
+  const target=(selector&&el('explore-content').querySelector(selector))||renderedInput;
+  target?.focus({preventScroll:true});
+  if(selection&&target===renderedInput)target.setSelectionRange(...selection);
+ };
+ // Graph points are mounted by the already scheduled graph paint frame.
+ if(attribute==='data-graph-player')requestAnimationFrame(restore);else restore();
+}
+el('explore-content').addEventListener('input',e=>{
+ const t=e.target;
+ if(t.id==='agent-search'){XL.agent.search=t.value;deferRender('agent',()=>renderSearchResults(t,'agents'));}
+ if(t.id==='graph-search'){XL.graph.search=t.value;deferRender('graph',()=>renderSearchResults(t,'graph'));}
+});
 // Initialization runs after the original dashboard script, preserving its primary UI.
 explorerUpdate();
 prepareDossierNews();

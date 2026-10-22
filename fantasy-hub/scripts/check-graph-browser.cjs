@@ -149,3 +149,31 @@ test('integrated home graph stat cards explain in place and chart headings keep 
   await page.locator('#explore-close').click();await settle();
  }
 });
+for(const [report,search,control] of [['graph','graph-search','graph-pos'],['agents','agent-search','agent-sort']]){
+ test(report+' pending search preserves a newly focused control',async()=>{
+  await page.evaluate(report=>openExplorer(report),report);await settle();
+  await page.locator('#'+search).fill('a');await page.locator('#'+control).focus();await page.waitForTimeout(300);
+  assert.equal(await page.evaluate(()=>document.activeElement.id),control);
+ });
+ test(report+' pending search leaves focus outside report alone',async()=>{
+  await page.evaluate(report=>{setWorkspaceLayout('tabbed');openExplorer(report)},report);await settle();
+  await page.locator('#'+search).fill('a');await page.locator('#workspace-tab-graph').focus();await page.waitForTimeout(300);
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'workspace-tab-graph');
+ });
+}
+test('delayed graph filtering preserves a surviving focused player rather than its old index',async()=>{
+ await open();const id=await page.evaluate(()=>String(graphData().find(r=>r.p.name.toLowerCase().includes('a')).p.id));
+ await page.locator('#graph-search').fill('a');await page.locator(`[data-graph-player=${JSON.stringify(id)}]`).focus();await page.waitForTimeout(300);
+ assert.equal(await page.evaluate(()=>document.activeElement.dataset.graphPlayer),id);
+});
+test('delayed search preserves a preset and an active text selection',async()=>{
+ await open();await page.locator('#graph-search').fill('a');await page.locator('[data-preset="avg,std"]').focus();await page.waitForTimeout(300);
+ assert.equal(await page.evaluate(()=>document.activeElement.dataset.preset),'avg,std');
+ await page.locator('#graph-search').fill('Jordan');await page.locator('#graph-search').evaluate(n=>n.setSelectionRange(1,4,'backward'));await page.waitForTimeout(300);
+ assert.deepEqual(await page.locator('#graph-search').evaluate(n=>[n.selectionStart,n.selectionEnd,n.selectionDirection]),[1,4,'backward']);
+});
+test('pending Free agents search cannot replace a newly opened roster',async()=>{
+ await page.evaluate(()=>openExplorer('agents'));await settle();await page.locator('#agent-search').fill('a');
+ await page.evaluate(()=>{openExplorer('roster');window.agentDestination=document.querySelector('#explore-content table');agentDestination.tabIndex=-1;agentDestination.focus()});await page.waitForTimeout(300);
+ assert.equal(await page.evaluate(()=>agentDestination.isConnected&&document.activeElement===agentDestination),true);
+});
