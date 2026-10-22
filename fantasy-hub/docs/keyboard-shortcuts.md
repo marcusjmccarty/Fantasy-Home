@@ -27,7 +27,8 @@ storage and navigation labels are unchanged.
 Character shortcuts ignore inputs, textareas, selects, editable regions, custom
 textbox/combobox/slider roles, composition, legacy IME code 229, repeats, prevented
 events, and Ctrl/Meta/Alt/AltGraph combinations. Shift is allowed only for `?`. Data/About/
-help modals and metric cards suspend navigation shortcuts. Native selects retain
+help modals and metric cards suspend navigation shortcuts. Data/About allow ?
+from non-editing controls; G and / remain suspended there. Native selects retain
 typeahead; no global arrows were added. Native report `cancel` also dismisses a
 ranking card first when focus is in a form control.
 
@@ -57,7 +58,8 @@ deployment, credentials, live provider requests, or paid actions were performed.
 - `npm test`: **72/72 passed**, including local Cloudflare runtime tests.
 - `node --check public/shortcuts.js` and `git diff --check`: passed.
 - From fantasy-hub, serve with `python3 -m http.server 8765 --directory public`,
-  then run `node scripts/verify-shortcuts.cjs` and `node scripts/audit-shortcuts.cjs`
+  then run `node scripts/verify-shortcuts.cjs`, `node scripts/audit-shortcuts.cjs`,
+  and `node scripts/verify-keyboard-gates.cjs`
   with Playwright available and Chromium
   installed. Optional `CHROMIUM_PATH` and `SHORTCUTS_BASE_URL` override defaults
   `/usr/bin/chromium` and `http://127.0.0.1:8765`. Playwright is a QA-environment
@@ -164,3 +166,35 @@ Escape: first Escape removes only the metric and restores its trigger; second
 Escape closes the native report. Held Escape, help-over-ranking, and modifier/IME
 guards pass with main's updated global listener order. Screenshots here were
 refreshed on the integrated v9.12.1 build. No main checkout, push, merge, or deploy.
+
+
+## Manager gate pass and refreshed handoff
+
+Additional fixes on the integration branch:
+
+- `ed8be29`: allow ? from non-editing Data/About controls while preserving report
+  navigation suppression and input exclusions.
+- `4788a52`: recover native help focus when the opener becomes hidden, inert,
+  detached, or CSS-hidden. Prefer the help control, otherwise a usable control
+  inside the remaining top modal/report. Never focus a background/inert control.
+- `ac3d00e`: ignore a delayed usage-search callback if its input belongs to a
+  previous report instance. Reproduction: type with caret 2, close/reopen the
+  report, put the new caret at 0; the old callback formerly moved it to 2.
+
+`verify-keyboard-gates.cjs` now independently covers player/summary/position
+ranking overlays in both modes; help over report/Data/About; held Escape; usable
+focus return for removed/hidden/inert/CSS-hidden openers; inert openers in Data/
+About; same-report close/reopen; ten rapid layout cycles with queued close events;
+exactly one workspace-open event for each Enter/Space activation; opt-out after G
+and reload. G is a direct action: there is no pending multi-key sequence to cancel.
+
+All three browser scripts passed on the integrated build. Node tests remain
+75/75; syntax and whitespace checks pass. No changes to graph/free-agent handlers
+or workspace persistence were made. Those shared renderer fixes remain assigned
+to the performance owner. Actual OS IME/assistive-technology/Safari/Firefox tests
+remain environment-limited, rather than claimed from synthetic Chromium tests.
+
+The archive's MANIFEST.json records its exact base/head and per-file checksums;
+SHA256SUMS includes the manifest. It contains the verified git bundle, this doc,
+the three browser scripts, and four test logs. Library identity is retained when
+refreshing the archive, so earlier verified candidates remain version history.
