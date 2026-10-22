@@ -382,6 +382,7 @@ document.addEventListener('change',event=>{
  if(['home-outlook-player','home-share-player'].includes(t.id)){STRATEGY.homePlayer=t.value;if(tradeRoster(getTeam()).some(p=>String(p.id)===t.value)){currentPlayerId=t.value;drawRoster(getTeam());drawProfile(getTeam());}else renderStrategyHome();}
  if(t.id&&el(t.id))el(t.id).focus?.({preventScroll:true});
 });
-el('explore-content').addEventListener('input',event=>{if(event.target.id==='usage-search'){const text=event.target.value,pos=event.target.selectionStart;STRATEGY.search=text;deferRender('usage',()=>{if(XL.open!=='opportunity')return;updateOpportunityResults();const input=el('usage-search');input?.focus({preventScroll:true});input?.setSelectionRange(pos,pos);});}});
+// Respect focus moves made while the search debounce is waiting.
+el('explore-content').addEventListener('input',event=>{if(event.target.id==='usage-search'){const text=event.target.value,pos=event.target.selectionStart;STRATEGY.search=text;deferRender('usage',()=>{if(XL.open!=='opportunity')return;const ownsFocus=document.activeElement===el('usage-search');updateOpportunityResults();const input=el('usage-search');if(ownsFocus){input?.focus({preventScroll:true});input?.setSelectionRange(pos,pos);}});}});
 for(const id of ['home-go-to','explore-jump'])for(const [value,label] of [['outlook','PLAYER OUTLOOK'],['opportunity','TOUCHES & SHARE'],['trade','TRADE CALCULATOR']])el(id)?.add(new Option(label,value));
 renderStrategyHome();
