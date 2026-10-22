@@ -5,7 +5,7 @@
 .title-bar .chrome:before{content:'';width:13px;height:13px;box-sizing:border-box;border:1px solid #555f56;background:#455148}
 .explore-history-controls .explore-back{width:26px;height:26px;min-width:26px;min-height:26px;font-size:17px}
 #explore-close{height:28px;min-height:28px;min-width:76px;padding:3px 8px;font-size:12px;line-height:20px}
-body:not([data-layout=tabbed]) .explore-dialog{width:calc(100vw - 2 * var(--window-side-gutter));max-width:none;height:calc(100dvh - 2 * var(--window-gutter));max-height:calc(100dvh - 2 * var(--window-gutter));margin:auto}
+body:not([data-layout=tabbed]) .explore-dialog,body:not([data-layout=tabbed]) .explore-dialog:has(.strategy-heading){width:calc(100vw - 2 * var(--window-side-gutter));max-width:none;height:calc(100dvh - 2 * var(--window-gutter));max-height:calc(100dvh - 2 * var(--window-gutter));margin:auto}
 body:not([data-layout=tabbed]) .explore-dialog .explore-content,body:not([data-layout=tabbed]) .explore-dialog:has(.strategy-heading) .explore-content{max-height:none;flex:1}
 .matchup-banner-week{font:11px 'Courier New',monospace;display:flex;gap:4px;align-items:center;flex-shrink:0}.matchup-banner-week select{font-size:12px;min-height:24px;padding:2px 3px}
 .matchup-original-score{padding:9px 10px;border-bottom:1px solid #9ba99b;background:#e8ece2}.matchup-original-score .matchup-side strong{font-size:28px;margin:1px 0 0}.matchup-original-score .matchup-side>span{font-size:12px}.matchup-original-score .matchup-side .matchup-team-record{font-size:11px;margin-top:2px}.matchup-original-score .matchup-divider{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:12px}.matchup-divider small{font:10px 'Courier New',monospace}
