@@ -303,7 +303,7 @@ function updateTradeControl(target){
  else if(target.dataset.tradeSide){const side=target.dataset.tradeSide;t[side]=target.checked?[...new Set([...t[side],target.value])]:t[side].filter(id=>id!==target.value);}
  else if(target.dataset.homeTradeAdd){if(target.value)t[target.dataset.homeTradeAdd]=[...new Set([...t[target.dataset.homeTradeAdd],target.value])];}
  else return false;
- t.alternatives=[];t.searched=false;if(XL.open==='trade'){renderTrade();if(target.dataset.tradeDrop){const input=el('explore-content').querySelector?.(`input[data-trade-drop="${target.dataset.tradeDrop}"][value="${CSS.escape(target.value)}"]`);const details=input?.closest('details');if(details)details.open=true;}}else renderHomeTrade();return true;
+ t.alternatives=[];t.searched=false;if(XL.open==='trade'){renderTrade();if(target.dataset.tradeDrop){const input=el('explore-content').querySelector?.(`input[data-trade-drop="${target.dataset.tradeDrop}"][value="${CSS.escape(target.value)}"]`);for(let details=input?.closest('details');details;details=details.parentElement?.closest('details'))details.open=true;}}else renderHomeTrade();return true;
 }
 document.addEventListener('click',event=>{
  if(event.target.closest('details,a'))return;

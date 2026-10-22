@@ -71,6 +71,11 @@ function makeDemo(){
       return id;
     });
   }
+  // Recorded exhibition lineups, including benches, exercise the matchup lists.
+  for(const [index,team] of teams.entries())for(const history of team.history){
+    history.lineup=team.playerIds.map((id,playerIndex)=>({id,starter:index===0?id in history.starters:playerIndex<9,points:players[id].scores[history.week]}));
+    if(index>0)history.starters=Object.fromEntries(history.lineup.filter(row=>row.starter).map(row=>[row.id,row.points]));
+  }
   return {source:'demo',leagueId:null,league:'Exhibition League',season:2026,scoring:'PPR',weeks:[1,2,3,4,5,6],
     teams,players, liveWeek:null, description:'FICTIONAL EXAMPLE · not league results'};
 }
@@ -280,7 +285,7 @@ function drawProfile(team){
   el('profile-name').textContent=p?.name||'NO SELECTION';
   el('profile-team').textContent=p?`${p.nfl} / ${p.status}`:'—';
   el('player-pos-top').textContent=p?.pos||'—';
-  const upcoming=Number(model.currentWeek||model.liveWeek||7),projection=number(p?.projections?.[upcoming])??number(p?.espnProj);
+  const upcoming=Number(model.currentWeek||model.liveWeek||(model.source==='demo'?7:currentWeek)||1),projection=number(p?.projections?.[upcoming])??number(p?.espnProj);
   el('profile-total').textContent=nfmt(projection);el('profile-estimate-label').textContent='W'+upcoming+' PROJ';
   el('profile-last').textContent=nfmt(p?.last);
   const recent=Object.entries(p?.scores||{}).filter(([w,v])=>Number(w)<upcoming&&number(v)!==null).sort((a,b)=>Number(a[0])-Number(b[0])).slice(-3).map(([,v])=>v);
