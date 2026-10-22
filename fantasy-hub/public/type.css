@@ -1,0 +1,17 @@
+/* GRIDIRON/86 type system — self-hosted IBM Plex (SIL Open Font License, see fonts/LICENSE-IBM-Plex.txt).
+   Plex Mono keeps Courier's 0.6em advance, so every fixed-width layout still lines up,
+   but with a taller x-height, firmer strokes and a slashed zero that reads at small sizes. */
+@font-face{font-family:'Plex Mono';src:url('fonts/IBMPlexMono-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Plex Mono';src:url('fonts/IBMPlexMono-Medium.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:'Plex Mono';src:url('fonts/IBMPlexMono-SemiBold.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:'Plex Mono';src:url('fonts/IBMPlexMono-Bold.woff2') format('woff2');font-weight:700 900;font-style:normal;font-display:swap}
+@font-face{font-family:'Plex Serif';src:url('fonts/IBMPlexSerif-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Plex Serif';src:url('fonts/IBMPlexSerif-Medium.woff2') format('woff2');font-weight:500 900;font-style:normal;font-display:swap}
+@font-face{font-family:'Plex Sans';src:url('fonts/IBMPlexSans-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:'Plex Sans';src:url('fonts/IBMPlexSans-Medium.woff2') format('woff2');font-weight:500 900;font-style:normal;font-display:swap}
+
+:root{
+  --mono:'Plex Mono','IBM Plex Mono',ui-monospace,'SF Mono',Menlo,Consolas,'Courier New',monospace;
+  --serif:'Plex Serif','IBM Plex Serif',Georgia,'Times New Roman',serif;
+  --sans:'Plex Sans','IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}

@@ -1,0 +1,82 @@
+/* GRIDIRON/86 — terminal.css (v9.16)
+   Final presentation layer. Loaded after every other stylesheet, so it only refines:
+   type rendering, legibility floors, a few redundant fields, and narrow-screen layout.
+   Theme, palette and window chrome are unchanged. */
+
+/* ---------- Type rendering ---------- */
+body{
+  font-family:var(--sans);
+  font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+}
+/* Numbers line up in every table, chart label and stat tile. */
+table,td,th,strong,b,.chart-val,.hero-figure,svg text{font-variant-numeric:tabular-nums lining-nums}
+
+/* Display serif: the team name is the one expressive moment on the page. */
+.team-headline h1{font-weight:400;letter-spacing:-.4px;font-size:32px;line-height:1.05}
+
+/* Prose in mono is tiring; long-form explanations read in Plex Sans. */
+.dialog p,.dialog-note,.modal p,dialog p,.outlook-text,.strategy-copy,.exhibition-copy{font-family:var(--sans);font-size:13px;line-height:1.5;max-width:72ch}
+
+/* ---------- Legibility floors ---------- */
+.chart-val{font:600 10px var(--mono);position:relative;z-index:2;padding-bottom:3px;line-height:1.2;text-shadow:0 0 2px #fff,0 0 2px #fff,1px 0 0 #fff,-1px 0 0 #fff,0 1px 0 #fff,0 -1px 0 #fff}
+.bar-label{font-size:10px}
+.matchup-roster-player strong small{font-size:8px;letter-spacing:.4px;opacity:.75}
+.tiny-label,.section-label,.window-topline,.tiny-caption,.muted-note{color:#555852}
+.utility-bar{font-size:11px}
+.utility-right button{font-size:11px}
+.title-bar h2{letter-spacing:.9px}
+
+/* Keyboard focus is always visible and always the same. */
+:where(button,select,input,a,[tabindex]):focus-visible{outline:2px solid #1f5fa8;outline-offset:2px}
+.chart-bar:focus-visible{outline-offset:1px}
+
+/* ---------- Club overview: one rank, not three ---------- */
+/* LEAGUE POSITION repeats LEAGUE STANDING (same panel) and LEAGUE RANK (page header). */
+.summary-home-grid>div:has(#home-league-position){display:none}
+/* An odd last tile spans the row instead of leaving a hole. */
+.summary-home-grid>div:last-child:nth-child(odd){grid-column:1/-1}
+
+/* ---------- Tabbed workspace: every report visible at once ---------- */
+@media (min-width:900px){
+  #workspace-tabs{flex-wrap:wrap;overflow-x:visible;row-gap:3px}
+  #workspace-tabs button{padding:7px 10px;font-size:11px}
+}
+@media (max-width:899px){
+  /* On narrow screens the strip scrolls; a fade on the right edge says there is more. */
+  #workspace-tabs{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);padding-right:28px}
+}
+
+/* ---------- Dialogs ---------- */
+dialog::backdrop{background:rgba(28,30,29,.45)}
+
+/* ---------- Tables never get clipped ---------- */
+.weekly-home-table-wrap,.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* ---------- Tablet & phone ---------- */
+@media (max-width:700px){
+  body{padding:0}
+  .desktop{border-left:0;border-right:0;box-shadow:none;min-height:100vh}
+  /* The width slider only makes sense on wide screens. */
+  .page-width-control{display:none}
+  .team-strip{flex-direction:column;align-items:stretch;gap:12px}
+  .team-headline h1{font-size:28px}
+  .team-header-stats{display:grid;grid-template-columns:repeat(4,auto);gap:0;justify-content:start}
+  .team-header-stats>div{min-width:0;padding:0 12px}
+  .team-header-stats>div:first-child{padding-left:0;border-left:0}
+  .header-week-control{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+  .header-week-control label{font:10px var(--mono);letter-spacing:.6px;color:#555852;text-transform:uppercase}
+  .team-header-stats .tiny-label{white-space:nowrap}
+  /* Long player names wrap to two lines instead of losing their surname. */
+  .matchup-roster-player b{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.15;font-size:11px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+
+/* Home Custom Grapher: the POS select needs room for "ALL" plus its arrow. */
+#home-graph-pos{min-width:64px}
+.home-graph-controls{grid-template-columns:minmax(64px,auto) minmax(0,1fr) minmax(0,1fr) auto auto}
