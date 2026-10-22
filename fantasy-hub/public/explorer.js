@@ -3,7 +3,7 @@
 const XL = {
   open:null, player:null, free:[], offset:0, freeLoaded:false, freeBusy:false, freeError:'',
   advanced:new Map(), importedColumns:[], demoSeeded:false, positionRowsVisible:new Map(),
-  graph:{x:'total',y:'avg',pos:'ALL',scope:'ALL',minimum:0,showLabels:true,trend:true,search:'',color:'pos'},
+  graph:{x:'projected',y:'avg',pos:'ALL',scope:'ALL',minimum:0,showLabels:true,trend:true,search:'',color:'pos'},
   agent:{pos:'ALL',search:'',sort:'projected'}, positionComparePos:'ALL', positionCompareWeek:'all', positionComparisonView:'position', positionComparisonPool:'ROSTERED', positionComparisonSort:'GRADE', leagueComparisonPos:'ALL', leagueComparisonView:'week', graphStatFocus:null, graphAutoSource:null, graphUserSelected:false, graphNotice:'',
   standingsSort:'rank', viewTeamId:null, lineupScenarios:new Map(), viewWeek:null, franchiseWeek:null, franchiseWeekTeam:null, selectedPoint:null, news:new Map(), overview:new Map(), history:[], future:[], focusedSeries:null, focusTarget:null, positionWeek:"all", positionFocusPlayer:null, positionSharePos:'LEADING', playerLogRange:'all', playerArchiveAll:false, opponentScouting:new Map(), scoutingPending:new Set(),
 };
@@ -1014,7 +1014,8 @@ function detailPositionComparison(){
   const rowMarkup=sorted.slice(0,visibleLimit).map((r,i)=>{
    const share=sum>0&&r.points!==null?r.points/sum*100:null;
    const color=COLORS[r.pos]||g.color,grade=r.grade,opp=r.opp;
-   const status=opp.opponent?`vs ${opp.opponent}`:'BYE / TBA';
+   // Without a loaded schedule, no opponent is not evidence of a bye week.
+   const status=opp.opponent?`vs ${opp.opponent}`:XL.opponentScouting.has(String(scouting))?'BYE / TBA':'—';
    const opposition=opp.rank!==null?`#${String(opp.rank).padStart(2,'0')} / ${labFormat(opp.ppg,1)} PPG`:'—';
    const franchise=r.team?`<button type="button" data-set-team="${esc(String(r.team.id))}" class="position-rich-team" title="Open ${esc(teamName(r.team))}">${esc(mode==='position'?teamName(r.team):r.pos==='DEF'?'D/ST':r.pos)}</button>`:`<span class="position-free-label">${mode==='team'?r.pos:'FREE AGENT'}</span>`;
    return `<div class="position-player-rich-row"><small class="position-player-place">${String(i+1).padStart(2,'0')}</small><button type="button" data-open-player="${esc(String(r.p.id))}" class="position-rich-name">${esc(r.p.name)}</button>${franchise}<button class="position-rich-meter" type="button" data-open-player="${esc(String(r.p.id))}" title="Open ${esc(r.p.name)}"><i style="width:${r.points===null?0:Math.max(0,r.points)/max*100}%;background:${color}"></i></button><strong>${labFormat(r.points,1)}</strong><span>${labPct(share)}</span><span>${labFormat(r.perStart,1)}</span><span>${labFormat(r.best,1)}</span><b class="position-player-grade ${grade!==null&&grade>=65?'good-grade':''}" title="${grades.basis.get(String(r.p.id))==='ppg-only'?'PPG-only grade using verified played-game count':'Composite grade from at least three recorded weeks'}">${grade===null?'—':`${grades.basis.get(String(r.p.id))==='ppg-only'?'~':''}${labFormat(grade,0)}`}</b><span>${r.reported??'—'}</span><span>${labFormat(r.recent,1)}</span><span>${labFormat(r.std,1)}</span><span class="position-availability" title="ESPN reported player availability">${esc(r.status)}</span><span class="position-opponent" title="NFL Week ${scouting} opponent from ESPN game schedule">${esc(status)}</span><span class="position-strength" title="${esc(opp.basis)} rank by NFL scored/allowed points per completed game; lower allowed = stronger defense">${opposition}</span><span>${labFormat(r.project,1)}</span><span>${labPct(r.owned)}</span></div>`;
@@ -1167,7 +1168,7 @@ function detailPlayerAnalytics(playerId){
  const fields=[
   ['FANTASY SCORING',[
    ['SCORE','FPTS',score],['PROJ','ESPN PROJ',projection],['DIFF','+/−',w=>score(w)!==null&&projection(w)!==null?score(w)-projection(w):null],
-   ['3WK AVG','ROLLING AVG',w=>{const seen=weeks.filter(v=>v<=w&&score(v)!==null).slice(-3).map(score);return seen.length?labSum(seen)/seen.length:null}],
+   ['3WK AVG','ROLLING AVG',w=>{if(score(w)===null)return null;const seen=weeks.filter(v=>v<=w&&score(v)!==null).slice(-3).map(score);return seen.length?labSum(seen)/seen.length:null}],
    ['20+','20+ PTS',w=>score(w)===null?null:score(w)>=20?1:0],['NFL DATA','RAW REPORTED',w=>p.statlines?.[w]&&Object.keys(p.statlines[w]).length?1:null]]],
   ['PASSING · VOLUME',[
    ['CMP','PASS CMP',w=>raw(w,'pass_cmp')],['ATT','PASS ATT',w=>raw(w,'pass_att')],['YDS','PASS YDS',w=>raw(w,'pass_yds')],['TD','PASS TD',w=>raw(w,'pass_td')],['INT','PASS INT',w=>raw(w,'int')],
@@ -1243,7 +1244,8 @@ function detailPlayerAnalytics(playerId){
   return sumFor(f);
  };
  const isRatio=label=>['YPA','CMP%','NFL RTG','TD%','INT%','YPC','YPT','YPR','CATCH%','FPTS/OPP','3WK AVG'].includes(label);
- const selectedFields=fields.filter(([title,columns])=>XL.playerArchiveAll||title==='FANTASY SCORING'||title.startsWith('POSITION PEERS')||weeks.some(w=>columns.some(([, ,fn])=>fn(w)!==null)));
+ // Fantasy points repeat in some bands; only that band's own recorded NFL stats decide whether it is shown.
+ const selectedFields=fields.filter(([title,columns])=>XL.playerArchiveAll||title==='FANTASY SCORING'||title.startsWith('POSITION PEERS')||weeks.some(w=>columns.some(([, ,fn])=>fn!==score&&fn(w)!==null)));
  const bandHTML=selectedFields.map(([title,columns],band)=>{
   // The same compact seven-column grid is reused for every stat band.
   const headings=['WEEK',...columns.map(([,desc])=>desc)];
@@ -1261,7 +1263,7 @@ function detailPlayerAnalytics(playerId){
  }).join('');
  const extra=advancedFor(p);
  const seasonOnly=[['YAC',extra.yac],['AIR YARDS',extra.air_yards],['EPA',extra.epa],['SNAP %',extra.snap_pct],['TARGET SHARE',extra.target_share],['PASSER RTG',extra.passer_rating]].filter(([,value])=>labNum(value)!==null);
- const advancedBand=seasonOnly.length?`<tbody class="archive-band archive-season-extra"><tr class="archive-band-title"><th colspan="7">09 / ADVANCED SEASON TOTALS · IMPORTED DATA</th></tr><tr class="archive-band-columns"><th>PERIOD</th>${Array.from({length:6},(_,i)=>`<th>${esc(seasonOnly[i]?.[0]||'—')}</th>`).join('')}</tr><tr><th scope="row">SEASON</th>${Array.from({length:6},(_,i)=>`<td>${labFormat(seasonOnly[i]?.[1],2)}</td>`).join('')}</tr></tbody>`:'';
+ const advancedBand=seasonOnly.length?`<tbody class="archive-band archive-season-extra"><tr class="archive-band-title"><th colspan="7">${String(selectedFields.length+1).padStart(2,'0')} / ADVANCED SEASON TOTALS · IMPORTED DATA</th></tr><tr class="archive-band-columns"><th>PERIOD</th>${Array.from({length:6},(_,i)=>`<th>${esc(seasonOnly[i]?.[0]||'—')}</th>`).join('')}</tr><tr><th scope="row">SEASON</th>${Array.from({length:6},(_,i)=>`<td>${labFormat(seasonOnly[i]?.[1],2)}</td>`).join('')}</tr></tbody>`:'';
 
  setExplorer(`<div class="archive-banner archive-single-banner"><div><small>GRIDIRON / COMPLETE GAME LOG · ${model.season}</small><h3>${esc(p.name)} <span>${esc(p.pos)} · ${esc(p.nfl)}</span></h3></div><button type="button" class="lab-action" id="player-log-export">EXPORT ALL REPORTED DATA CSV ↗</button></div>`+
  `<div class="archive-matrix-sheet"><table class="archive-wrapped-table" aria-label="Complete game log with wrapped statistical bands">${bandHTML}${advancedBand}</table></div>`+
@@ -1491,7 +1493,7 @@ const NFL_SEARCH_TEAMS={
 function nflSearchText(code){const abbr=String(code||'').trim().toUpperCase();return [abbr,NFL_SEARCH_TEAMS[abbr]||'',abbr==='WSH'||abbr==='WAS'?'Washington Football Team':'' ,abbr==='JAX'?'Jacksonville Jags':'',abbr==='LAR'||abbr==='LA'?'St Louis Rams':''].join(' ').toLowerCase();}
 function agentList(){let list=XL.free;const a=XL.agent;
  if(a.pos!=='ALL')list=list.filter(p=>a.pos==='DEF'?['DEF','D/ST'].includes(p.pos):p.pos===a.pos);
- if(a.search){const query=a.search.trim().toLowerCase();const exactTeamCode=query.toUpperCase();list=list.filter(p=>Object.hasOwn(NFL_SEARCH_TEAMS,exactTeamCode)?String(p.nfl||'').toUpperCase()===exactTeamCode:(String(p.name||'')+' '+nflSearchText(p.nfl)).includes(query));}
+ if(a.search){const query=a.search.trim().toLowerCase();const exactTeamCode=query.toUpperCase();list=list.filter(p=>Object.hasOwn(NFL_SEARCH_TEAMS,exactTeamCode)?String(p.nfl||'').toUpperCase()===exactTeamCode:(String(p.name||'').toLowerCase()+' '+nflSearchText(p.nfl)).includes(query));}
  // Values live only for this render; metric overrides and updated data stay fresh.
  return list.map(p=>({player:p,value:metricValue(p,a.sort)??-Infinity})).sort((x,y)=>y.value-x.value).map(row=>row.player);
 }
@@ -1502,20 +1504,26 @@ function detailAgents(){const list=agentList();const count=XL.free.length;
  expandTable(['POS','PLAYER','NFL','STATUS','SEASON PTS','AVG','LAST WK','LAST 3','PROJ','% ROSTERED','% STARTED'],list.slice(0,160).map(p=>{const s=summarize(p);return `<tr class="lab-clickable" data-open-player="${esc(p.id)}" tabindex="0" role="button" aria-label="Open ${esc(p.name)} player dossier"><td>${esc(p.pos)}</td><td><strong>${esc(p.name)}</strong></td><td>${esc(p.nfl)}</td><td>${esc(p.status)}</td><td>${labFormat(s.total)}</td><td>${labFormat(s.avg)}</td><td>${labFormat(s.last)}</td><td>${labFormat(s.recent)}</td><td>${labFormat(p.espnProj)}</td><td>${labPct(p.owned)}</td><td>${labPct(p.started)}</td></tr>`}))+
  `${model.source==='espn'?`<div class="lab-controls"><button class="lab-action" id="agent-more" ${XL.freeBusy?'disabled':''}>LOAD NEXT 60 ESPN PLAYERS ↓</button><span class="lab-note">Availability reflects ESPN's latest permitted response. Some leagues return a limited pool.</span></div>`:''}`);
 }
-function graphCandidates(){let ps=getPool();if(XL.graph.scope==='TEAM')ps=rowsFor(explorerTeam());else if(XL.graph.scope==='FREE')ps=XL.free;else if(XL.graph.scope==='LEAGUE')ps=getAllPlayers();if(XL.graph.pos!=='ALL')ps=ps.filter(p=>XL.graph.pos==='DEF'?['DEF','D/ST'].includes(p.pos):p.pos===XL.graph.pos);if(XL.graph.search)ps=ps.filter(p=>(p.name+' '+p.nfl).toLowerCase().includes(XL.graph.search.toLowerCase()));return ps.filter(p=>summarize(p).games>=XL.graph.minimum||XL.graph.minimum===0);}
+function graphCandidates(){let ps=getPool();if(XL.graph.scope==='TEAM')ps=rowsFor(explorerTeam());else if(XL.graph.scope==='FREE')ps=XL.free;else if(XL.graph.scope==='LEAGUE')ps=getAllPlayers();if(XL.graph.pos!=='ALL')ps=ps.filter(p=>XL.graph.pos==='DEF'?['DEF','D/ST'].includes(p.pos):p.pos===XL.graph.pos);const query=String(XL.graph.search||'').trim().toLowerCase();if(query)ps=ps.filter(p=>(String(p.name||'')+' '+nflSearchText(p.nfl)).toLowerCase().includes(query));return ps.filter(p=>summarize(p).games>=XL.graph.minimum||XL.graph.minimum===0);}
 // Pick a real, available pair on initial load. ESPN can supply season/projected
 // scores without week-by-week logs, so the graph must not assume those exist.
 function ensureGraphAxes(){
  const key=[model.source,model.leagueId||model.league,model.season,model.teams?.length].join('|');
- if(key!==XL.graphAutoSource){XL.graphAutoSource=key;XL.graphUserSelected=false;XL.graphNotice='';}
+ const fresh=key!==XL.graphAutoSource;
+ if(fresh){XL.graphAutoSource=key;XL.graphUserSelected=false;XL.graphNotice='';}
  if(XL.graphUserSelected)return;
- if(graphData().length)return;
- const pairs=[['total','avg'],['total','projected'],['projected','owned'],['owned','started'],['owned','total'],['projected','started'],['recent','last'],['total','last'],['avg','std'],['pass_yds','pass_td'],['rush_att','rush_yds'],['receptions','rec_yds']];
- const previous=[XL.graph.x,XL.graph.y];
- for(const [x,y] of pairs){XL.graph.x=x;XL.graph.y=y;if(graphData().length){
-  XL.graphNotice=`Showing available ${META[y].name} versus ${META[x].name} data. Other stats need additional source records.`;
+ if(!fresh&&graphData().length)return;
+ // Informative defaults first. Never default to a pair that is a deterministic
+ // function of the other (e.g. season total vs points per game, r = 1).
+ const pairs=[['projected','avg'],['avg','std'],['targets','avg'],['recent','avg'],['total','projected'],['projected','owned'],['owned','started'],['owned','total'],['projected','started'],['recent','last'],['total','last'],['pass_yds','pass_td'],['rush_att','rush_yds'],['receptions','rec_yds']];
+ const previous=[XL.graph.x,XL.graph.y],counts=pairs.map(([x,y])=>{XL.graph.x=x;XL.graph.y=y;return graphData().length;}),best=Math.max(0,...counts);
+ // Prefer the first pairing that covers at least half of the best-covered pool.
+ const index=best?counts.findIndex(n=>n>=Math.max(2,best*.5)):-1,pick=index>=0?index:counts.findIndex(n=>n>0);
+ if(pick>=0){
+  const [x,y]=pairs[pick];XL.graph.x=x;XL.graph.y=y;
+  if(pick>1)XL.graphNotice=`Showing available ${META[y].name} versus ${META[x].name} data. Other stats need additional source records.`;
   return;
- }}
+ }
  XL.graph.x=previous[0];XL.graph.y=previous[1];
 }
 function graphPresetAvailable(x,y){
@@ -1573,24 +1581,78 @@ function scatterSVG(rows,dimensions={}){
  // Use the available pixels instead of scaling a fixed canvas to a wide screen.
  const W=Math.max(240,Math.round(dimensions.width||window.innerWidth-(mobile?70:140)));
  const H=Math.max(180,Math.round(dimensions.height||window.innerHeight-350));
- const m=mobile?{l:47,t:18,r:16,b:42}:{l:62,t:18,r:22,b:45};
+ const m=mobile?{l:50,t:18,r:16,b:42}:{l:62,t:18,r:22,b:45};
  const w=W-m.l-m.r,h=H-m.t-m.b;
  if(!rows.length)return '<div class="lab-no-data"><b>NO COMPARABLE DATA POINTS</b><p>Choose two metrics present in this dataset, adjust the position filter, or import an advanced CSV.</p></div>';
  let xs=rows.map(x=>x.x),ys=rows.map(x=>x.y),xmin=Math.min(...xs),xmax=Math.max(...xs),ymin=Math.min(...ys),ymax=Math.max(...ys);
  const padX=Math.max(1,(xmax-xmin)*.09),padY=Math.max(1,(ymax-ymin)*.10);
  xmin=xmin>=0&&xmin<padX?0:xmin-padX;xmax+=padX;ymin=ymin>=0&&ymin<padY?0:ymin-padY;ymax+=padY;
  const tx=v=>m.l+(v-xmin)/(xmax-xmin||1)*w,ty=v=>m.t+h-(v-ymin)/(ymax-ymin||1)*h;
- const ticks=(axis)=>Array.from({length:6},(_,i)=>{const v=(axis==='x'?xmin:ymin)+(axis==='x'?xmax-xmin:ymax-ymin)*i/5;return axis==='x'?`<line x1="${tx(v)}" y1="${m.t}" x2="${tx(v)}" y2="${m.t+h}" stroke="#e6e8e6"/><text x="${tx(v)}" y="${m.t+h+15}" text-anchor="middle">${labFormat(v,1)}</text>`:`<line x1="${m.l}" y1="${ty(v)}" x2="${m.l+w}" y2="${ty(v)}" stroke="#e6e8e6"/><text x="${m.l-8}" y="${ty(v)+4}" text-anchor="end">${labFormat(v,1)}</text>`}).join('');
+ // Round-number ticks (e.g. 0, 25, 50…) placed inside the padded domain.
+ const xTicks=graphNiceTicks(xmin,xmax,Math.max(3,Math.min(8,Math.floor(w/110)))),yTicks=graphNiceTicks(ymin,ymax,Math.max(3,Math.min(7,Math.floor(h/60))));
+ const ticks=`<g class="lab-axis-ticks">${xTicks.map(v=>`<line x1="${tx(v)}" y1="${m.t}" x2="${tx(v)}" y2="${m.t+h}" stroke="#e6e8e6"/><line x1="${tx(v)}" y1="${m.t+h}" x2="${tx(v)}" y2="${m.t+h+4}" stroke="#a5aaa8"/><text class="lab-tick" x="${tx(v)}" y="${m.t+h+16}" text-anchor="middle">${graphTickLabel(v,xTicks)}</text>`).join('')}${yTicks.map(v=>`<line x1="${m.l}" y1="${ty(v)}" x2="${m.l+w}" y2="${ty(v)}" stroke="#e6e8e6"/><line x1="${m.l-4}" y1="${ty(v)}" x2="${m.l}" y2="${ty(v)}" stroke="#a5aaa8"/><text class="lab-tick" x="${m.l-7}" y="${ty(v)+4}" text-anchor="end">${graphTickLabel(v,yTicks)}</text>`).join('')}</g>`;
  const fit=graphCorrelations(rows);let regression='';if(XL.graph.trend&&fit&&fit.slope!==null){const y1=fit.intercept+fit.slope*xmin,y2=fit.intercept+fit.slope*xmax;regression=`<line x1="${tx(xmin)}" y1="${ty(y1)}" x2="${tx(xmax)}" y2="${ty(y2)}" stroke="#b3515b" stroke-width="2" stroke-dasharray="8 5" clip-path="url(#graphclip)"/>`}
- const occupied=[];
+ const fontSize=13,charW=fontSize*.62;
+ const points=rows.map(d=>({x:tx(d.x),y:ty(d.y),vx:d.x,vy:d.y,name:String(d.p.name),selected:XL.selectedPoint!=null&&String(XL.selectedPoint)===String(d.p.id)}));
+ const placed=XL.graph.showLabels?graphLabelLayout(points,{left:m.l,top:m.t,right:W-m.r,bottom:m.t+h,charW,lineH:fontSize+3,gap:8,radius:6}):points.map(()=>null);
  const circles=rows.map((d,i)=>{
-  const x=tx(d.x),y=ty(d.y),name=String(d.p.name),labelWidth=Math.min(W-m.l-m.r,name.length*7.2+14);
-  const lx=Math.max(m.l+4,x+labelWidth+12>W-m.r?x-labelWidth-9:x+9),ly=y<30?y+22:y-10;
-  const visible=XL.graph.showLabels&&!occupied.some(k=>lx<k.x+k.w+6&&lx+labelWidth>k.x-6&&ly>k.y-18&&ly<k.y+18);
-  if(visible)occupied.push({x:lx,y:ly,w:labelWidth});
-  return `<g class="lab-dot ${visible?'label-visible':''}" tabindex="0" role="button" data-graph-point="${i}" data-graph-player="${esc(String(d.p.id))}" aria-label="Open ${esc(name)} Player Terminal"><circle cx="${x}" cy="${y}" r="${XL.selectedPoint===d.p.id?8:6}" stroke="#fff" stroke-width="1.4" fill="${XL.graph.color==='pos'?playerColor(d.p):'#487ebb'}"/><text class="lab-label" x="${lx}" y="${ly}">${esc(name)}</text></g>`;
+  const pt=points[i],spot=placed[i],visible=!!spot;
+  // Hidden labels stay in place for hover/focus reveal, offset beside their own dot.
+  const lx=spot?spot.x:Math.min(Math.max(m.l+4,pt.x+9),Math.max(m.l+4,W-m.r-pt.name.length*charW)),ly=spot?spot.y:(pt.y<30?pt.y+22:pt.y-10);
+  return `<g class="lab-dot ${visible?'label-visible':''}" tabindex="0" role="button" data-graph-point="${i}" data-graph-player="${esc(String(d.p.id))}" aria-label="Open ${esc(pt.name)} Player Terminal"><circle cx="${pt.x}" cy="${pt.y}" r="${pt.selected?8:6}" stroke="#fff" stroke-width="1.4" fill="${XL.graph.color==='pos'?playerColor(d.p):'#487ebb'}"/><text class="lab-label" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}">${esc(pt.name)}</text></g>`;
  }).join('');
- return `<svg class="lab-scatter-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Scatter plot: ${esc(META[XL.graph.x].name)} against ${esc(META[XL.graph.y].name)}"><defs><clipPath id="graphclip"><rect x="${m.l}" y="${m.t}" width="${w}" height="${h}"/></clipPath></defs><rect x="${m.l}" y="${m.t}" width="${w}" height="${h}" fill="#fff" stroke="#a5aaa8"/>${ticks('x')}${ticks('y')}${regression}${circles}<text x="${m.l+w/2}" y="${H-5}" text-anchor="middle" class="lab-axis-title">${esc(META[XL.graph.x].name)}</text><text x="15" y="${m.t+h/2}" transform="rotate(-90 15 ${m.t+h/2})" text-anchor="middle" class="lab-axis-title">${esc(META[XL.graph.y].name)}</text></svg>`;
+ return `<svg class="lab-scatter-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Scatter plot: ${esc(META[XL.graph.x].name)} against ${esc(META[XL.graph.y].name)}"><defs><clipPath id="graphclip"><rect x="${m.l}" y="${m.t}" width="${w}" height="${h}"/></clipPath></defs><rect x="${m.l}" y="${m.t}" width="${w}" height="${h}" fill="#fff" stroke="#a5aaa8"/>${ticks}${regression}${circles}<text x="${m.l+w/2}" y="${H-5}" text-anchor="middle" class="lab-axis-title">${esc(META[XL.graph.x].name)}</text><text x="13" y="${m.t+h/2}" transform="rotate(-90 13 ${m.t+h/2})" text-anchor="middle" class="lab-axis-title">${esc(META[XL.graph.y].name)}</text></svg>`;
+}
+// Evenly spaced "nice" tick values (1/2/2.5/5 x 10^n) that lie within [lo,hi].
+function graphNiceTicks(lo,hi,count=5){
+ if(!Number.isFinite(lo)||!Number.isFinite(hi))return [];
+ if(hi<lo)[lo,hi]=[hi,lo];
+ if(hi===lo)return [lo];
+ const raw=(hi-lo)/Math.max(1,count),mag=10**Math.floor(Math.log10(raw)),norm=raw/mag;
+ const step=(norm<=1?1:norm<=2?2:norm<=2.5?2.5:norm<=5?5:10)*mag;
+ const out=[];for(let v=Math.ceil(lo/step-1e-9)*step;v<=hi+step*1e-9&&out.length<50;v+=step)out.push(Math.abs(v)<step*1e-9?0:+v.toPrecision(12));
+ return out;
+}
+function graphTickLabel(v,ticks){
+ const step=ticks.length>1?Math.abs(ticks[1]-ticks[0]):Math.abs(v)||1;
+ const digits=step>=1?(Number.isInteger(+step.toPrecision(12))?0:1):Math.min(4,Math.ceil(-Math.log10(step)+1e-9)+(Number.isInteger(+(step*10**Math.ceil(-Math.log10(step))).toPrecision(12))?0:1));
+ return Number(v).toLocaleString('en-US',{maximumFractionDigits:digits,minimumFractionDigits:digits});
+}
+// Greedy label placement. Extremes and the selected player are placed first;
+// each label tries several anchor positions and is skipped when every option
+// would collide with an already placed label or another player's dot.
+function graphLabelLayout(points,{left,top,right,bottom,charW=7,lineH=14,gap=7,radius=5}){
+ const n=points.length,out=Array(n).fill(null);if(!n)return out;
+ const priority=new Map(),bump=(i,v)=>priority.set(i,Math.max(priority.get(i)||0,v));
+ const by=(key,dir)=>points.reduce((best,p,i)=>best===-1||(dir>0?p[key]>points[best][key]:p[key]<points[best][key])?i:best,-1);
+ points.forEach((p,i)=>{if(p.selected)bump(i,1000);});
+ for(const i of [by('vx',1),by('vy',1),by('vx',-1),by('vy',-1)])bump(i,100);
+ // Then prefer points farthest from the centre of mass (most notable outliers).
+ const cx=points.reduce((a,p)=>a+p.x,0)/n,cy=points.reduce((a,p)=>a+p.y,0)/n;
+ const order=points.map((p,i)=>i).sort((a,b)=>(priority.get(b)||0)-(priority.get(a)||0)||Math.hypot(points[b].x-cx,points[b].y-cy)-Math.hypot(points[a].x-cx,points[a].y-cy)||a-b);
+ const boxes=[],hit=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+ const dots=points.map(p=>({x:p.x-radius,y:p.y-radius,w:radius*2,h:radius*2}));
+ const labelled=[];
+ for(const i of order){
+  const p=points[i],lw=p.name.length*charW+4,asc=lineH*.78;
+  // A dot drawn on top of an already labelled dot would only stack duplicate names.
+  if(!p.selected&&labelled.some(q=>Math.hypot(q.x-p.x,q.y-p.y)<radius))continue;
+  const candidates=[[p.x+gap,p.y-gap*.6],[p.x+gap,p.y+asc+gap*.4],[p.x-gap-lw,p.y-gap*.6],[p.x-gap-lw,p.y+asc+gap*.4],[p.x-lw/2,p.y-gap-2],[p.x-lw/2,p.y+asc+gap+2]];
+  for(const [lx,ly] of candidates){
+   const box={x:lx-2,y:ly-asc-1,w:lw+2,h:lineH};
+   if(box.x<left+2||box.x+box.w>right-1||box.y<top+1||box.y+box.h>bottom-1)continue;
+   if(boxes.some(b=>hit(box,b)))continue;
+   if(dots.some((d,j)=>j!==i&&hit(box,d)&&!(points[j].x===p.x&&points[j].y===p.y)))continue;
+   boxes.push(box);out[i]={x:lx,y:ly};break;
+  }
+  if(out[i])labelled.push(p);
+  // The selected player and axis extremes are always labelled: clamp into the plot if needed.
+  if(!out[i]&&(priority.get(i)||0)>=100){
+   const lx=Math.min(Math.max(left+4,p.x+gap),right-lw-2),ly=Math.min(Math.max(top+asc+2,p.y-gap*.6),bottom-4),box={x:lx-2,y:ly-asc-1,w:lw+2,h:lineH};
+   if((priority.get(i)||0)>=1000||!boxes.some(b=>hit(box,b))){boxes.push(box);out[i]={x:lx,y:ly};}
+  }
+ }
+ return out;
 }
 function metricSelect(which,counts){return `<select id="graph-${which}">${METRICS.map(([key,name,unit,source])=>`<option value="${key}" ${XL.graph[which]===key?'selected':''}>${esc(name)}${counts[key]===0?' · not loaded':''}</option>`).join('')}</select>`}
 function detailGraph(){
@@ -1712,32 +1774,24 @@ function graphPreviewSvg(rows){
  const targetWidth=homeHost?.clientWidth|| (isNarrow?390:920);
  const targetHeight=Math.max(190,(homeHost?.clientHeight||360)-43);
  const W=Math.max(isNarrow?390:650,Math.round(H*targetWidth/targetHeight));
- const m={l:isNarrow?29:26,r:6,t:11,b:26};const w=W-m.l-m.r,h=H-m.t-m.b;
+ const m={l:isNarrow?44:42,r:8,t:11,b:isNarrow?36:34};const w=W-m.l-m.r,h=H-m.t-m.b;
  if(!rows.length)return '<div class="graph-home-empty">NO COMPARABLE RECORDS · CHANGE METRICS OR OPEN VARIABLE LAB</div>';
  const xs=rows.map(r=>r.x),ys=rows.map(r=>r.y),pad=(lo,hi)=>Math.max(.5,(hi-lo)*.08);
  let xmin=Math.min(...xs),xmax=Math.max(...xs),ymin=Math.min(...ys),ymax=Math.max(...ys);
  const px=pad(xmin,xmax),py=pad(ymin,ymax);xmin-=px;xmax+=px;ymin-=py;ymax+=py;
  const tx=v=>m.l+(v-xmin)/(xmax-xmin||1)*w,ty=v=>m.t+h-(v-ymin)/(ymax-ymin||1)*h;
- const grids=Array.from({length:5},(_,i)=>{const frac=i/4;return `<line x1="${m.l}" x2="${m.l+w}" y1="${m.t+frac*h}" y2="${m.t+frac*h}" stroke="#e4e9e5"/><line x1="${m.l+frac*w}" x2="${m.l+frac*w}" y1="${m.t}" y2="${m.t+h}" stroke="#edf0ed"/>`;}).join('');
+ const xTicks=graphNiceTicks(xmin,xmax,Math.max(3,Math.min(7,Math.floor(w/120)))),yTicks=graphNiceTicks(ymin,ymax,5);
+ const grids=xTicks.map(v=>`<line x1="${tx(v)}" x2="${tx(v)}" y1="${m.t}" y2="${m.t+h}" stroke="#edf0ed"/><text class="graph-home-tick" x="${tx(v)}" y="${m.t+h+13}" text-anchor="middle">${graphTickLabel(v,xTicks)}</text>`).join('')+yTicks.map(v=>`<line x1="${m.l}" x2="${m.l+w}" y1="${ty(v)}" y2="${ty(v)}" stroke="#e4e9e5"/><text class="graph-home-tick" x="${m.l-4}" y="${ty(v)+3.5}" text-anchor="end">${graphTickLabel(v,yTicks)}</text>`).join('');
  const fit=graphCorrelations(rows);
  const trend=XL.graph.trend&&fit&&fit.slope!==null?`<line x1="${tx(xmin)}" y1="${ty(fit.intercept+fit.slope*xmin)}" x2="${tx(xmax)}" y2="${ty(fit.intercept+fit.slope*xmax)}" stroke="#b35665" stroke-width="1.6" stroke-dasharray="5 4"/>`:'';
- const occupied=[];
- const dots=rows.map(r=>{
-  const x=tx(r.x),y=ty(r.y);
-  let label='';
-  if(XL.graph.showLabels){
-   const name=String(r.p.name||'').slice(0,19),estimatedWidth=name.length*5.4+8;
-   let lx=x+7,ly=y-9;
-   if(lx+estimatedWidth>W-m.r)lx=x-estimatedWidth-6;
-   if(ly<12)ly=y+14;
-   if(!occupied.some(k=>lx<k.x+k.w+5&&lx+estimatedWidth>k.x-5&&ly>k.y-10&&ly<k.y+10)){
-    occupied.push({x:lx,y:ly,w:estimatedWidth});
-    label=`<text class="graph-home-label" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}">${esc(name)}</text>`;
-   }
-  }
+ const points=rows.map(r=>({x:tx(r.x),y:ty(r.y),vx:r.x,vy:r.y,name:String(r.p.name||'').slice(0,19),selected:XL.selectedPoint!=null&&String(XL.selectedPoint)===String(r.p.id)}));
+ const placed=XL.graph.showLabels?graphLabelLayout(points,{left:m.l,top:m.t,right:W-m.r,bottom:m.t+h,charW:11*.62,lineH:13,gap:6,radius:4.2}):[];
+ const dots=rows.map((r,i)=>{
+  const x=points[i].x,y=points[i].y,spot=placed[i];
+  const label=spot?`<text class="graph-home-label" x="${spot.x.toFixed(1)}" y="${spot.y.toFixed(1)}">${esc(points[i].name)}</text>`:'';
   return `<circle class="graph-home-dot" data-home-graph-player="${esc(String(r.p.id))}" cx="${x}" cy="${y}" r="4.2" fill="${playerColor(r.p)}" stroke="white" stroke-width=".9" tabindex="0" role="button" aria-label="Open ${esc(r.p.name)} player dossier"><title>${esc(r.p.name)} · ${META[XL.graph.x].name}: ${labFormat(r.x)} · ${META[XL.graph.y].name}: ${labFormat(r.y)}</title></circle>${label}`;
  }).join('');
- return `<svg class="graph-home-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Scatterplot of ${esc(META[XL.graph.x].name)} versus ${esc(META[XL.graph.y].name)}"><rect x="${m.l}" y="${m.t}" width="${w}" height="${h}" fill="#fff" stroke="#9daaa6"/>${grids}${trend}${dots}<text x="${m.l+w/2}" y="${H-7}" text-anchor="middle">${esc(META[XL.graph.x].name)}</text><text x="9" y="${m.t+h/2}" text-anchor="middle" transform="rotate(-90 9 ${m.t+h/2})">${esc(META[XL.graph.y].name)}</text></svg>`;
+ return `<svg class="graph-home-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Scatterplot of ${esc(META[XL.graph.x].name)} versus ${esc(META[XL.graph.y].name)}"><rect x="${m.l}" y="${m.t}" width="${w}" height="${h}" fill="#fff" stroke="#9daaa6"/>${grids}${trend}${dots}<text x="${m.l+w/2}" y="${H-5}" text-anchor="middle">${esc(META[XL.graph.x].name)}</text><text x="9" y="${m.t+h/2}" text-anchor="middle" transform="rotate(-90 9 ${m.t+h/2})">${esc(META[XL.graph.y].name)}</text></svg>`;
 }
 function renderGraphHome(){
  const host=el('graph-teaser');if(!host)return;

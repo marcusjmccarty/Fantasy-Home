@@ -6,10 +6,10 @@ const source=readFileSync(new URL('../public/explorer.js',import.meta.url),'utf8
 function fixture(){
  const c=vm.createContext({});
  vm.runInContext(source.slice(0,source.indexOf('function teamForPlayer('))+source.slice(source.indexOf('const NFL_SEARCH_TEAMS='),source.indexOf('function detailAgents(')),c);
- // Frozen pre-change behavior, used as an ordering oracle with real metric helpers.
+ // Frozen behavior (with case-insensitive name matching), used as an ordering oracle with real metric helpers.
  vm.runInContext(`function reference(){let list=XL.free;const a=XL.agent;
  if(a.pos!=='ALL')list=list.filter(p=>a.pos==='DEF'?['DEF','D/ST'].includes(p.pos):p.pos===a.pos);
- if(a.search){const query=a.search.trim().toLowerCase();const exactTeamCode=query.toUpperCase();list=list.filter(p=>Object.hasOwn(NFL_SEARCH_TEAMS,exactTeamCode)?String(p.nfl||'').toUpperCase()===exactTeamCode:(String(p.name||'')+' '+nflSearchText(p.nfl)).includes(query));}
+ if(a.search){const query=a.search.trim().toLowerCase();const exactTeamCode=query.toUpperCase();list=list.filter(p=>Object.hasOwn(NFL_SEARCH_TEAMS,exactTeamCode)?String(p.nfl||'').toUpperCase()===exactTeamCode:(String(p.name||'').toLowerCase()+' '+nflSearchText(p.nfl)).includes(query));}
  return [...list].sort((x,y)=>(metricValue(y,a.sort)??-Infinity)-(metricValue(x,a.sort)??-Infinity));}`,c);
  return {c,...vm.runInContext('({XL,list:agentList,reference,keys:METRICS.map(x=>x[0]),nameKey})',c)};
 }
@@ -42,4 +42,9 @@ test('metric evaluation is bounded to once per filtered player per call',()=>{
  const f=fixture();f.XL.free=players(1000);f.XL.agent.pos='WR';
  vm.runInContext('var calls=0;const originalMetricValue=metricValue;metricValue=(...a)=>{calls++;return originalMetricValue(...a)}',f.c);
  const rows=f.list();assert.equal(f.c.calls,rows.length);f.list();assert.equal(f.c.calls,rows.length*2);
+});
+test('free agent name search is case-insensitive',()=>{
+ const f=fixture();f.XL.free=[{id:'1',name:'Miles Sutton',pos:'QB',nfl:'KC'},{id:'2',name:'Avery Knight',pos:'TE',nfl:'SEA'}];
+ for(const q of ['Miles','miles','MILES SUTTON','  sutton ']){f.XL.agent.search=q;assert.deepEqual(ids(f.list()),['1'],q);}
+ f.XL.agent.search='Seattle';assert.deepEqual(ids(f.list()),['2']);
 });
