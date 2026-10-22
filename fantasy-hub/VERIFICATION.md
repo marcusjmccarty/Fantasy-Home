@@ -28,8 +28,8 @@ Not verified: production deployment in your Cloudflare account; a private ESPN i
 
 ### Fieldhouse / strategy expansion
 
-- 28 Node tests passed: 14 existing Worker checks, 7 navigation checks, 7 analytics
-  checks. Analytics cover look-ahead exclusion, projection anchoring, missing/zero/
+- 32 Node tests passed: 14 existing Worker checks, 7 navigation checks, 7 analytics
+  checks, and 4 strategy rendering checks. Analytics cover look-ahead exclusion, projection anchoring, missing/zero/
   negative scores, flex eligibility, unique assignments, and package completeness.
 - 5 Python aggregation tests passed: red-zone boundaries, complete team
   denominators, duplicate plays and excluded play types, missing yardlines, and
@@ -37,5 +37,7 @@ Not verified: production deployment in your Cloudflare account; a private ESPN i
 - The new data workflow has not been verified against live nflverse downloads in
   this restricted local environment. The first successful GitHub Actions run is
   required before live Opportunity data is available.
+- Strategy rendering checks exercise all new reports with the actual exhibition
+  model, selected trade packages, opportunity filters, and league resets.
 - Responsive CSS is implemented; visual QA is still unverified locally due to the
   preview restrictions documented above.
