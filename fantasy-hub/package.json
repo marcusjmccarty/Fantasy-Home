@@ -1,1 +1,1 @@
-{"name":"fantasy-hub","version":"10.0.0","private":true,"type":"module","scripts":{"dev":"wrangler dev","deploy":"wrangler deploy","test":"node --test"},"devDependencies":{"wrangler":"^4.0.0"}}
+{"name":"fantasy-hub","version":"9.6.1","private":true,"type":"module","scripts":{"dev":"wrangler dev","deploy":"wrangler deploy","test":"node --test"},"devDependencies":{"wrangler":"^4.0.0"}}
