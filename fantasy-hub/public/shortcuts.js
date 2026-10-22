@@ -5,6 +5,12 @@
  const help=document.getElementById('shortcuts-dialog');
  const enabled=document.getElementById('shortcuts-enabled');
  const report=document.getElementById('explore-dialog');
+ // Separate from workspace state; write only on an explicit preference change.
+ const preferenceKey='gridiron86-keyboard-shortcuts-v1';
+ try{enabled.checked=localStorage.getItem(preferenceKey)!=='off';}catch{/* Page-local choice still works when storage is blocked. */}
+ enabled.addEventListener('change',()=>{
+  try{localStorage.setItem(preferenceKey,enabled.checked?'on':'off');}catch{}
+ });
  const visible=node=>node&&!node.disabled&&node.getClientRects().length>0&&!node.closest('[hidden]');
  const editing=target=>target instanceof Element&&!!target.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="textbox"],[role="combobox"],[role="slider"]');
  function dismissRanking(){
