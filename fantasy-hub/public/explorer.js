@@ -160,7 +160,7 @@ function openExplorer(type,arg=null,options={}){
  el('explore-back').disabled=!XL.history.length;
  el('explore-forward').disabled=!XL.future.length;
  if(el('explore-jump'))el('explore-jump').value=type;
- renderExplorer();if(entering)dialog.showModal();dialog.scrollTop=0;el('explore-content').scrollTop=0;el('explore-content').style.paddingBottom='';
+ renderExplorer();if(entering){if(document.body.dataset.layout==='tabbed')dialog.show();else dialog.showModal();}document.dispatchEvent(new CustomEvent('workspace:opened',{detail:{type}}));dialog.scrollTop=0;el('explore-content').scrollTop=0;el('explore-content').style.paddingBottom='';
  if(XL.focusTarget==='weekly-ledger')focusWeeklyLedger();
  if(XL.focusTarget==='franchise-lineup')focusFranchiseLineup();
  if(XL.focusTarget==='position-contributions')focusPositionContributions();
@@ -1709,7 +1709,13 @@ function explorerUpdate(){const host=el('fa-summary');if(!host)return;
  el('home-fa-sort').value=XL.agent.sort;
  if(document.activeElement!==el('home-fa-search'))el('home-fa-search').value=XL.agent.search;
  renderFreeAgentHome();renderGraphHome();
- if(XL.open&&el('explore-dialog')?.open&&XL.open!=='graph'&&XL.open!=='agents')renderExplorer();
+ if(document.body.dataset.layout==='tabbed'&&XL.open){
+   XL.viewTeamId=String(currentTeamId);
+   if(!model.players[XL.player]&&!XL.free.some(p=>String(p.id)===String(XL.player)))XL.player=currentPlayerId;
+   explorerClubHeader(XL.open,XL.player);
+   el('explore-context').textContent=`${model.season} SEASON`;
+   renderExplorer();
+ }else if(XL.open&&el('explore-dialog')?.open&&XL.open!=='graph'&&XL.open!=='agents')renderExplorer();
 }
 // Inline compact homepage filters share state with each expanded workspace.
 for(const [id,key] of [['home-fa-position','pos'],['home-fa-sort','sort']])el(id).addEventListener('change',event=>{
@@ -1745,7 +1751,7 @@ const dialog=el('explore-dialog');el('explore-close').addEventListener('click',(
 // Native <dialog> backdrop clicks are delivered to the dialog element itself.
 // Only dismiss when the pointer is OUTSIDE its rectangle, never on contents.
 dialog.addEventListener('click',e=>{
- if(e.target!==dialog)return;
+ if(e.target!==dialog||document.body.dataset.layout==='tabbed')return;
  const r=dialog.getBoundingClientRect();
  if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();
 });

@@ -1,0 +1,67 @@
+/* Workspace edition — warm paper, ink, and the original terminal blue. */
+[hidden]{display:none!important}
+.workspace-bar{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px 22px;background:#f5f4ee;border-bottom:1px solid #b3b7b0}
+.workspace-eyebrow{font:700 11px 'Courier New',monospace;letter-spacing:1.5px;color:#385e78}
+.workspace-caption p{margin:6px 0 0;font:14px/1.5 Arial,sans-serif;color:#505b58}
+.view-switch{display:flex;gap:4px;padding:4px;background:#e2e4dd;border:1px solid #a7aea6;flex-shrink:0}
+.view-switch button{display:flex;align-items:center;justify-content:center;gap:9px;min-height:40px;padding:9px 18px;background:transparent;border:1px solid transparent;font:700 13px Arial,sans-serif;color:#4b5652}
+.view-switch button[aria-pressed=true]{background:#263d39;border-color:#263d39;color:#fff;box-shadow:1px 2px 0 #bdc3b9}
+.view-switch button:hover:not([aria-pressed=true]){background:#f9faf6;color:#1d3430}
+.view-switch button span{font-size:18px;line-height:1}
+.workspace-navigation{background:#f5f4ee;padding:0 22px}
+.workspace-tabs{display:flex;gap:3px;overflow-x:auto;position:relative;scrollbar-width:thin;scrollbar-color:#96a8a0 #e7e9e3;padding-top:15px;scroll-padding:12px}
+.workspace-tabs button{flex:0 0 auto;min-height:47px;padding:12px 14px;border:1px solid transparent;border-bottom:3px solid transparent;background:transparent;font:600 13px Arial,sans-serif;white-space:nowrap;color:#535f59}
+.workspace-tabs button:hover{background:#e6ebe4;color:#253e38}
+.workspace-tabs button[aria-selected=true]{background:#e6ede7;border-color:#c6d0c6;border-bottom-color:#305e4d;color:#183e30}
+.workspace-tabs button:focus-visible{outline-offset:-4px;outline:2px solid #2868b2}
+.workspace-tab-context{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-top:1px solid #b8c2b7;font:700 10px 'Courier New',monospace;letter-spacing:.9px;color:#5c6e64}
+body[data-layout=tabbed] .home-go-label{display:none}
+body[data-layout=tabbed] .explore-dialog{position:relative;inset:auto;margin:0;width:100%;max-width:none;height:auto;max-height:none;border:0;box-shadow:none;background:#e9eae3;overflow:visible}
+body[data-layout=tabbed] .explore-title-bar{margin:0 22px;min-height:50px;padding:10px 14px;background:#30443e;border:1px solid #30443e;gap:14px}
+body[data-layout=tabbed] .explore-title-bar>div:first-child{flex:1}
+body[data-layout=tabbed] .explore-title-bar #explore-title{font-size:11px;letter-spacing:.5px;line-height:1.6}
+body[data-layout=tabbed] .explore-top-actions{display:none}
+body[data-layout=tabbed] .explore-content{padding:22px;gap:18px;overflow:visible;min-height:55vh}
+body[data-layout=tabbed] .explore-footer{margin:0 22px 20px;padding:12px 0;background:transparent;border-top:1px solid #b5bfb5;font-size:11px}
+body[data-layout=tabbed] .explore-footer span:last-child{display:none}
+body[data-layout=tabbed] .lab-intro h3{font-size:clamp(27px,3vw,36px);line-height:1.2;margin-bottom:8px;color:#20392f}
+body[data-layout=tabbed] .lab-intro p{font:14px/1.65 Arial,sans-serif;color:#4e6057;max-width:90ch}
+body[data-layout=tabbed] .lab-panel{padding:18px;border-color:#b5c0b4;box-shadow:none;background:#fcfcf7}
+body[data-layout=tabbed] .lab-panel h4{font-size:12px;line-height:1.5;color:#304b3d;padding-bottom:12px}
+body[data-layout=tabbed] .lab-stat{padding:16px 13px;min-height:100px;border-right-color:#c3ccc1;border-bottom-color:#c3ccc1;border-left-color:#c3ccc1}
+body[data-layout=tabbed] .lab-stat small{font-size:11px;line-height:1.5;color:#4f6057}
+body[data-layout=tabbed] .lab-stat>b{font-size:clamp(20px,2.3vw,29px)}
+body[data-layout=tabbed] .lab-table{font-size:13px;line-height:1.5;font-variant-numeric:tabular-nums}
+body[data-layout=tabbed] .lab-table th{font-size:11px;line-height:1.5;background:#e4eae0;color:#3e5145}
+body[data-layout=tabbed] .lab-table th,body[data-layout=tabbed] .lab-table td{padding:12px 11px}
+body[data-layout=tabbed] .lab-table small{font-size:11px;color:#59665e}
+body[data-layout=tabbed] .lab-note,body[data-layout=tabbed] .lab-info,body[data-layout=tabbed] .lab-definition{font-size:12px;line-height:1.65;color:#516258}
+body[data-layout=tabbed] .lab-controls{padding:14px;gap:14px;background:#f4f6ee;border-color:#bdc8ba}
+body[data-layout=tabbed] .lab-controls label{font-size:11px;color:#465a4c}
+body[data-layout=tabbed] .lab-controls select,body[data-layout=tabbed] .lab-controls input:not([type=file]){min-height:40px;font-size:13px;padding:9px}
+body[data-layout=tabbed] .lab-action{min-height:38px;font-size:12px}
+body[data-layout=tabbed] .lab-two{gap:18px}
+@media(min-width:1500px){body[data-layout=tabbed] .desktop{max-width:1600px}}
+@media(max-width:800px){
+ .workspace-bar{padding:16px;gap:12px;align-items:flex-start;flex-direction:column}
+ .view-switch{align-self:stretch}.view-switch button{flex:1}
+ .workspace-caption p{font-size:13px}
+ .workspace-navigation{padding:0 12px}
+ body[data-layout=tabbed] .explore-title-bar{margin:0 12px}
+ body[data-layout=tabbed] .explore-content{padding:16px 12px}
+ body[data-layout=tabbed] .explore-footer{margin:0 12px 14px}
+ body[data-layout=tabbed] .lab-two{grid-template-columns:1fr}
+ body[data-layout=tabbed] .lab-panel{padding:12px}
+ body[data-layout=tabbed] .lab-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+ body[data-layout=tabbed] .lab-stat{padding:12px 8px}
+ body[data-layout=tabbed] .lab-stat>b{font-size:20px}
+ body[data-layout=tabbed] .lab-table{font-size:12px}
+ body[data-layout=tabbed] .lab-table th,body[data-layout=tabbed] .lab-table td{padding:10px}
+}
+@media(max-width:440px){body[data-layout=tabbed] .lab-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.workspace-tab-context{font-size:9px}.workspace-tabs button{padding:12px;font-size:13px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{scroll-behavior:auto!important}}
+/* Reports scroll with the page; their navigation stays within reach. */
+.workspace-navigation{position:sticky;top:0;z-index:20;box-shadow:0 2px 0 #d1d8cd}
+body[data-layout=tabbed] .explore-content>*{min-width:0}
+body[data-layout=tabbed] .position-player-rich-row{font-size:12px;min-height:42px}
+body[data-layout=tabbed] .position-rich-head{font-size:11px;min-height:38px}

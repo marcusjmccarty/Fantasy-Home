@@ -172,3 +172,20 @@ The review tightened ESPN credential redirect handling, prevented a pending leag
 Rotate any API key shared in chat or another channel: create its replacement in Google AI Studio, update the existing Cloudflare `GEMINI_API_KEY` secret and deploy, confirm an overview works, then revoke the old key. Keep the replacement out of chat, source and screenshots. The public AI endpoint is not authenticated; another visitor can exhaust the shared allowance. Rate limits are not account authentication or a guarantee against service disruption. Review provider quotas/billing independently.
 
 This was a bounded code, dependency, repository-history and deployment review, not a penetration test or an audit of account permissions, third-party systems, backup retention or all historical credential formats. ESPN, Google, Cloudflare, nflverse and Sleeper availability remains external.
+
+## Workspace edition 10.0
+
+Use the **Dashboard / Tabbed** selector beneath the team header:
+
+- **Dashboard** keeps the original tiles and expanded modal reports.
+- **Tabbed** shows full reports directly on the page, without dashboard tiles or
+  individual player cards. The scrollable report tabs remain visible while reading.
+- Twelve tabs cover Overview, Matchup, Roster, Weekly, Standings, Player file,
+  Game logs, Free agents, Usage, Player pool, League trends, and Variable lab.
+- Layout and last report are remembered in this browser. Tab focus supports
+  Left/Right arrows and Home/End. Player drilldowns update the selected tab.
+- Both layouts share the existing reports, filters, team data, and ESPN connection.
+
+Defensive Outlook, expanded share volumes, and Trade Calculator remain future work.
+
+Navigation regression checks: `node --test test/workspace.test.js`.

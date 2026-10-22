@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="style.css">
   <script src="script.js" defer></script>
   <script src="explorer.js" defer></script>
+  <script src="workspace.js" defer></script>
+  <link rel="stylesheet" href="workspace.css">
 </head>
 <body>
   <div class="desktop" id="desktop">
@@ -32,6 +34,17 @@
       </div>
     </div>
 
+    <section class="workspace-bar" aria-label="Workspace layout">
+      <div class="workspace-caption"><span class="workspace-eyebrow">YOUR PLAYBOOK</span><p id="workspace-description">The whole league at a glance. Open any window to go deeper.</p></div>
+      <div class="view-switch" role="group" aria-label="Choose layout">
+        <button type="button" data-layout="dashboard" aria-pressed="true"><span aria-hidden="true">▦</span> Dashboard</button>
+        <button type="button" data-layout="tabbed" aria-pressed="false"><span aria-hidden="true">▤</span> Tabbed</button>
+      </div>
+    </section>
+    <nav id="workspace-navigation" class="workspace-navigation" aria-label="Statistical workspaces" hidden>
+      <div id="workspace-tabs" class="workspace-tabs" role="tablist" aria-label="Reports"></div>
+      <div class="workspace-tab-context"><span id="workspace-section">TEAM / OVERVIEW</span><span>FULL REPORTS <span aria-hidden="true">↗</span></span></div>
+    </nav>
     <main class="window-grid" aria-label="Fantasy football dashboard">
       <section class="win summary-window expandable" data-explore="summary" tabindex="0" aria-label="Open expanded summary statistics" aria-labelledby="title-summary">
         <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-summary">CLUB OVERVIEW</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
@@ -123,7 +136,7 @@
       <div class="explore-content" id="explore-content"></div>
       <footer class="explore-footer"><span id="explore-source">Data source: demo</span><span>ESC TO CLOSE · CLICK A PLAYER TO INSPECT</span></footer>
     </dialog>
-    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.6</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
+    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — WORKSPACE EDITION 10.0</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
   </div>
 
   <dialog id="data-dialog" aria-labelledby="dialog-title">
