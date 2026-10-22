@@ -1599,10 +1599,28 @@ function detailGraph(){
  if(plot){
   const choose=event=>{const dot=event.target.closest('[data-graph-point]');if(!dot)return;event.stopPropagation();const r=rows[Number(dot.dataset.graphPoint)];if(r){XL.selectedPoint=String(r.p.id);openExplorer('profile',String(r.p.id));}};
   plot.addEventListener('click',choose);
-  const foreground=event=>{const dot=event.target.closest('.lab-dot');if(dot&&dot!==dot.parentElement.lastElementChild)dot.parentElement.append(dot);};
-  plot.addEventListener('pointerover',foreground);plot.addEventListener('focusin',foreground);
+  // Paint a noninteractive copy above the chart without moving keyboard targets.
+  const foreground=dot=>{
+   plot.querySelector('.graph-point-highlight')?.remove();
+   if(!dot||!plot.contains(dot))return;
+   const overlay=document.createElementNS('http://www.w3.org/2000/svg','g');
+   overlay.setAttribute('class','graph-point-highlight');overlay.setAttribute('aria-hidden','true');
+   for(const child of dot.children)overlay.append(child.cloneNode(true));
+   dot.ownerSVGElement.append(overlay);
+  };
+  const focused=()=>document.activeElement?.closest('.lab-dot');
+  plot.addEventListener('pointerover',event=>foreground(event.target.closest('.lab-dot')||focused()));
+  plot.addEventListener('pointerout',event=>foreground(event.relatedTarget?.closest?.('.lab-dot')||focused()));
+  plot.addEventListener('focusin',event=>foreground(event.target.closest('.lab-dot')));
+  plot.addEventListener('focusout',event=>foreground(event.relatedTarget?.closest?.('.lab-dot')));
   plot.addEventListener('keydown',event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();choose(event);}});
-  const redraw=()=>{if(!plot.isConnected)return;const r=plot.getBoundingClientRect();plot.innerHTML=scatterSVG(rows,{width:r.width,height:r.height});};
+  const redraw=()=>{
+   if(!plot.isConnected)return;
+   const active=plot.contains(document.activeElement)?document.activeElement.closest('[data-graph-point]'):null;
+   const point=active?.dataset.graphPoint,r=plot.getBoundingClientRect();
+   plot.innerHTML=scatterSVG(rows,{width:r.width,height:r.height});
+   if(point!==undefined)plot.querySelector(`[data-graph-point="${point}"]`)?.focus({preventScroll:true});
+  };
   requestAnimationFrame(()=>{fitGraphScreen();redraw();});
   graphResizeObserver=new ResizeObserver(redraw);graphResizeObserver.observe(plot);
  }

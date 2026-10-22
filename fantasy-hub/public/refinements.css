@@ -65,6 +65,7 @@ body:not([data-layout=tabbed]) .explore-dialog:has(.graph-screen) .explore-conte
 .graph-screen .lab-label{opacity:0;pointer-events:none;font:13px 'Courier New',monospace;paint-order:stroke;stroke:#fff;stroke-width:4px;fill:#263d36}
 .graph-screen .label-visible .lab-label,.graph-screen .lab-dot:hover .lab-label,.graph-screen .lab-dot:focus-visible .lab-label{opacity:1}
 .graph-screen .lab-dot{pointer-events:none}.graph-screen .lab-dot circle{pointer-events:all}
+.graph-point-highlight,.graph-point-highlight *{pointer-events:none}.graph-point-highlight .lab-label{opacity:1}.graph-point-highlight circle{stroke:#15191b;stroke-width:2.5;r:8}
 .graph-tools{border:1px solid #9da99b;padding:10px;background:#f0f2e9}.graph-tools>summary{cursor:pointer;font:bold 13px 'Courier New',monospace}.graph-tools[open] .graph-enrichment-panel{margin-top:10px}
 /* Trade desk — three readable instruments, two simple package pickers. */
 .trade-desk{display:flex;flex-direction:column;gap:12px;min-width:0}.trade-desk .strategy-heading{margin:0}.trade-desk .trade-controls{margin:0;padding:8px;background:#e5e8de}
