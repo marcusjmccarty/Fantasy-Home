@@ -28,6 +28,14 @@
  report.addEventListener('cancel',event=>{if(dismissRanking())event.preventDefault();});
  const modal=()=>[...document.querySelectorAll('dialog:modal')].at(-1);
  function showHelp(){if(!help.open)help.showModal();}
+ // Native restoration is sufficient unless an asynchronous report update has
+ // removed its opener. Recover only stranded focus, never override a new modal.
+ help.addEventListener('close',()=>{
+  if(help.open||document.activeElement!==document.body&&!help.contains(document.activeElement))return;
+  const top=modal();if(top&&top!==report)return;
+  const fallback=(report.open?report:document).querySelector('[data-shortcuts-help]');
+  if(visible(fallback))fallback.focus({preventScroll:true});
+ });
  document.querySelectorAll('[data-shortcuts-help]').forEach(button=>button.addEventListener('click',showHelp));
  document.addEventListener('keydown',event=>{
   if(event.defaultPrevented||event.isComposing||event.keyCode===229||event.repeat||event.ctrlKey||event.metaKey||event.altKey)return;
