@@ -49,3 +49,31 @@ test('tabbed resize does not redraw hidden home graph',async()=>{
  assert.equal(await page.evaluate(()=>homeRenders),1);
  assert.ok(await page.locator('.graph-home-svg').isVisible());
 });
+test('tablet and 200-percent-equivalent viewports keep labels and statistics inside the report',async()=>{
+ for(const [width,height] of [[731,844],[960,540]])for(const mode of ['dashboard','tabbed']){
+  await page.setViewportSize({width,height});await page.evaluate(mode=>setWorkspaceLayout(mode),mode);await open();
+  const m=await page.evaluate(()=>{
+   const label=document.querySelector('.lab-label'),grid=document.querySelector('.graph-stat-grid').getBoundingClientRect(),tools=document.querySelector('.graph-tools').getBoundingClientRect();
+   return {text:parseFloat(getComputedStyle(label).fontSize)*label.closest('svg').getScreenCTM().a,gridBottom:grid.bottom,toolsTop:tools.top,width:document.documentElement.scrollWidth};
+  });
+  assert.ok(m.text>=12);assert.ok(m.gridBottom<=m.toolsTop);assert.equal(m.width,width);
+ }
+});
+test('hover overlay leaves point order unchanged and keyboard navigation remains sequential',async()=>{
+ await open();const order=await page.locator('.lab-dot').evaluateAll(ns=>ns.map(n=>n.dataset.graphPoint));
+ await page.locator('.lab-dot circle').first().hover();
+ assert.deepEqual(await page.locator('.lab-dot').evaluateAll(ns=>ns.map(n=>n.dataset.graphPoint)),order);
+ assert.equal(await page.locator('.graph-point-highlight').getAttribute('aria-hidden'),'true');
+ assert.equal(await page.locator('.graph-point-highlight [tabindex]').count(),0);
+ await page.locator('.graph-preset:not([disabled])').last().focus();
+ await page.keyboard.press('Tab');await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>document.activeElement.dataset.graphPoint),'1');
+ await page.keyboard.press('Shift+Tab');assert.equal(await page.evaluate(()=>document.activeElement.dataset.graphPoint),'0');
+ await page.keyboard.press('Space');assert.equal(await page.evaluate(()=>XL.open),'profile');
+});
+test('filters, empty data and rapid navigation do not leave a stale graph',async()=>{
+ await open();await page.selectOption('#graph-pos','WR');await settle();assert.equal(await page.locator('.lab-dot').count(),36);
+ await page.locator('#graph-search').fill('NO MATCH XYZ');await page.waitForTimeout(400);
+ assert.equal(await page.locator('.lab-dot').count(),0);assert.equal(await page.locator('.lab-no-data').count(),1);
+ await page.evaluate(()=>{openExplorer('graph');openExplorer('weekly');openExplorer('summary')});await settle();
+ assert.equal(await page.locator('.lab-scatter-svg').count(),0);
+});

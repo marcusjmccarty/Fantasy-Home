@@ -112,3 +112,8 @@ body:not([data-layout=tabbed]) .explore-dialog:has(.graph-screen) .explore-conte
  .graph-screen .lab-graph-panel{flex:none}
  .graph-screen .graph-plot{flex:none;height:260px;min-height:260px}
 }
+/* Keep short/zoomed viewports from squeezing the plot or overflowing its report. */
+.graph-screen{min-height:min-content}
+.graph-screen .lab-graph-layout,.graph-screen .lab-graph-panel{min-height:min-content}
+.graph-screen .graph-plot{min-height:180px}
+@media(max-width:730px){.graph-screen .graph-plot{min-height:260px}}
