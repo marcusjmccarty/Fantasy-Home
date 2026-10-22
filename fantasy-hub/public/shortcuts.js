@@ -51,11 +51,12 @@
   }
   if(!enabled.checked||editing(event.target)||event.shiftKey&&event.key!=='?')return;
   if(document.querySelector('.metric-popover'))return;
-  if(top&&top!==report)return;
+  if(top===help)return;
   let target;
   if(event.key==='?'){
    event.preventDefault();showHelp();return;
   }
+  if(top&&top!==report)return;
   if(event.key.toLowerCase()==='g'){
    target=report.open&&document.body.dataset.layout==='tabbed'
     ?document.querySelector('#workspace-tabs [aria-selected="true"]')
