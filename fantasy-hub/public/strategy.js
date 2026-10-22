@@ -392,6 +392,7 @@ document.addEventListener('change',event=>{
  const usage={'usage-period':'period','usage-position':'position','usage-sort':'sort','usage-leaders':'leaders'};if(usage[t.id]){STRATEGY[usage[t.id]]=t.value;updateOpportunityResults();if(t.id==='usage-period')renderStrategyHome();}
  if(t.id&&el(t.id))el(t.id).focus?.({preventScroll:true});
 });
-el('explore-content').addEventListener('input',event=>{if(event.target.id==='usage-search'){const text=event.target.value,pos=event.target.selectionStart;STRATEGY.search=text;deferRender('usage',()=>{if(XL.open!=='opportunity')return;updateOpportunityResults();const input=el('usage-search');input?.focus({preventScroll:true});input?.setSelectionRange(pos,pos);});}});
+// Ignore stale report instances and respect focus moves during the debounce.
+el('explore-content').addEventListener('input',event=>{if(event.target.id==='usage-search'){const text=event.target.value,pos=event.target.selectionStart;STRATEGY.search=text;deferRender('usage',()=>{if(XL.open!=='opportunity'||event.target!==el('usage-search'))return;const ownsFocus=document.activeElement===el('usage-search');updateOpportunityResults();const input=el('usage-search');if(ownsFocus){input?.focus({preventScroll:true});input?.setSelectionRange(pos,pos);}});}});
 for(const id of ['home-go-to','explore-jump'])for(const [value,label] of [['outlook','PLAYER OUTLOOK'],['opportunity','TOUCHES & SHARE'],['trade','TRADE CALCULATOR']])el(id)?.add(new Option(label,value));
 renderStrategyHome();

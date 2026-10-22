@@ -65,6 +65,7 @@ body:not([data-layout=tabbed]) .explore-dialog:has(.graph-screen) .explore-conte
 .graph-screen .lab-label{opacity:0;pointer-events:none;font:13px 'Courier New',monospace;paint-order:stroke;stroke:#fff;stroke-width:4px;fill:#263d36}
 .graph-screen .label-visible .lab-label,.graph-screen .lab-dot:hover .lab-label,.graph-screen .lab-dot:focus-visible .lab-label{opacity:1}
 .graph-screen .lab-dot{pointer-events:none}.graph-screen .lab-dot circle{pointer-events:all}
+.graph-point-highlight,.graph-point-highlight *{pointer-events:none}.graph-point-highlight .lab-label{opacity:1}.graph-point-highlight circle{stroke:#15191b;stroke-width:2.5;r:8}
 .graph-tools{border:1px solid #9da99b;padding:10px;background:#f0f2e9}.graph-tools>summary{cursor:pointer;font:bold 13px 'Courier New',monospace}.graph-tools[open] .graph-enrichment-panel{margin-top:10px}
 /* Trade desk — three readable instruments, two simple package pickers. */
 .trade-desk{display:flex;flex-direction:column;gap:12px;min-width:0}.trade-desk .strategy-heading{margin:0}.trade-desk .trade-controls{margin:0;padding:8px;background:#e5e8de}
@@ -105,3 +106,14 @@ body:not([data-layout=tabbed]) .explore-dialog:has(.graph-screen) .explore-conte
 .position-week-col{cursor:default}.position-week-pillar{padding:0;cursor:pointer;appearance:none;background:transparent}.position-week-col:hover .position-week-pillar{outline:none}.position-week-pillar:hover,.position-week-pillar:focus-visible{outline:2px solid #315c79;outline-offset:1px}.position-week-col b,.position-week-col small{font-size:12px}
 .league-contribution-franchise:is(:hover,:focus-visible){outline:none}.graph-screen .lab-graph-top .lab-graph-legend span{font-size:12px}.lab-note,#explore-content .lab-note{font-size:13px}
 @media(max-width:650px){.explore-title-bar .explore-history-controls{width:64px}.explore-title-bar b#explore-title{padding-left:72px;font-size:11px}}
+
+/* Narrow reports scroll rather than scaling chart text into a compressed plot. */
+@media(max-width:730px){
+ .graph-screen .lab-graph-panel{flex:none}
+ .graph-screen .graph-plot{flex:none;height:260px;min-height:260px}
+}
+/* Keep short/zoomed viewports from squeezing the plot or overflowing its report. */
+.graph-screen{min-height:min-content}
+.graph-screen .lab-graph-layout,.graph-screen .lab-graph-panel{min-height:min-content}
+.graph-screen .graph-plot{min-height:180px}
+@media(max-width:730px){.graph-screen .graph-plot{min-height:260px}}

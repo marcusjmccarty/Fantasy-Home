@@ -28,6 +28,9 @@ document.addEventListener('click',event=>{
  const trigger=event.target.closest('[data-stat-help]');if(!trigger)return;
  event.preventDefault();event.stopImmediatePropagation();showStatHelp(trigger);
 },true);
-document.addEventListener('keydown',event=>{if(openMetricHelp&&event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();closeStatHelp(true);}},true);
+document.addEventListener('keydown',event=>{
+ if(event.defaultPrevented||event.isComposing||event.keyCode===229||event.repeat||event.ctrlKey||event.metaKey||event.altKey||event.getModifierState('AltGraph')||event.shiftKey)return;
+ if(openMetricHelp&&event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();closeStatHelp(true);}
+},true);
 document.addEventListener('scroll',event=>{if(openMetricHelp&&!openMetricHelp.card.contains(event.target))closeStatHelp();},true);
 window.addEventListener('resize',()=>closeStatHelp());
