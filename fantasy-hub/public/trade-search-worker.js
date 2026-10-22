@@ -1,3 +1,3 @@
 'use strict';
-importScripts('analytics-math.js');
+importScripts('analytics-math.js?v=9.11.1');
 self.onmessage=event=>{const {own,their,slots,week,mode}=event.data;self.postMessage(FantasyMath.searchTrades(own,their,slots,week,mode));};
