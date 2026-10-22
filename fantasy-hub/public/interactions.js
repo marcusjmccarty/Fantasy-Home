@@ -15,9 +15,10 @@ function metricPopupLeft(rect,row,width,viewport,margin=12){
 function showStatHelp(trigger){
  closeStatHelp();const rect=trigger.getBoundingClientRect(),card=document.createElement('section'),margin=12;
  card.className='metric-popover';card.setAttribute('role','dialog');card.setAttribute('aria-label',trigger.dataset.statTitle);card.tabIndex=-1;
- card.innerHTML=`<header>${esc(trigger.dataset.statTitle)}</header><strong>${esc(trigger.querySelector('strong,b')?.textContent||'')}</strong><p>${esc(trigger.dataset.statHelp)}</p>`;
+ const rankings=trigger.dataset.statRankings?JSON.parse(trigger.dataset.statRankings):null;
+ card.innerHTML=`<header>${esc(trigger.dataset.statTitle)}</header><strong>${esc(trigger.querySelector('strong,b')?.textContent||'')}</strong>${rankings?`<table class="metric-ranking"><thead><tr><th>#</th><th>FRANCHISE</th><th>${esc(trigger.dataset.statUnit)}</th></tr></thead><tbody>${rankings.map(r=>`<tr class="${r.id===String(currentTeamId)?'is-active':''}"><td>${r.rank}</td><td>${esc(r.name)}</td><td>${Number(r.value).toFixed(1)}</td></tr>`).join('')||'<tr><td colspan="3">No recorded starts.</td></tr>'}</tbody></table>`:`<p>${esc(trigger.dataset.statHelp)}</p>`}`;
  card.style.setProperty('--metric-accent',getComputedStyle(trigger).getPropertyValue('--metric-accent')||getComputedStyle(trigger).borderTopColor);
- const width=Math.min(Math.max(rect.width,260),innerWidth-margin*2);card.style.width=width+'px';card.style.minHeight=rect.height+'px';const row=[...trigger.parentElement.querySelectorAll('[data-stat-help]')].map(el=>el.getBoundingClientRect()).filter(r=>Math.abs(r.top-rect.top)<3);card.style.left=metricPopupLeft(rect,row,width,innerWidth,margin)+'px';
+ const width=Math.min(Math.max(rect.width,rankings?360:260),innerWidth-margin*2);card.style.width=width+'px';card.style.minHeight=rect.height+'px';const row=[...trigger.parentElement.querySelectorAll('[data-stat-help]')].map(el=>el.getBoundingClientRect()).filter(r=>Math.abs(r.top-rect.top)<3);card.style.left=metricPopupLeft(rect,row,width,innerWidth,margin)+'px';
  (trigger.closest('dialog')||document.body).append(card);
  const up=trigger.dataset.statDirection==='up'||rect.top+card.offsetHeight>innerHeight-margin;
  card.style.top=Math.max(margin,up?rect.bottom-card.offsetHeight:rect.top)+'px';card.style.maxHeight=(innerHeight-margin*2)+'px';

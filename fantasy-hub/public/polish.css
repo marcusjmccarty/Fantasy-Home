@@ -166,3 +166,11 @@ button.strategy-metric.stat-help-trigger,.strategy-metric,.lab-stat{background:#
 .matchup-roster-player strong small{font:8px/1 'Courier New',monospace;color:#6b7068}
 .matchup-roster-player .score-projection{color:#315f8b}
 @media(max-width:650px){.header-week-control label,#header-current-week{font-size:16px}.summary-record-panel .lab-definition{font-size:14px}.summary-record-panel .lab-definition>b{font-size:19px}.home-trade-builder{grid-template-columns:minmax(0,1fr) 80px minmax(0,1fr);gap:6px}.home-trade-center .trade-balance-ring{width:78px;height:78px}.home-trade-center .trade-balance-ring b{font-size:22px}.home-trade-gain .home-trade-total{font-size:27px}.home-trade-picks button{font-size:12px}}
+
+/* User-set outer margins; native browser zoom is untouched. */
+:root{--page-width:100%}
+.desktop{width:var(--page-width);max-width:none;margin-inline:auto;container-type:inline-size}
+body:not([data-layout=tabbed]) .explore-dialog,body:not([data-layout=tabbed]) .explore-dialog:has(.strategy-heading){width:min(var(--page-width),calc(100vw - 2 * var(--window-side-gutter)))}
+.page-width-control{display:flex;align-items:center;gap:4px;font:10px 'Courier New',monospace;white-space:nowrap}.page-width-control input{width:65px;accent-color:#aeb9ab;cursor:pointer}.page-width-control output{width:33px;text-align:right}.menu-bar,.menu-right{flex-wrap:wrap}
+.metric-ranking{width:100%;border-collapse:collapse;font:12px/1.4 'Courier New',monospace;margin-top:10px}.metric-ranking th{font-size:10px;text-align:left}.metric-ranking td,.metric-ranking th{padding:6px 4px;border-bottom:1px solid #cbd0c6}.metric-ranking td:last-child{text-align:right;font-weight:bold}.metric-ranking .is-active{background:#dce8ef;font-weight:bold}
+@container(max-width:850px){.window-grid{grid-template-columns:1fr}.window-grid>.window,.window-grid>.strategy-windows{grid-column:1/-1}.strategy-windows{grid-template-columns:1fr}.strategy-window:last-child{grid-column:auto}.team-strip,.utility-bar{flex-wrap:wrap}.team-header-stats{flex-wrap:wrap}}

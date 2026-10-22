@@ -194,11 +194,11 @@ el('standings-body').addEventListener('keydown',e=>{
 el('home-standing-sort')?.addEventListener('change',()=>drawStandings());
 
 function homePositionTotals(team,period='all'){
- const totals={QB:0,RB:0,WR:0,TE:0,K:0,DEF:0};let known=0;
+ const totals={QB:0,RB:0,WR:0,TE:0,K:0,DEF:0},counts={QB:0,RB:0,WR:0,TE:0,K:0,DEF:0};let known=0;
  (team.history||[]).filter(h=>period==='all'||Number(h.week)===Number(period)).forEach(h=>Object.entries(h.starters||{}).forEach(([id,points])=>{
   const position=model.players[id]?.pos==='D/ST'?'DEF':model.players[id]?.pos;
-  if(Object.hasOwn(totals,position)&&number(points)!==null){totals[position]+=points;known++;}
- }));return {totals,known};
+  if(Object.hasOwn(totals,position)&&number(points)!==null){totals[position]+=points;counts[position]++;known++;}
+ }));return {totals,known,counts};
 }
 function drawPositions(team){
  const picker=el('home-position-week'),weeks=[...new Set(team.history.map(h=>Number(h.week)))].sort((a,b)=>a-b),period=picker.value==='all'||weeks.includes(Number(picker.value))?picker.value:'all';
@@ -206,8 +206,12 @@ function drawPositions(team){
  const {totals,known}=homePositionTotals(team,period),max=Math.max(...Object.values(totals),1),total=sum(Object.values(totals)),colors={QB:'#487ebb',RB:'#399676',WR:'#9466bc',TE:'#b85d70',K:'#b07c33',DEF:'#657b83'};
  el('position-caption').textContent=known?'':'No starter scores for this period.';
  const leader=Object.entries(totals).sort((a,b)=>b[1]-a[1])[0],periodName=period==='all'?'the season':'Week '+period;
- const metrics=[['Starter points',known?nfmt(total,1):'—','Recorded starting-player points for '+periodName+'. Bench scores are excluded.'],['Points / start',known?nfmt(total/known,1):'—','Average points per recorded player start for '+periodName+'. A reported zero counts as a start.'],['Leading share',known&&total>0?leader[0]+' '+nfmt(leader[1]/total*100,0)+'%':'—','The position contributing the largest share of recorded starter points for '+periodName+'.']];
- el('home-position-metrics').innerHTML=metrics.map(([label,value,help])=>`<button type="button" class="stat-help-trigger strategy-metric" data-stat-title="${esc(label)}" data-stat-help="${esc(help)}" aria-expanded="false"><span>${esc(label)}</span><strong>${esc(value)}</strong></button>`).join('');
+ const peers=model.teams.map(t=>({team:t,...homePositionTotals(t,period)}));
+ const rankedBy=fn=>peers.map(r=>({id:String(r.team.id),name:teamName(r.team),value:fn(r)})).filter(r=>r.value!==null).sort((a,b)=>b.value-a.value||a.name.localeCompare(b.name)).map((r,i,rows)=>({...r,rank:1+rows.filter(x=>x.value>r.value+1e-9).length}));
+ const positions=Object.keys(totals).map(pos=>{const rows=rankedBy(r=>r.counts[pos]?r.totals[pos]:null),mine=rows.find(r=>r.id===String(team.id));return {pos,rows,rank:mine?.rank??Infinity};}).sort((a,b)=>a.rank-b.rank||totals[b.pos]-totals[a.pos]);
+ const best=positions[0],pps=rankedBy(r=>r.known?sum(Object.values(r.totals))/r.known:null),share=rankedBy(r=>{const t=sum(Object.values(r.totals));return r.known&&t>0?r.totals[leader[0]]/t*100:null;});
+ const metrics=[['Best position',Number.isFinite(best.rank)?best.pos+' #'+best.rank:'—',best.rows,best.pos+' POINTS'],['Points / start',known?nfmt(total/known,1):'—',pps,'POINTS / START'],['Leading share',known&&total>0?leader[0]+' '+nfmt(leader[1]/total*100,0)+'%':'—',share,leader[0]+' SHARE %']];
+ el('home-position-metrics').innerHTML=metrics.map(([label,value,rows,unit])=>`<button type="button" class="stat-help-trigger strategy-metric" data-stat-title="${esc(label)} / ${esc(periodName)}" data-stat-help="" data-stat-rankings="${esc(JSON.stringify(rows))}" data-stat-unit="${esc(unit)}" aria-expanded="false"><span>${esc(label)}</span><strong>${esc(value)}</strong></button>`).join('');
  el('position-chart').innerHTML=known?Object.entries(totals).map(([pos,value])=>`<div class="position-row"><strong>${pos}</strong><div class="meter-track"><button type="button" class="meter-fill" data-home-position="${pos}" style="width:${Math.max(1,Math.min(100,100*Math.max(0,value)/max)).toFixed(1)}%;background:${colors[pos]}" aria-label="Open ${pos} position allocation${period==='all'?' for the season':' for week '+period}"></button></div><b>${nfmt(value,1)}<small>${total>0&&value>=0?nfmt(value/total*100,0)+'%':''}</small></b></div>`).join(''):'<div class="empty-chart">NO POSITION DATA</div>';
 }
 el('home-position-week').addEventListener('change',()=>drawPositions(getTeam()));
