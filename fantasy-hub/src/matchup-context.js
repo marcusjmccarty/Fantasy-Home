@@ -14,3 +14,14 @@ export function summarizeUnits(data,week){
  }
  return result;
 }
+
+export function playerWorkload(data,player,week){
+ const names=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+ const pool=data?.players||[],idMatch=pool.find(r=>r.espn_id&&String(r.espn_id)===String(player.id));
+ const named=pool.filter(r=>names(r.name)===names(player.name));
+ const row=idMatch||(named.length===1?named[0]:null);
+ const weeks=Object.entries(row?.weeks||{}).filter(([w])=>Number(w)>0&&Number(w)<week).map(([,r])=>r);
+ if(!weeks.length)return null;
+ const sum=k=>weeks.reduce((s,r)=>s+(Number(r[k])||0),0),carries=sum('carries'),targets=sum('targets'),receptions=sum('receptions');
+ return {recordedWeeks:weeks.length,carries,targets,receptions,touches:carries+receptions,opportunities:carries+targets,touchesPerRecordedWeek:+((carries+receptions)/weeks.length).toFixed(2),redzoneCarries:sum('redzone_carries'),redzoneTargets:sum('redzone_targets'),inside5Carries:sum('inside5_carries'),basis:'NFLverse recorded plays strictly before requested week; no-play penalties, kneels, spikes and two-point attempts excluded'};
+}

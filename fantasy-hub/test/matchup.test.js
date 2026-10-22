@@ -8,3 +8,10 @@ test('matchup units use only previous weeks and preserve unknown denominators',(
  assert.equal(result.games,1);assert.equal(result.yardsPerPlay,5);assert.equal(result.netPassYardsPerPlay,-5);assert.equal(result.sackRate,100);assert.equal(result.turnoversPerGame,0);assert.equal(result.epaPerPlay,null);assert.equal(result.successRate,null);assert.equal(result.explosiveRate,50);
  assert.deepEqual(summarizeUnits({},7),{});
 });
+test('AI workload matches one player and excludes the requested and future weeks',async()=>{
+ const {playerWorkload}=await import('../src/matchup-context.js');
+ const data={players:[{name:'Test Runner',espn_id:'10',weeks:{1:{carries:10,receptions:2,targets:3,redzone_carries:2,inside5_carries:1},2:{carries:999}}}]};
+ const result=playerWorkload(data,{id:'10',name:'Test Runner'},2);
+ assert.equal(result.touches,12);assert.equal(result.opportunities,13);assert.equal(result.recordedWeeks,1);assert.equal(result.inside5Carries,1);
+ assert.equal(playerWorkload(data,{id:'20',name:'Missing'},2),null);
+});

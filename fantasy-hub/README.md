@@ -1,4 +1,4 @@
-# Fantasy Hub — GRIDIRON/86 v9.6, Cloudflare edition
+# Fantasy Hub — GRIDIRON/86 v9.8, Cloudflare edition
 
 Live site: https://fantasy-home.fantasy-hub.workers.dev/
 
