@@ -23,3 +23,14 @@ Both matchup views use a shared total: actual points for games in progress or fi
 This is a weekly scoring/lineup calculator, not a rest-of-season, dynasty or draft-pick model. It optimizes hypothetical lineups; it does not execute trades, change ESPN rosters, enforce trade deadlines, or assume already-earned points transfer with a player. Availability and scoring are only as current as the provider snapshot.
 
 Regression coverage includes bench-only swaps, consolidation, FLEX and custom ESPN eligibility, duplicate/numeric IDs, zero/negative values, missing estimates, injuries, optional drops, week-bound projections, pregame/live/final scoring, pregame 0–0 ESPN fixtures and home/expanded trade parity. Workspace checks cover independent windowed franchises and synchronized tabbed franchises. Responsive visual verification is recorded after deployment.
+
+## Verification outcome
+
+- 107 Node tests passed before integrating the independently landed Free Agent Wire sort optimization; its 4 additional tests passed after integration (111 Node checks total).
+- 7 Python data-processing checks passed. JavaScript syntax and Git whitespace checks passed.
+- Deployed commit: `3dff85f2821745dccbc57098205f2f6a318fb560`.
+- Live browser verification at 1600 × 900 and 390 × 844 using exhibition data: centered ring, matching home/expanded impact values, five players on each side with all ten removal buttons visible and no internal scroll cap, readable record table (15px labels / 20px values on desktop), no mobile horizontal overflow, and synchronized header/matchup/trade week selection.
+- Live franchise switching: windowed report switched to team 2 while active team remained 1; tabbed report switched to team 3 and active team became 3. Returned to Windowed, team 1, week 6, cleared test trade picks and restored the normal viewport.
+- No browser console errors observed. Private ESPN live data was not connected in this browser; current-week provider edge cases were verified with fixtures, not claimed as a private-league live test.
+
+Screenshots: `screenshots/v9.15-trade-home.png`, `screenshots/v9.15-club-overview.png`, `screenshots/v9.15-mobile-trade.png`.
