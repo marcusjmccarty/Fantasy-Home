@@ -76,5 +76,5 @@ Screenshots: [desktop](screenshots/finder-desktop.png),
 Main advanced during draft publication to 1d98cdccb4677a53cbd28ecb35dc9537b1a4549d
 (the separate agent-sort PR #4 merge). Merged main into this successor branch,
 with no edits to that owner's code. Repeated the functional browser demo: all
-30 entries and both complete workflows pass. Node suite: 102 passed, zero failed.
+30 entries and both complete workflows pass. Node suite: 101 passed, zero failed.
 This integration is only on the feature branch; main was not written.
