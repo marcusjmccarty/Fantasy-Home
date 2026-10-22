@@ -354,7 +354,7 @@ function requestTradeRecommendations(){
  tradeSearch.worker?.terminate();tradeSearch.key=key;tradeSearch.result=null;tradeSearch.visible=24;tradeSearch.error='';
  if(typeof Worker==='undefined'){tradeSearch.error='Automatic comparisons need browser worker support.';renderTradeRecommendations();return;}
  try{
-  const worker=new Worker('trade-search-worker.js?v=9.18.0');tradeSearch.worker=worker;
+  const worker=new Worker('trade-search-worker.js?v=9.21.0');tradeSearch.worker=worker;
   worker.onmessage=event=>{if(tradeSearch.key!==key)return;tradeSearch.result=event.data;worker.terminate();tradeSearch.worker=null;renderTradeRecommendations();};
   worker.onerror=()=>{if(tradeSearch.key!==key)return;worker.terminate();tradeSearch.worker=null;tradeSearch.error='Trade search could not finish. Change a team to retry.';renderTradeRecommendations();};
   worker.postMessage({own,their,slots,week,mode});

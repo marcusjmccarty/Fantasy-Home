@@ -170,3 +170,81 @@ svg text.weekly-data-label{paint-order:stroke fill;stroke:#fff;stroke-width:3px;
 .trade-club-link{border:0;background:none;padding:2px 0;font:500 20px/1.15 var(--serif);color:var(--ink);text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:#b8bab2;text-underline-offset:4px}
 .trade-club-link:hover{text-decoration-color:var(--ink)}
 .trade-diagnosis,.trade-alternatives{font-size:13px;line-height:1.5}
+
+/* ======================================================================
+   v9.21 — title bar with explicit report tabs, inline width slider,
+   team-name picker and arrangeable tiles.
+   ====================================================================== */
+/* The title bar and its tab strip span the whole window (like an OS menu bar),
+   so changing the page width never moves the controls under the pointer. */
+.app-chrome{max-width:none;width:auto;margin:0;background:#272927;color:#f6f5f0;border:1px solid #30322f;border-bottom:0}
+body>.menu-bar{border-radius:0}
+body>.workspace-navigation.report-tabs{position:sticky;top:0;z-index:40;margin:0 0 0;padding:4px 10px 0;background:#272927;border:1px solid #30322f;border-top:1px solid #3d403c;border-bottom:0;box-shadow:none}
+body>.desktop{border-top:0}
+.report-tabs .report-bar{flex-wrap:wrap;gap:4px 14px;align-items:flex-end;overflow:visible}
+.report-tabs .report-group{flex-direction:row;align-items:flex-end;gap:0;position:relative;padding-left:14px}
+.report-tabs .report-group:first-child{padding-left:0}
+.report-tabs .report-group+.report-group::before{content:'';position:absolute;left:0;top:7px;bottom:7px;border-left:1px solid #5b5f59}
+.report-tabs .report-group-label{display:none}
+.report-tabs .report-group-items{gap:2px}
+.report-tabs .report-bar button{margin:0;padding:8px 11px 9px;min-height:34px;border:1px solid transparent;border-bottom:0;background:transparent;color:#d9dad3;font:500 12.5px/1 var(--mono);box-shadow:none}
+.report-tabs .report-bar button:hover{background:#3a3d39;color:#fff}
+.report-tabs .report-bar button[aria-current=page]{background:var(--paper);color:#111512;font-weight:700;border-color:#30322f;box-shadow:inset 0 3px 0 #3f6b5e}
+.report-tabs .report-bar button:focus-visible{outline:2px solid #9cc2ff;outline-offset:-3px}
+.report-tabs .report-home-glyph{font-size:14px}
+@media (max-width:899px){
+  .report-tabs .report-bar{flex-wrap:nowrap;overflow-x:auto;padding-right:28px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+}
+@media (max-width:700px){body>.app-chrome,body>.workspace-navigation.report-tabs{border-left:0;border-right:0}}
+
+/* Width: a plain slider with − / + steps and a readout that resets to 100%. */
+.width-slider{display:inline-flex;align-items:center;gap:4px;font:11.5px var(--mono);color:#d9dad3}
+.width-slider-label{margin-right:4px;letter-spacing:.6px}
+.width-step,.width-readout{min-width:24px;min-height:24px;padding:0 4px;border:1px solid transparent;background:transparent;color:#f6f5f0;font:600 14px/1 var(--mono);cursor:pointer}
+.width-step:hover:not(:disabled),.width-readout:hover{border-color:#8c8f88}
+.width-step:disabled{opacity:.35;cursor:default}
+.width-readout{font:12px var(--mono);min-width:44px;text-align:right}
+#page-width{-webkit-appearance:none;appearance:none;width:120px;height:24px;margin:0;padding:0;background:transparent;cursor:ew-resize}
+#page-width::-webkit-slider-runnable-track{height:3px;background:linear-gradient(90deg,#c9ccc3 var(--fill,100%),#5f635d var(--fill,100%));border:0}
+#page-width::-moz-range-track{height:3px;background:#5f635d;border:0}
+#page-width::-moz-range-progress{height:3px;background:#c9ccc3}
+#page-width::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:16px;margin-top:-6.5px;background:#f4f4ed;border:1px solid #111;border-radius:0}
+#page-width::-moz-range-thumb{width:9px;height:15px;background:#f4f4ed;border:1px solid #111;border-radius:0}
+#page-width:focus-visible{outline:2px solid #9cc2ff;outline-offset:2px}
+@media (max-width:700px){.width-slider{display:none}}
+
+/* Team name is the franchise picker. */
+.team-picker{position:relative;display:inline-flex;align-items:baseline;gap:8px;margin:4px 0 3px;max-width:100%}
+.team-picker h1{margin:0}
+.team-picker-caret{font:16px var(--mono);color:#555852}
+.team-picker select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}
+.team-picker:hover h1{text-decoration:underline;text-decoration-color:#9a9d95;text-underline-offset:5px}
+.team-picker:focus-within{outline:2px solid #1f5fa8;outline-offset:3px}
+.team-picker{display:flex;width:fit-content}
+.report-tabs .report-bar{gap:4px 10px}
+.report-tabs .report-group{padding-left:10px}
+.report-tabs .report-bar button{padding:8px 9px 9px}
+.report-tabs .report-bar button{padding:8px 8px 9px;font-size:12px}
+.report-tabs .report-bar{gap:4px 6px}.report-tabs .report-group{padding-left:8px}.report-tabs .report-group-items{gap:1px}
+
+/* ---------- Arrangeable dashboard ---------- */
+.window-grid>.win>.title-bar{cursor:grab;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.window-grid>.win>.title-bar :is(button,select,input,label){cursor:pointer}
+.tile-handle{appearance:none;-webkit-appearance:none;display:inline-block;flex:0 0 auto;padding:0;cursor:grab!important;position:relative}
+.tile-handle::after{content:'';position:absolute;inset:-6px}
+.tile-handle:hover{background:#fff;box-shadow:inset 0 0 0 3px #d4d4cc}
+.tile-handle:focus-visible{outline:2px solid #1f5fa8;outline-offset:3px}
+body.is-dragging,body.is-dragging *{cursor:grabbing!important;-webkit-user-select:none;user-select:none}
+.window-grid>.win.is-lifted{position:relative;z-index:50;box-shadow:8px 12px 0 rgba(28,30,29,.28),0 18px 40px rgba(28,30,29,.25);transition:box-shadow .15s;will-change:transform;pointer-events:none}
+.window-grid>.win.is-lifted .title-bar{background:#3f6b5e;color:#fff}
+body.is-arranging .window-grid>.win:not(.is-lifted):not(.is-held){animation:tile-wiggle .32s ease-in-out infinite alternate}
+body.is-arranging .window-grid>.win:nth-child(2n):not(.is-lifted):not(.is-held){animation-delay:-.16s}
+@keyframes tile-wiggle{from{rotate:-.25deg}to{rotate:.25deg}}
+@media (prefers-reduced-motion:reduce){body.is-arranging .window-grid>.win{animation:none!important}}
+.window-grid>.win.is-held{outline:3px dashed #1f5fa8;outline-offset:3px;z-index:5}
+.window-grid>.win.is-held .title-bar{background:#dbe7f5}
+.arrange-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 12px 10px;font:12px var(--sans);color:#4d514b}
+.arrange-reset{font:600 12px var(--mono);padding:5px 10px;min-height:28px;border:1px solid #878981;background:#eae9e3;cursor:pointer}
+.arrange-reset:hover{background:#fff}
+body[data-layout=tabbed] .arrange-bar{display:none}
+.window-grid{position:relative}

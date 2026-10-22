@@ -7,39 +7,41 @@
   <title>GRIDIRON 86 / Fantasy Team Terminal</title>
   <link rel="preload" href="fonts/IBMPlexMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/IBMPlexMono-Bold.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="type.css?v=9.18.0">
-  <link rel="stylesheet" href="style.css?v=9.18.0">
-  <link rel="stylesheet" href="workspace.css?v=9.18.0">
-  <link rel="stylesheet" href="readability.css?v=9.18.0">
-  <link rel="stylesheet" href="refinements.css?v=9.18.0">
-  <link rel="stylesheet" href="polish.css?v=9.18.0">
-  <link rel="stylesheet" href="terminal.css?v=9.18.0">
-  <link rel="stylesheet" href="keyboard.css?v=9.18.0">
-  <script src="script.js?v=9.18.0" defer></script>
-  <script src="interactions.js?v=9.18.0" defer></script>
-  <script src="explorer.js?v=9.18.0" defer></script>
-  <script src="analytics-math.js?v=9.18.0" defer></script>
-  <script src="strategy.js?v=9.18.0" defer></script>
-  <script src="workspace.js?v=9.18.0" defer></script>
-  <script src="page-width.js?v=9.18.0" defer></script>
-  <script src="shortcuts.js?v=9.18.0" defer></script>
+  <link rel="stylesheet" href="type.css?v=9.21.0">
+  <link rel="stylesheet" href="style.css?v=9.21.0">
+  <link rel="stylesheet" href="workspace.css?v=9.21.0">
+  <link rel="stylesheet" href="readability.css?v=9.21.0">
+  <link rel="stylesheet" href="refinements.css?v=9.21.0">
+  <link rel="stylesheet" href="polish.css?v=9.21.0">
+  <link rel="stylesheet" href="terminal.css?v=9.21.0">
+  <link rel="stylesheet" href="keyboard.css?v=9.21.0">
+  <script src="script.js?v=9.21.0" defer></script>
+  <script src="interactions.js?v=9.21.0" defer></script>
+  <script src="explorer.js?v=9.21.0" defer></script>
+  <script src="analytics-math.js?v=9.21.0" defer></script>
+  <script src="strategy.js?v=9.21.0" defer></script>
+  <script src="workspace.js?v=9.21.0" defer></script>
+  <script src="arrange.js?v=9.21.0" defer></script>
+  <script src="page-width.js?v=9.21.0" defer></script>
+  <script src="shortcuts.js?v=9.21.0" defer></script>
 
 </head>
 <body>
-  <div class="desktop" id="desktop">
-    <header class="menu-bar">
+  <header class="menu-bar app-chrome">
       <div class="menu-left"><span class="system-glyph" aria-hidden="true">▦</span><b>GRIDIRON/86</b><span class="menu-divider"></span><span>Fantasy Team Terminal</span></div>
-      <div class="menu-right"><div class="width-control"><button id="page-width-toggle" type="button" class="menu-action" aria-expanded="false" aria-controls="page-width-panel" title="Page width (W)">WIDTH <span id="page-width-readout">100%</span></button><div id="page-width-panel" class="page-width-panel" role="group" aria-labelledby="page-width-heading" hidden><div class="page-width-heading" id="page-width-heading">Page width</div><div class="page-width-row"><input id="page-width" type="range" min="60" max="100" step="1" value="100" aria-label="Page width percentage" aria-valuetext="100 percent"><input id="page-width-value" type="number" min="60" max="100" step="1" value="100" aria-label="Page width percentage, typed"><span aria-hidden="true">%</span></div><div class="page-width-presets" role="group" aria-label="Width presets"><button type="button" data-width="100">Full</button><button type="button" data-width="90">90%</button><button type="button" data-width="80">80%</button><button type="button" data-width="70">70%</button></div><p class="page-width-hint">Arrow keys adjust by 1%, Page Up/Down by 10%. Esc closes.</p></div></div><span id="system-clock"></span><button type="button" class="menu-action" data-shortcuts-help aria-haspopup="dialog" title="Keyboard shortcuts (?)">KEYS ?</button><button id="about-button" class="menu-action">ABOUT</button><button id="open-data" class="menu-action highlighted">+ LOAD DATA</button></div>
+      <div class="menu-right"><div class="width-slider" role="group" aria-label="Page width"><span class="width-slider-label" aria-hidden="true">WIDTH</span><button type="button" id="page-width-down" class="width-step" aria-label="Narrower page" title="Narrower">−</button><input id="page-width" type="range" min="60" max="100" step="1" value="100" aria-label="Page width" aria-valuetext="100 percent" title="Drag to set page width (W)"><button type="button" id="page-width-up" class="width-step" aria-label="Wider page" title="Wider">+</button><button type="button" id="page-width-readout" class="width-readout" title="Reset to full width" aria-label="Page width 100 percent. Reset to full width">100%</button></div><span id="system-clock"></span><button type="button" class="menu-action" data-shortcuts-help aria-haspopup="dialog" title="Keyboard shortcuts (?)">KEYS ?</button><button id="about-button" class="menu-action">ABOUT</button><button id="open-data" class="menu-action highlighted">+ LOAD DATA</button></div>
     </header>
+    <nav id="workspace-navigation" class="workspace-navigation report-tabs" aria-label="Reports"><div id="workspace-tabs" class="report-bar"></div></nav>
+  <div class="desktop" id="desktop">
+
 
     <div class="utility-bar">
-      <div class="team-selector"><label for="team-select">TEAM:</label><select id="team-select" aria-label="Select fantasy team"></select></div>
       <div class="context"><b id="league-name">EXHIBITION LEAGUE</b><span class="separator">/</span><span id="season-name">2026 SEASON</span></div>
       <div class="utility-right"><span class="status-dot" id="status-dot"></span><span id="connection-status">SAMPLE DATA</span><button id="refresh-button" title="Reload connected data">↻ REFRESH</button></div>
     </div>
 
     <div class="team-strip">
-      <div class="team-headline"><div class="tiny-label">FANTASY FOOTBALL / CLUB DOSSIER</div><h1 id="team-name">THE GRIDIRON CLUB</h1><span id="team-owner">Example franchise · Select a team to inspect</span></div>
+      <div class="team-headline"><div class="tiny-label">FANTASY FOOTBALL / CLUB DOSSIER</div><div class="team-picker"><h1 id="team-name">THE GRIDIRON CLUB</h1><span class="team-picker-caret" aria-hidden="true">▾</span><select id="team-select" aria-label="Team: choose which franchise to view"></select></div><span id="team-owner">Example franchise · Select a team to inspect</span></div>
       <div class="team-header-stats">
         <div class="header-week-control"><label class="tiny-label" for="header-current-week">CURRENT WEEK</label><select id="header-current-week" aria-label="Active scoring week"></select></div>
         <div><span class="tiny-label">RECORD</span><b id="header-record">4–2</b></div>
@@ -47,8 +49,6 @@
         <div><span class="tiny-label">SCORING</span><b id="header-scoring">PPR</b></div>
       </div>
     </div>
-
-    <nav id="workspace-navigation" class="workspace-navigation" aria-label="Reports"><div id="workspace-tabs" class="report-bar"></div></nav>
 
     <main class="window-grid" aria-label="Fantasy football dashboard">
       <section class="win summary-window expandable" data-explore="summary" tabindex="0" aria-label="Open expanded summary statistics" aria-labelledby="title-summary">
@@ -76,7 +76,32 @@
           <p id="summary-footnote" class="muted-note">This is sample data. Load a league for actual scores.</p>
         </div>
       </section>
-
+      <section class="win matchup-window expandable" data-explore="matchup" tabindex="0" aria-label="Open Matchup Center" aria-labelledby="title-matchup">
+        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-matchup">MATCHUP CENTER</h2><label class="week-label matchup-banner-week">WEEK <select id="week-select" aria-label="Select matchup week"></select></label><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
+        <div class="win-inner"><div id="matchup-panel" class="matchup-panel"></div><div class="tiny-caption" id="matchup-comment">Scores reflect selected week.</div></div>
+      </section>
+      <section class="win standings-window expandable" data-explore="standings" tabindex="0" aria-label="Open expanded standings statistics" aria-labelledby="title-standings">
+        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-standings">STANDINGS</h2><label class="home-standing-sort" for="home-standing-sort">SORT <select id="home-standing-sort" aria-label="Sort homepage league standings"><option value="rank">OFFICIAL ORDER</option><option value="points">POINTS SCORED</option><option value="avg">WEEKLY AVERAGE</option><option value="against">FEWEST ALLOWED</option><option value="wins">WINS</option></select></label><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
+        <div class="win-inner no-padding">
+          <table class="dense-table league-table"><thead><tr><th>#</th><th>CLUB</th><th>W–L</th><th class="num">PF</th></tr></thead><tbody id="standings-body"></tbody></table>
+        </div>
+      </section>
+      <section class="win profile-window expandable" data-explore="profile" tabindex="0" aria-label="Open expanded profile statistics" aria-labelledby="title-profile">
+        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-profile">PLAYER FILE</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
+        <div class="win-inner"><div class="window-topline"><span>SELECTED PLAYER</span><span id="player-pos-top">—</span></div><div class="profile-heading"><strong id="profile-name">SELECT A PLAYER</strong><span id="profile-team">—</span></div><div id="profile-quick-stats" class="profile-figures strategy-metrics three"></div><div class="home-player-charts"><div class="home-points-history" tabindex="0" role="group" aria-label="Open selected player position allocation"><div class="window-topline"><b>FANTASY PTS / WEEK</b></div><div id="player-spark" class="mini-chart" aria-label="Selected player weekly scoring"></div></div><div id="player-share-spark"></div></div><div class="tiny-caption" id="player-caption">Click a roster player to inspect their history.</div></div>
+      </section>
+      <section class="win strategy-window expandable" data-explore="opportunity" tabindex="0" aria-labelledby="title-share">
+          <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-share">TOUCHES &amp; SHARE</h2><button class="chrome" type="button" aria-label="Expand touches and share data">▣</button></header>
+          <div class="win-inner"><div id="share-preview"></div></div>
+        </section>
+      <section class="win strategy-window expandable" data-explore="outlook" tabindex="0" aria-labelledby="title-outlook">
+          <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-outlook">PLAYER OUTLOOK</h2><button class="chrome" type="button" aria-label="Expand player outlook">▣</button></header>
+          <div class="win-inner"><div id="outlook-preview"></div></div>
+        </section>
+      <section class="win positions-window expandable" data-explore="positions" tabindex="0" aria-label="Open expanded positions statistics" aria-labelledby="title-positions">
+        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-positions">POSITION ALLOCATION</h2><label class="week-label matchup-banner-week">PERIOD <select id="home-position-week" aria-label="Position allocation period"><option value="all">Season</option></select></label><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
+        <div class="win-inner"><div class="window-topline"><span>STARTER POINTS BY POSITION</span></div><div id="home-position-metrics" class="strategy-metrics three home-position-metrics"></div><div id="position-chart" class="position-chart"></div><div class="muted-note" id="position-caption">Actual starting-lineup contribution.</div></div>
+      </section>
       <section class="win weekly-window expandable" data-explore="weekly" tabindex="0" aria-label="Open expanded weekly statistics" aria-labelledby="title-weekly">
         <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-weekly">WEEKLY PRODUCTION</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
         <div class="win-inner">
@@ -86,30 +111,10 @@
           <div class="weekly-home-table-wrap"><table class="dense-table weekly-home-table"><thead><tr><th>WK</th><th>OPPONENT</th><th class="num">PTS</th><th class="num">OPP</th><th class="num">RANK</th></tr></thead><tbody id="weekly-home-rows"></tbody></table></div>
         </div>
       </section>
-
-      <section class="win standings-window expandable" data-explore="standings" tabindex="0" aria-label="Open expanded standings statistics" aria-labelledby="title-standings">
-        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-standings">STANDINGS</h2><label class="home-standing-sort" for="home-standing-sort">SORT <select id="home-standing-sort" aria-label="Sort homepage league standings"><option value="rank">OFFICIAL ORDER</option><option value="points">POINTS SCORED</option><option value="avg">WEEKLY AVERAGE</option><option value="against">FEWEST ALLOWED</option><option value="wins">WINS</option></select></label><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
-        <div class="win-inner no-padding">
-          <table class="dense-table league-table"><thead><tr><th>#</th><th>CLUB</th><th>W–L</th><th class="num">PF</th></tr></thead><tbody id="standings-body"></tbody></table>
-        </div>
-      </section>
-
-      <section class="win positions-window expandable" data-explore="positions" tabindex="0" aria-label="Open expanded positions statistics" aria-labelledby="title-positions">
-        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-positions">POSITION ALLOCATION</h2><label class="week-label matchup-banner-week">PERIOD <select id="home-position-week" aria-label="Position allocation period"><option value="all">Season</option></select></label><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
-        <div class="win-inner"><div class="window-topline"><span>STARTER POINTS BY POSITION</span></div><div id="home-position-metrics" class="strategy-metrics three home-position-metrics"></div><div id="position-chart" class="position-chart"></div><div class="muted-note" id="position-caption">Actual starting-lineup contribution.</div></div>
-      </section>
-
-      <section class="win matchup-window expandable" data-explore="matchup" tabindex="0" aria-label="Open Matchup Center" aria-labelledby="title-matchup">
-        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-matchup">MATCHUP CENTER</h2><label class="week-label matchup-banner-week">WEEK <select id="week-select" aria-label="Select matchup week"></select></label><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
-        <div class="win-inner"><div id="matchup-panel" class="matchup-panel"></div><div class="tiny-caption" id="matchup-comment">Scores reflect selected week.</div></div>
-      </section>
-
-      <section class="win profile-window expandable" data-explore="profile" tabindex="0" aria-label="Open expanded profile statistics" aria-labelledby="title-profile">
-        <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-profile">PLAYER FILE</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
-        <div class="win-inner"><div class="window-topline"><span>SELECTED PLAYER</span><span id="player-pos-top">—</span></div><div class="profile-heading"><strong id="profile-name">SELECT A PLAYER</strong><span id="profile-team">—</span></div><div id="profile-quick-stats" class="profile-figures strategy-metrics three"></div><div class="home-player-charts"><div class="home-points-history" tabindex="0" role="group" aria-label="Open selected player position allocation"><div class="window-topline"><b>FANTASY PTS / WEEK</b></div><div id="player-spark" class="mini-chart" aria-label="Selected player weekly scoring"></div></div><div id="player-share-spark"></div></div><div class="tiny-caption" id="player-caption">Click a roster player to inspect their history.</div></div>
-      </section>
-
-
+      <section class="win strategy-window expandable" data-explore="trade" tabindex="0" aria-labelledby="title-trade">
+          <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-trade">TRADES / CALCULATOR</h2><button class="chrome" type="button" aria-label="Expand trade calculator">▣</button></header>
+          <div class="win-inner" id="trade-preview"></div>
+        </section>
       <section class="win freeagents-window expandable" data-explore="agents" tabindex="0" aria-label="Expand free agent explorer">
         <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2>FREE AGENT WIRE</h2><button class="chrome" type="button" aria-label="Expand free agents">▣</button></header>
         <div class="win-inner"><div class="window-topline"><span>AVAILABLE PLAYER POOL</span><span id="fa-source-tag">DEMO POOL</span></div><div class="home-fa-controls" aria-label="Free agent quick filters">
@@ -127,20 +132,6 @@
               <label class="home-graph-check"><input id="home-graph-trend" type="checkbox" checked> TREND</label><label class="home-graph-check"><input id="home-graph-labels" type="checkbox"> LABELS</label>
             </div><div id="graph-teaser" class="graph-teaser" aria-label="Interactive chart of actual loaded data"></div></div>
       </section>
-      <div class="strategy-windows" aria-label="Player strategy reports">
-        <section class="win strategy-window expandable" data-explore="outlook" tabindex="0" aria-labelledby="title-outlook">
-          <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-outlook">PLAYER OUTLOOK</h2><button class="chrome" type="button" aria-label="Expand player outlook">▣</button></header>
-          <div class="win-inner"><div id="outlook-preview"></div></div>
-        </section>
-        <section class="win strategy-window expandable" data-explore="opportunity" tabindex="0" aria-labelledby="title-share">
-          <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-share">TOUCHES &amp; SHARE</h2><button class="chrome" type="button" aria-label="Expand touches and share data">▣</button></header>
-          <div class="win-inner"><div id="share-preview"></div></div>
-        </section>
-        <section class="win strategy-window expandable" data-explore="trade" tabindex="0" aria-labelledby="title-trade">
-          <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-trade">TRADES / CALCULATOR</h2><button class="chrome" type="button" aria-label="Expand trade calculator">▣</button></header>
-          <div class="win-inner" id="trade-preview"></div>
-        </section>
-      </div>
       <section class="win roster-window expandable" data-explore="roster" tabindex="0" aria-label="Open expanded roster statistics" aria-labelledby="title-roster">
         <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-roster">ROSTER / PERSONNEL REGISTER</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
         <div class="roster-tools"><span id="roster-label">ROSTER ENTRIES / SAMPLE</span><label>SORT <select id="sort-players"><option value="points">TOTAL PTS</option><option value="week">LAST WEEK</option><option value="name">NAME A—Z</option><option value="position">POSITION</option></select></label></div>
@@ -154,7 +145,7 @@
       <div class="explore-content" id="explore-content"></div>
       <footer class="explore-footer"><span id="explore-source">Data source: demo</span><span class="explore-footer-keys">ESC CLOSES CARDS, THEN RETURNS TO THE DASHBOARD · CTRL+K FIND · ? KEYS</span></footer>
     </dialog>
-    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.18.0</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
+    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.21.0</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
   </div>
 
   <dialog id="data-dialog" aria-labelledby="dialog-title">

@@ -75,8 +75,9 @@ function remember(view,player){
   }catch{}
 }
 function reportTop(){
-  const nav=el('workspace-navigation');
-  return Math.max(0,nav.getBoundingClientRect().top+window.scrollY-6);
+  // Scroll so the report starts just below the sticky tab strip.
+  const nav=el('workspace-navigation'),report=el('explore-dialog');
+  return Math.max(0,report.getBoundingClientRect().top+window.scrollY-(nav.offsetHeight||0)-10);
 }
 
 /* Called by openExplorer before it renders: switch the page into report view. */

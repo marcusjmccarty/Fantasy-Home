@@ -50,6 +50,7 @@ const GridironKeys=(()=>{
   {id:'list-open',group:'Lists & tables',doc:true,always:true,keys:['Enter','Space'],label:'Open or select the focused row, window or button'},
   {id:'windows',group:'Lists & tables',doc:true,always:true,keys:['←','↑','→','↓'],label:'Dashboard: move between windows by position'},
   {id:'window-out',group:'Lists & tables',doc:true,always:true,keys:['Esc'],label:'Dashboard: from a control inside a window, return to the window'},
+  {id:'window-move',group:'Lists & tables',doc:true,always:true,keys:['Space','←','→','↑','↓'],label:'Dashboard: on a window’s move handle (the square in its title bar), Space picks it up, arrows move it, Space drops it, Esc cancels. You can also drag windows by their title bars.'},
   {id:'width',group:'View',key:'w',keys:['W'],label:'Page width panel (arrows 1%, Page Up/Down 10%, Esc closes)'},
   {id:'narrower',group:'View',key:'-',keys:['-'],label:'Narrower page (5%)'},
   {id:'wider',group:'View',key:'=',keys:['='],label:'Wider page (5%)'},
@@ -182,8 +183,8 @@ if(typeof globalThis!=='undefined')globalThis.GridironKeys=GridironKeys;
    button.setAttribute('aria-controls',help.id);
    if(on)button.setAttribute('aria-keyshortcuts','?');else button.removeAttribute('aria-keyshortcuts');
   }
-  const width=$('page-width-toggle');
-  if(width){width.title=on?'Page width (W)':'Page width';if(on)width.setAttribute('aria-keyshortcuts','W');else width.removeAttribute('aria-keyshortcuts');}
+  const width=$('page-width');
+  if(width){width.title=on?'Drag to set page width (W)':'Drag to set page width';if(on)width.setAttribute('aria-keyshortcuts','W');else width.removeAttribute('aria-keyshortcuts');}
   for(const button of bar.querySelectorAll('[data-workspace]')){
    const base=button.dataset.baseTitle??=button.title||'';
    const go=K.goKeys(button.dataset.workspace);
@@ -307,13 +308,13 @@ if(typeof globalThis!=='undefined')globalThis.GridironKeys=GridironKeys;
   field.focus();field.select?.();return true;
  }
  function toggleWidth(){
-  const toggle=$('page-width-toggle'),api=window.gridironPageWidth;
-  if(!api||!visible(toggle)){announce('Page width is fixed at this screen size');return true;}
-  if($('page-width-panel').hidden)api.open();else api.close();
+  const slider=$('page-width'),api=window.gridironPageWidth;
+  if(!api||!visible(slider)){announce('Page width is fixed at this screen size');return true;}
+  api.open();announce(`Page width ${api.value} percent. Use arrow keys to adjust`);
   return true;
  }
  function widthStep(delta){
-  const api=window.gridironPageWidth,toggle=$('page-width-toggle');
+  const api=window.gridironPageWidth,toggle=$('page-width');
   if(!api||!visible(toggle)){announce('Page width is fixed at this screen size');return true;}
   api.step(delta);announce(`Page width ${api.value} percent`);return true;
  }
@@ -379,8 +380,6 @@ if(typeof globalThis!=='undefined')globalThis.GridironKeys=GridironKeys;
   const target=event.target instanceof Element?event.target:document.activeElement;
   if(modal())return false; // native dialogs own Escape and restore focus themselves
   if(pending){setPending(null);return true;}
-  const panel=$('page-width-panel');
-  if(panel&&!panel.hidden){window.gridironPageWidth?.close({restore:panel.contains(target)});return true;}
   if(dismissRanking())return true;
   const picker=report.querySelector('[data-lineup-picker][aria-expanded="true"]');
   if(picker&&visible(picker)){const key=picker.dataset.lineupPicker;picker.click();report.querySelector(`[data-lineup-picker="${CSS.escape(key)}"]`)?.focus();return true;}
@@ -533,12 +532,12 @@ if(typeof globalThis!=='undefined')globalThis.GridironKeys=GridironKeys;
      openExplorer('profile',p.id);settleFocus();return true;}});
    }
   }
-  const width=window.gridironPageWidth,canWidth=width&&visible($('page-width-toggle'));
+  const width=window.gridironPageWidth,canWidth=width&&visible($('page-width'));
   const action=(id,label,detail,run,extra={})=>items.push({id:`action:${id}`,kind:'Actions',label,detail,run,...extra});
   action('load','Load league data…','ESPN, Sleeper or a JSON file',()=>{$('open-data').click();return true;},{terms:'connect import espn sleeper json open'});
   action('refresh','Refresh data','Reload the connected league',()=>{$('refresh-button').click();return true;},{terms:'reload update sync'});
   if(canWidth){
-   action('width','Page width…','Open the width panel',()=>toggleWidth(),{hint:'W',terms:'resize narrow wide layout'});
+   action('width','Page width…','Focus the width slider',()=>toggleWidth(),{hint:'W',terms:'resize narrow wide layout'});
    for(const v of [100,90,80,70])action(`width-${v}`,`Page width ${v===100?'full':v+'%'}`,'Width preset',()=>{width.set(v);announce(`Page width ${v} percent`);return true;},{terms:`width ${v} percent layout`});
   }
   action('about','About GRIDIRON/86','Version and data notes',()=>{$('about-button').click();return true;});
