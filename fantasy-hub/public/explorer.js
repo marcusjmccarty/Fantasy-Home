@@ -115,7 +115,7 @@ function togglePlayerRanking(index){
 function expandTable(headers,rows,cls=''){return `<div class="lab-table-scroll"><table class="lab-table ${cls}"><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')||`<tr><td colspan="${headers.length}" class="empty-chart">DATA NOT SUPPLIED BY THIS PROVIDER</td></tr>`}</tbody></table></div>`}
 function trendBars(items,colorFn=()=>COLORS.QB,maximum=null){
  const max=maximum||Math.max(1,...items.map(v=>Math.max(0,labNum(v.v)||0)));
- return `<div class="lab-histogram">${items.map((v,i)=>`<div class="lab-hist-col" title="${esc(v.label)} · ${labFormat(v.v)}"><strong>${labFormat(v.v,0)}</strong><button type="button" class="lab-hist-bar ${v.week?'player-week-bar':''}" ${v.week?`data-player-week="${v.week}" aria-label="Open Week ${v.week} starter contributions"`: 'disabled'} style="height:${Math.max(2,(labNum(v.v)||0)/max*100)}%;background:${colorFn(v,i)}"></button><small>${esc(v.short??v.label)}</small></div>`).join('')}</div>`;
+ return `<div class="lab-histogram ${items.length>12?'dense-weeks':''}" style="--week-count:${items.length}">${items.map((v,i)=>`<div class="lab-hist-col" title="${esc(v.label)} · ${labFormat(v.v)}"><strong>${labFormat(v.v,0)}</strong><button type="button" class="lab-hist-bar ${v.week?'player-week-bar':''}" ${v.week?`data-player-week="${v.week}" aria-label="Open Week ${v.week} starter contributions"`: 'disabled'} style="height:${Math.max(2,(labNum(v.v)||0)/max*100)}%;background:${colorFn(v,i)}"></button><small>${esc(v.short??v.label)}</small></div>`).join('')}</div>`;
 }
 var graphResizeObserver=null;
 function setExplorer(html){if(typeof closeStatHelp==='function')closeStatHelp();graphResizeObserver?.disconnect();el('explore-content').innerHTML=html;el('explore-source').textContent=sourceName();}
@@ -1786,8 +1786,7 @@ el('weekly-chart').addEventListener('click',event=>{
  event.preventDefault();event.stopPropagation();
  openExplorer('summary',null,{teamId:String(currentTeamId),week:Number(bar.dataset.homeWeek),focus:'franchise-lineup'});
 });
-// Homepage player bars are the ONLY hotspots for weekly contribution drilldown.
-// Clicking the white chart space still opens the complete Position Allocation report.
+// Player bars select a week; the chart surface opens the player’s complete scoring log.
 el('player-spark').addEventListener('click',event=>{
  const bar=event.target.closest('button[data-home-player-week]');
  event.stopPropagation();
@@ -1798,8 +1797,7 @@ el('weekly-chart').addEventListener('keydown',event=>{
  const bar=event.target.closest('[data-home-week]');if(!bar||!['Enter',' '].includes(event.key))return;
  event.preventDefault();event.stopPropagation();bar.click();
 });
-// The Individual Player Files use the exact same week-to-contributions drilldown
-// as the compact Player Terminal. Unpainted graph space opens Position Allocation.
+// Individual Player Files use the same week and full scoring-log destinations.
 const playerDossiers=el('player-dossiers');
 playerDossiers.addEventListener('click',e=>{
  const dossier=e.target.closest('.dossier-window');if(!dossier)return;
@@ -1932,8 +1930,7 @@ el('explore-content').addEventListener('click',e=>{
  }
 });
 el('explore-content').addEventListener('click',async e=>{
- // Graph bars link to a focused starting lineup; background of the player
- // histogram instead opens Position Allocation (not the entire franchise page).
+ // Graph bars link to a focused starting lineup; the chart surface opens the full player log.
  const positionWeek=e.target.closest('[data-position-week]');
  if(positionWeek){e.stopPropagation();openExplorer('summary',null,{teamId:String(XL.viewTeamId??currentTeamId),week:Number(positionWeek.dataset.positionWeek),focus:'franchise-lineup'});return;}
  const weeklyBar=e.target.closest('[data-weekly-bar-week]');
