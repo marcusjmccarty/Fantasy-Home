@@ -222,11 +222,12 @@ function eligibleBench(slot,pos,originalPos){
 // Shared lineup state and totals: Franchise Report and Matchup Center always
 // show the same read-only what-if scenario for the same team and week.
 function weeklyLineupData(t,wanted){
- const activeWeek=Number(model.currentWeek||model.liveWeek||currentWeek||wanted);
+ const activeWeek=Number(model.currentWeek||model.liveWeek||t.currentMatchup?.week||currentWeek||wanted);
+ const liveMatch=Number(t.currentMatchup?.week)===wanted?t.currentMatchup:null;
  const weekHistory=(t.history||[]).find(h=>Number(h.week)===wanted);
  const hasWeekEntries=!!(weekHistory?.lineup?.length||Object.keys(weekHistory?.starters||{}).length);
  const liveRoster=wanted===activeWeek?(t.currentLineup||[]):[];
- const chosen=hasWeekEntries?weekHistory:liveRoster.length?{week:wanted,points:weekHistory?.points??t.currentMatchup?.points??null,lineup:liveRoster,starters:{}}:weekHistory||null;
+ const chosen=hasWeekEntries?weekHistory:liveRoster.length?{week:wanted,points:weekHistory?.points??liveMatch?.points??null,lineup:liveRoster,starters:{}}:weekHistory||null;
  const data=sideLineup({...t,history:chosen?[chosen]:[]},wanted);
  const entries=[...data.items];
  if(wanted===activeWeek){
@@ -251,7 +252,7 @@ function weeklyLineupData(t,wanted){
  const projectionValues=starters.map(projFor).filter(v=>v!==null);
  const computedActual=actualValues.length?labSum(actualValues):null;
  const computedProjection=projectionValues.length?labSum(projectionValues):null;
- const official=labNum(weekHistory?.points??(wanted===activeWeek?t.currentMatchup?.points:null));
+ const official=labNum(weekHistory?.points??(wanted===activeWeek?liveMatch?.points:null));
  const origActual=originalStarters.map(scoreFor).filter(v=>v!==null);
  const completeOrig=originalStarters.length>0&&origActual.length===originalStarters.length;
  // Official ESPN total is authoritative. A complete original starter sum is a

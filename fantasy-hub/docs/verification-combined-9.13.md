@@ -38,3 +38,17 @@ This is an integration-review candidate, not approval to merge or deploy. Origin
 The complete graph/UI browser script passes **28/28**, 0 failed/skipped (35.45 seconds). It includes all earlier cases plus separate Complete Statistical File → Player Stat Archive coverage, header/Matchup/strategy active-week synchronization in both selector directions, and home AI button player routing without opening its parent tile. The AI test injects a demo fixture control and stubs generation; it verifies event handling only, with no provider calls. The expanded Matchup picker is correctly read from `#lab-match-week` in the heading; the old dark-chrome slot is intentionally empty in main.
 
 No application fix was needed for these compatibility gates. The unresolved intermittent keyboard metric-focus result above remains explicitly open pending the keyboard owner's investigation.
+
+## Non-demo AI and historical-week follow-up
+
+New `scripts/check-integration-ai-browser.cjs`: **8/8 pass**, all real frontend handlers with local fictional non-demo data and intercepted API responses. No provider calls.
+
+- Both global selectors synchronize; the expanded Matchup selector remains report-local and leaves global/strategy week unchanged.
+- Missing historical matchup stays missing at home and does not inherit the current matchup's score in the expanded scoreboard.
+- Home AI click, Enter and Space each make exactly one mocked POST, keep the parent tile closed, and show a disabled busy control. A duplicate invocation while busy adds no request.
+- HTTP 502 error is visible, busy state clears, and retry makes one new request and displays its successful result.
+- Held responses for a previous player or week do not appear under the changed player/week in either the home preview or expanded outlook.
+
+The historical case initially failed: when model-level currentWeek/liveWeek metadata was absent, weeklyLineupData treated the selected historical week as the active week and borrowed currentMatchup.points. The narrow fix uses the matchup's recorded week before the global selection fallback and requires its week to match before using its official score. A valid current-week fixture still reports its official total. AI implementation was unchanged.
+
+After this fix: 92 JS, 7 Python, 28 graph/UI browser cases, 8 non-demo AI/week browser cases and all three keyboard scripts pass. The earlier intermittent metric-focus caveat remains open pending keyboard-owner investigation; these passing reruns do not establish its cause.
