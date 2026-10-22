@@ -39,15 +39,63 @@ table,td,th,strong,b,.chart-val,.hero-figure,svg text{font-variant-numeric:tabul
 /* An odd last tile spans the row instead of leaving a hole. */
 .summary-home-grid>div:last-child:nth-child(odd){grid-column:1/-1}
 
-/* ---------- Tabbed workspace: every report visible at once ---------- */
-@media (min-width:900px){
-  #workspace-tabs{flex-wrap:wrap;overflow-x:visible;row-gap:3px}
-  #workspace-tabs button{padding:7px 10px;font-size:11px}
-}
+/* ---------- Header: Current week reads like its neighbours ---------- */
+.team-header-stats>.header-week-control{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:4px;align-self:auto}
+.header-week-control label.tiny-label{font:10px var(--mono);letter-spacing:.6px;color:#555852;text-transform:uppercase;line-height:1.2}
+#header-current-week{font:bold 19px/1 var(--mono);color:var(--ink);padding:1px 22px 1px 6px;min-height:30px;border:1px solid #8b8e86;background-color:var(--white)}
+
+/* ---------- Report bar: one navigation for the dashboard and every report ---------- */
+.workspace-navigation{position:sticky;top:0;z-index:30;margin:0;padding:8px 12px 0;background:var(--paper);border-bottom:1px solid var(--ink);box-shadow:0 1px 0 #fff8}
+.report-bar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px 8px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:#9a9d95 transparent}
+.report-group{display:flex;flex-direction:column;gap:3px;flex:0 0 auto;min-width:0}
+.report-group-label{font:600 9.5px/1 var(--mono);letter-spacing:1px;text-transform:uppercase;color:#5d605a;padding-left:2px}
+.report-group-items{display:flex;gap:2px}
+.report-bar button{position:relative;flex:0 0 auto;white-space:nowrap;margin:0 0 -1px;padding:8px 8px 9px;border:1px solid #868a81;border-bottom-color:var(--ink);background:#d6d7cf;color:#2d322e;font:500 12px/1 var(--mono);letter-spacing:.1px;cursor:pointer;min-height:32px}
+.report-bar button:hover{background:#eeefe8;color:var(--ink)}
+.report-bar button[aria-current=page]{background:var(--white);color:#111512;font-weight:700;border-color:var(--ink);border-bottom-color:var(--white);box-shadow:inset 0 3px 0 #3f6b5e;z-index:1}
+.report-bar button:focus-visible{outline:2px solid #1f5fa8;outline-offset:-4px;z-index:2}
+.report-home{display:inline-flex!important;align-items:center;gap:6px}
+.report-home-glyph{font-size:14px;line-height:0}
+body[data-layout=tabbed] .window-grid,body[data-layout=tabbed] .dossiers-section,.window-grid[hidden],.dossiers-section[hidden]{display:none!important}
+/* Dashboard selected: the window grid is the "page" under the active tab. */
+body[data-layout=dashboard] .window-grid{padding-top:14px}
+/* Report selected: the report panel attaches to the bar like a folder. */
+body[data-layout=tabbed] .explore-dialog[open]{position:relative;inset:auto;display:flex;width:calc(100% - 24px);max-width:none;height:auto;min-height:500px;max-height:none;margin:12px 12px 14px;border:1px solid #444a43;box-shadow:2px 3px 0 #a8aaa4;overflow:visible}
+body[data-layout=tabbed] .explore-content{overflow:visible;flex:1 0 auto;max-height:none;min-width:0}
+/* Wide tables scroll inside the report instead of pushing past the screen edge. */
+@media (max-width:899px){body[data-layout=tabbed] .explore-content{overflow-x:auto;overflow-y:visible}body[data-layout=tabbed] .explore-dialog[open]{width:calc(100% - 16px);margin:10px 8px 12px}}
+body[data-layout=tabbed] .explore-content>*{flex-shrink:0}
+body[data-layout=tabbed] .explore-title-bar{flex-wrap:wrap}
+body[data-layout=tabbed] .explore-top-actions{margin-left:auto}
+body[data-layout=tabbed] .explore-jump-label,body[data-layout=tabbed] .explore-top-actions [data-shortcuts-help]{display:none}
+body[data-layout=tabbed] #explore-close{display:inline-flex}
+body[data-layout=tabbed] .explore-footer span:last-child{font-size:inherit}
+body[data-layout=tabbed] .explore-footer span:last-child::after{content:none}
+body[data-layout=tabbed] .explore-dialog[open]{scroll-margin-top:72px}
+#explore-title:focus{outline:none}
+#explore-title:focus-visible{outline:2px solid #9cc2ff;outline-offset:3px}
 @media (max-width:899px){
-  /* On narrow screens the strip scrolls; a fade on the right edge says there is more. */
-  #workspace-tabs{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);padding-right:28px}
+  .report-bar{flex-wrap:nowrap;gap:10px;padding-right:28px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+  .report-bar button{padding:8px 9px;font-size:11.5px}
 }
+@media (max-width:600px){.workspace-navigation{padding:6px 8px 0}}
+
+/* ---------- Page width panel ---------- */
+.width-control{position:relative}
+.page-width-panel{position:fixed;z-index:200;width:260px;padding:12px;background:var(--panel);color:var(--ink);border:1px solid var(--ink);box-shadow:3px 3px 0 #2b2d2a;font:12px var(--mono);white-space:normal}
+.page-width-panel[hidden]{display:none}
+.page-width-heading{font:700 11px var(--mono);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px}
+.page-width-row{display:flex;align-items:center;gap:8px}
+.page-width-panel #page-width{flex:1;width:auto;min-width:0;height:24px}
+.page-width-panel #page-width::-webkit-slider-runnable-track{height:4px;background:#8c968a}
+.page-width-panel #page-width::-webkit-slider-thumb{width:14px;height:20px;margin-top:-8px;background:var(--white);border:1px solid var(--ink)}
+.page-width-panel #page-width-value{width:52px;min-width:52px;height:28px;font-size:13px}
+.page-width-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:10px}
+.page-width-presets button{padding:6px 0;border:1px solid #868a81;background:#eceee6;font:600 11px var(--mono);cursor:pointer;min-height:28px}
+.page-width-presets button:hover{background:#fff}
+.page-width-presets button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.page-width-hint{margin:10px 0 0;font:11px/1.4 var(--sans);color:#4f534d}
+#page-width-readout{font-variant-numeric:tabular-nums}
 
 /* ---------- Dialogs ---------- */
 dialog::backdrop{background:rgba(28,30,29,.45)}
@@ -60,14 +108,12 @@ dialog::backdrop{background:rgba(28,30,29,.45)}
   body{padding:0}
   .desktop{border-left:0;border-right:0;box-shadow:none;min-height:100vh}
   /* The width slider only makes sense on wide screens. */
-  .page-width-control{display:none}
+  .width-control{display:none}
   .team-strip{flex-direction:column;align-items:stretch;gap:12px}
   .team-headline h1{font-size:28px}
   .team-header-stats{display:grid;grid-template-columns:repeat(4,auto);gap:0;justify-content:start}
   .team-header-stats>div{min-width:0;padding:0 12px}
   .team-header-stats>div:first-child{padding-left:0;border-left:0}
-  .header-week-control{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
-  .header-week-control label{font:10px var(--mono);letter-spacing:.6px;color:#555852;text-transform:uppercase}
   .team-header-stats .tiny-label{white-space:nowrap}
   /* Long player names wrap to two lines instead of losing their surname. */
   .matchup-roster-player b{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.15;font-size:11px}

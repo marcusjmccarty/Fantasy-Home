@@ -160,7 +160,7 @@ function updateDeepLink(){
     const u=new URL(window.location.href);
     if(model.source==='sleeper'){u.searchParams.set('league',model.leagueId);u.searchParams.set('roster',currentTeamId);}
     else if(!startupLeaguePending){u.searchParams.delete('league');u.searchParams.delete('roster');}
-    history.replaceState(null,'',u);
+    history.replaceState(history.state,'',u); // keep workspace navigation state
   }catch{}
 }
 

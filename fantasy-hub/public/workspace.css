@@ -1,9 +1,4 @@
 /* Additions to the original Xerox-style chassis. Keep style.css authoritative. */
-.layout-switch{display:inline-flex;border:1px solid #454943;flex-shrink:0}
-.layout-switch button{border:0;border-radius:0;background:#eeeee7;color:var(--ink);padding:4px 7px;font:bold 10px var(--mono);cursor:pointer}
-.layout-switch button+button{border-left:1px solid #454943}
-.layout-switch button[aria-pressed=true]{background:#343a36;color:#fff;box-shadow:inset 1px 1px 0 #101511}
-.layout-switch button:focus-visible,.workspace-navigation button:focus-visible{outline:2px solid #2563ba;outline-offset:2px;position:relative;z-index:1}
 .menu-bar{flex-wrap:wrap;gap:6px}
 .menu-right{flex-wrap:wrap;gap:9px;margin-left:auto}
 
@@ -28,21 +23,6 @@
 .strategy-home-table td:last-child,.strategy-home-table th:last-child{text-align:right;font-variant-numeric:tabular-nums}
 
 /* Folder tabs display the existing expanded windows inline. */
-.workspace-navigation{margin:12px 12px 0;border-bottom:1px solid #444a43}
-.workspace-navigation[hidden],body[data-layout=tabbed] .window-grid,body[data-layout=tabbed] .dossiers-section{display:none!important}
-#workspace-tabs{position:relative;display:flex;align-items:stretch;gap:3px;overflow-x:auto;padding:3px 2px 0;scrollbar-width:thin;scrollbar-color:#858b81 #e5e4dc}
-#workspace-tabs button{flex:0 0 auto;white-space:nowrap;border:1px solid #777d72;border-bottom:0;border-radius:0;background:#d4d6cd;padding:8px 11px;font:bold 11px var(--mono);color:#363c36;cursor:pointer}
-#workspace-tabs button:hover{background:#f3f4ed}
-#workspace-tabs button[aria-selected=true]{background:var(--white);color:#161e1a;box-shadow:inset 0 3px 0 #4a6c61}
-body[data-layout=tabbed] .explore-dialog[open]{position:relative;inset:auto;display:flex;width:calc(100% - 24px);max-width:none;height:auto;min-height:500px;max-height:none;margin:0 12px 14px;border:1px solid #444a43;box-shadow:2px 3px 0 #a8aaa4;overflow:visible}
-body[data-layout=tabbed] .explore-content{overflow:visible;flex:1 0 auto}
-body[data-layout=tabbed] .explore-content>*{flex-shrink:0}
-body[data-layout=tabbed] .explore-title-bar{flex-wrap:wrap}
-body[data-layout=tabbed] .explore-top-actions{margin-left:auto}
-body[data-layout=tabbed] .explore-jump-label{display:none}
-body[data-layout=tabbed] #explore-close{display:none}
-body[data-layout=tabbed] .explore-footer span:last-child{font-size:0}
-body[data-layout=tabbed] .explore-footer span:last-child::after{content:'SELECT A TAB TO CHANGE REPORTS';font-size:9px}
 
 /* Report additions use the established paper, rules, type and data colors. */
 .strategy-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}

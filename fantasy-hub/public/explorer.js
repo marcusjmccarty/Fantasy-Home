@@ -127,6 +127,7 @@ function explorerClubHeader(type,playerId=null){
 }
 
 function openExplorer(type,arg=null,options={}){
+ if(typeof enterReportView==='function')enterReportView(); // Reports always open inline under the report bar.
  const dialog=el('explore-dialog');
  const entering=!dialog.open;
  if(entering){
