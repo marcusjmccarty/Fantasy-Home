@@ -40,7 +40,11 @@
   if(event.key==='?'){
    event.preventDefault();showHelp();return;
   }
-  if(event.key.toLowerCase()==='g')target=document.getElementById(report.open?'explore-jump':'home-go-to');
+  if(event.key.toLowerCase()==='g'){
+   target=report.open&&document.body.dataset.layout==='tabbed'
+    ?document.querySelector('#workspace-tabs [aria-selected="true"]')
+    :document.getElementById(report.open?'explore-jump':'home-go-to');
+  }
   if(event.key==='/'){
    const scope=report.open?report:document.querySelector('main');
    target=[...scope.querySelectorAll('input[type="search"],#agent-search,#graph-search')].find(visible);
