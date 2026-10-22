@@ -38,8 +38,10 @@
  });
  document.querySelectorAll('[data-shortcuts-help]').forEach(button=>button.addEventListener('click',showHelp));
  document.addEventListener('keydown',event=>{
-  if(event.defaultPrevented||event.isComposing||event.keyCode===229||event.repeat||event.ctrlKey||event.metaKey||event.altKey)return;
+  if(event.defaultPrevented||event.isComposing||event.keyCode===229||event.ctrlKey||event.metaKey||event.altKey||event.getModifierState('AltGraph'))return;
   const top=modal();
+  // A held Escape must not cascade through a stack of native dialogs.
+  if(event.repeat){if(event.key==='Escape'&&top)event.preventDefault();return;}
   // Native dialogs own Escape and focus restoration. Only intercept an inner
   // ranking card when no higher modal is covering its report.
   if(event.key==='Escape'){
