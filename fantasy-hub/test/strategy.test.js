@@ -5,10 +5,10 @@ import {readFileSync} from 'node:fs';
 const read=name=>readFileSync(new URL('../public/'+name,import.meta.url),'utf8');
 function setup(){
  let html='';const handlers=new Map(),nodes=new Map();const el=id=>{if(!nodes.has(id))nodes.set(id,{markup:'',writes:0,get innerHTML(){return this.markup},set innerHTML(value){this.markup=value;this.writes++},addEventListener(){},add(){}});return nodes.get(id)};
- const c=vm.createContext({window:{addEventListener(){}},document:{addEventListener(type,fn){handlers.set(type,[...(handlers.get(type)||[]),fn])}},sourceName:()=>"Exhibition",el,Option:class{},setExplorer:s=>{html=s},heading:(title,copy)=>`<div><h3>${title}</h3><p>${copy}</p></div>`,currentWeek:6,currentPlayerId:'allen',XL:{player:null},normalizeNFLAbbr:x=>x,esc:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;'),labFormat:(v,d=1)=>v==null?'—':Number(v).toFixed(d),labPct:v=>v==null?'—':Number(v).toFixed(1)+'%',nameKey:v=>String(v).toLowerCase().replace(/[^a-z0-9]/g,''),expandTable:(headers,rows)=>`<table>${headers.join('|')}${rows.join('')}</table>`});
+ const c=vm.createContext({window:{addEventListener(){}},document:{addEventListener(type,fn){handlers.set(type,[...(handlers.get(type)||[]),fn])}},sourceName:()=>"Exhibition",el,Option:class{},setExplorer:s=>{html=s},heading:(title,copy)=>`<div><h3>${title}</h3><p>${copy}</p></div>`,currentWeek:7,number:v=>typeof v==='number'&&Number.isFinite(v)?v:null,nfmt:(v,d=1)=>v==null?'—':Number(v).toFixed(d),sum:xs=>xs.reduce((a,b)=>a+b,0),currentPlayerId:'allen',XL:{player:null},normalizeNFLAbbr:x=>x,esc:v=>String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;'),labFormat:(v,d=1)=>v==null?'—':Number(v).toFixed(d),labPct:v=>v==null?'—':Number(v).toFixed(1)+'%',nameKey:v=>String(v).toLowerCase().replace(/[^a-z0-9]/g,''),expandTable:(headers,rows)=>`<table>${headers.join('|')}${rows.join('')}</table>`});
  const script=read('script.js');vm.runInContext(script.slice(script.indexOf('function makeDemo()'),script.indexOf('function updateUI()')),c);
  vm.runInContext("var model=makeDemo();var currentTeamId='1';var getTeam=()=>model.teams.find(t=>t.id===currentTeamId);var findTeam=id=>model.teams.find(t=>t.id===id);var getPool=()=>Object.values(model.players);var rowsFor=t=>t.playerIds.map(id=>model.players[id]);var teamName=t=>t?.name||'No team';",c);
- vm.runInContext(read('analytics-math.js'),c);vm.runInContext(read('interactions.js'),c);vm.runInContext(read('strategy.js'),c);
+ vm.runInContext(script.slice(script.indexOf('function playerQuickStats('),script.indexOf('function drawProfile(')),c);vm.runInContext(read('analytics-math.js'),c);vm.runInContext(read('interactions.js'),c);vm.runInContext(read('strategy.js'),c);
  return {run:code=>vm.runInContext(code,c),html:()=>html,node:el,change:(id,value)=>{for(const fn of handlers.get('change')||[])fn({target:{id,value,dataset:{}}})}};
 }
 test('all strategy reports render with the real exhibition model',()=>{
@@ -26,13 +26,13 @@ test('new league resets stale trade selections and missing periods remain unavai
  h.run("STRATEGY.period='recent'");assert.equal(h.run("usageTotals({weeks:{1:{carries:3,targets:0}}},{through_week:8})"),null);
 });
 test('home windows follow player selection and keep unavailable data blank',()=>{
- const h=setup();assert.match(h.node('home-share-player').innerHTML,/value="allen" selected/);
+ const h=setup();assert.match(h.node('share-preview').innerHTML,/Josh Allen/);
  h.run("currentPlayerId='cook';renderStrategyHome()");
- assert.match(h.node('home-outlook-player').innerHTML,/value="cook" selected/);
- assert.match(h.node('home-share-player').innerHTML,/value="cook" selected/);
+ assert.match(h.node('outlook-preview').innerHTML,/James Cook/);
+ assert.match(h.node('share-preview').innerHTML,/James Cook/);
  assert.match(h.node('share-preview').innerHTML,/SYNTHETIC EXHIBITION DATA/);
  h.run("currentPlayerId='dal';renderStrategyHome()");
- assert.ok(!h.node('share-preview').innerHTML.includes('Inside-5 carries'));assert.ok(!h.node('share-preview').innerHTML.includes('Est. TD chance'));assert.match(h.node('share-preview').innerHTML,/Scoring avg/);
+ assert.ok(!h.node('share-preview').innerHTML.includes('Inside-5 carries'));assert.ok(!h.node('share-preview').innerHTML.includes('Est. TD chance'));assert.match(h.node('share-preview').innerHTML,/Proj · W7/);
  h.run("currentPlayerId='allen';model.players.allen.scores={};renderStrategyHome()");
  assert.match(h.node('outlook-preview').innerHTML,/Estimated floor.*?<strong>—<\/strong>/);
 });
@@ -45,7 +45,7 @@ test('franchise scopes and opportunity leader scopes respect roster membership',
  const h=setup();assert.equal(h.run("strategyPlayerPool('2').length"),12);
  assert.equal(h.run("strategyPlayerPool('active').some(p=>p.id==='cook')"),true);
  const active=h.run('opportunityRows(usageDataset()).length');h.run("STRATEGY.leaders='all'");assert.ok(h.run('opportunityRows(usageDataset()).length')>active);
- h.run("STRATEGY.homeScope='2';renderStrategyHome()");assert.match(h.node('home-outlook-player').innerHTML,/Avery Knight/);assert.ok(!h.node('home-outlook-player').innerHTML.includes('James Cook'));
+ h.run("STRATEGY.scope='2';STRATEGY.player='demo-1-1';renderStrategyHome()");assert.match(h.node('outlook-preview').innerHTML,/Josh Allen/);assert.equal(h.run('homePlayer().id'),'allen');
 });
 test('home trade controls update the same packages used in the full calculator',()=>{
  const h=setup();h.run("updateTradeControl({id:'',dataset:{homeTradeAdd:'give'},value:'cook'});updateTradeControl({id:'',dataset:{homeTradeAdd:'get'},value:'demo-1-1'})");
@@ -87,15 +87,15 @@ test('counteroffers prioritize filling the starting lineup over package balance 
 });
 
 test('unchanged home panels retain their DOM; changed player data still refreshes',()=>{
- const h=setup(),ids=['outlook-preview','share-preview','player-share-spark','home-outlook-player','home-share-player','trade-preview'];
+ const h=setup(),ids=['outlook-preview','share-preview','player-share-spark','trade-preview'];
  const writes=ids.map(id=>h.node(id).writes);h.run('renderStrategyHome();renderStrategyHome()');
  assert.deepEqual(ids.map(id=>h.node(id).writes),writes);
  h.run('model.players.allen.projections={7:99};renderStrategyHome()');
  assert.ok(h.node('outlook-preview').writes>writes[0]);assert.match(h.node('outlook-preview').innerHTML,/99.0/);
- assert.equal(h.node('home-outlook-player').writes,writes[3]);
+ assert.equal(h.node('share-preview').writes,writes[1]);
 });
 test('trade edits preserve unrelated home panels and counteroffers share one evaluator',()=>{
- const h=setup(),ids=['outlook-preview','share-preview','player-share-spark','home-outlook-player','home-share-player'],writes=ids.map(id=>h.node(id).writes);
+ const h=setup(),ids=['outlook-preview','share-preview','player-share-spark'],writes=ids.map(id=>h.node(id).writes);
  h.run("updateTradeControl({id:'',dataset:{homeTradeAdd:'give'},value:'cook'});updateTradeControl({id:'',dataset:{homeTradeAdd:'get'},value:'demo-1-1'});renderTrade()");
  assert.deepEqual(ids.map(id=>h.node(id).writes),writes);
  h.run('var batches=0;var makeEvaluator=FantasyMath.createTradeEvaluator;FantasyMath.createTradeEvaluator=(...args)=>{batches++;return makeEvaluator(...args)};findTradeAlternatives()');
@@ -162,4 +162,22 @@ test('metric popovers anchor to the right half, with the center opening from the
  for(let i=0;i<9;i++)assert.equal(h.run(`metricPopupLeft(${JSON.stringify(row[i])},${JSON.stringify(row)},260,1400)`),i<5?row[i].left:row[i].right-260);
  assert.equal(h.run('metricPopupLeft({left:900,right:990},[{left:900,right:990}],260,1000)'),728);
  assert.equal(h.run('metricPopupLeft({left:2,right:90},[{left:2,right:90}],260,1000)'),12);
+});
+
+test('home workload has three key metrics while the expanded snapshot keeps eight',()=>{
+ const h=setup();h.run("currentPlayerId='cook';STRATEGY.player='cook';renderStrategyHome();renderOpportunity()");
+ assert.equal((h.node('share-preview').innerHTML.match(/class="stat-help-trigger strategy-metric/g)||[]).length,3);
+ assert.equal((h.html().match(/class="stat-help-trigger strategy-metric metric-disclosure/g)||[]).length,8);
+ assert.match(h.node('share-preview').innerHTML,/TD chance/);assert.match(h.node('share-preview').innerHTML,/RZ chances/);
+});
+test('active week drives historical projections and the three player quick stats without future leakage',()=>{
+ const h=setup();h.run("model.currentWeek=7;model.players.allen.espnProj=99;model.players.allen.projections={7:99,3:20};currentWeek=3;renderStrategyHome()");
+ assert.equal(h.run('strategyWeek()'),3);assert.equal(h.run('currentProjection(model.players.allen).center'),20);
+ let cards=h.run('playerQuickStats(model.players.allen)');assert.match(cards,/Proj · W3/);assert.match(cards,/Last wk · W2/);assert.ok(!cards.includes('99.0'));
+ h.run('currentWeek=4');assert.notEqual(h.run('currentProjection(model.players.allen).center'),99);assert.ok(!h.run('playerQuickStats(model.players.allen)').includes('99.0'));
+ assert.equal(h.run('tradeRoster(getTeam())[0].espnProj'),null);
+});
+test('lineup assessment uses comparable prior evidence and never treats a short pool as a firm tier',()=>{
+ const h=setup();h.run("model.players.cook.status='OUT'");assert.equal(h.run('lineupRead(model.players.cook).label'),'Bench · unavailable');
+ h.run("getPool=()=>[model.players.allen]");assert.equal(h.run('lineupRead(model.players.allen).label'),'Role uncertain');assert.match(h.run('lineupRead(model.players.allen).summary'),/too small/);
 });

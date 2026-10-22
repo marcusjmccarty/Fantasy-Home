@@ -27,3 +27,12 @@ test('home matchup retains all starters, excludes bench and preserves missing sc
  c.team={name:'Test',wins:3,losses:2,history:[{week:1,lineup:[{id:'b',starter:false,points:20},{id:'a',starter:true,points:0},{id:'c',starter:true,points:null}]}]};
  const html=vm.runInContext('homeMatchupRoster(team,1)',c);assert.match(html,/Starter A/);assert.match(html,/Starter C/);assert.ok(!html.includes('Bench B'));assert.match(html,/<strong>0<\/strong>/);assert.match(html,/<strong>—<\/strong>/);
 });
+
+test('active week selectors stay synchronized and reject unavailable weeks',()=>{
+ const nodes=new Map();const el=id=>{if(!nodes.has(id))nodes.set(id,{value:'',replaceChildren(...opts){this.options=opts},add(o){this.options.push(o)}});return nodes.get(id)};
+ const team={history:[{week:1},{week:3}]};const c=vm.createContext({el,currentWeek:7,model:{weeks:[1,2,3],currentWeek:7},Option:class{constructor(text,value){this.text=text;this.value=value}},getTeam:()=>team,XL:{open:null}});
+ vm.runInContext(section(read('script.js'),'function availableActiveWeeks(','function drawMatchup('),c);vm.runInContext('var updateUI=()=>updateWeekMenu(getTeam());updateUI();setActiveWeek(2)',c);
+ assert.equal(el('header-current-week').value,'2');assert.equal(el('week-select').value,'2');assert.equal(vm.runInContext('currentWeek',c),2);
+ vm.runInContext('setActiveWeek(18)',c);assert.equal(vm.runInContext('currentWeek',c),2);
+ assert.ok(el('week-select').options.some(o=>o.value==='7'));
+});

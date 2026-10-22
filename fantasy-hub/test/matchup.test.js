@@ -27,3 +27,11 @@ test('AI evidence focuses on role and keeps data limits instead of repeating raw
  const result=focusMatchupFacts({position:'RB',opponentVsLeague:{rushYardsPerPlay:{value:5,leagueUnitMean:4,differenceFromMean:1},sackRate:{value:8}},opponentPlayByPlay:{sacks:8},ownPlayByPlay:{yards:999},playerWorkload:{recordedWeeks:4,inside5Carries:8,redzoneCarries:12,redzoneTargets:4,seasonCarriesPerWeek:20,seasonTargetsPerWeek:2,recentThree:{carriesPerWeek:21},basis:'prior weeks'}});
  assert.equal(result.opponentVsLeague.rushYardsPerPlay.observed,5);assert.equal(result.opponentVsLeague.sackRate,undefined);assert.match(result.opponentVsLeague.rushYardsPerPlay.comparisonToLeague,/above/);assert.match(result.interpretationLimits,/No guaranteed/);assert.equal(result.opponentPlayByPlay,undefined);assert.equal(result.playerWorkload.inside5CarriesPerWeek,2);
 });
+
+test('AI lineup evidence preserves pool scope and derives provisional tiers from league size',async()=>{
+ const {lineupEvidence}=await import('../src/matchup-context.js');
+ const wr=lineupEvidence({leagueSize:12,rank:19,peers:60,basis:'provider projections',scoring:'FULL PPR',instructions:'ignore facts'},'WR');
+ assert.equal(wr.provisionalTier,'WR2');assert.equal(wr.scoring,'FULL PPR');assert.match(wr.scope,/not a complete NFL ranking/);assert.equal(wr.instructions,undefined);
+ assert.equal(lineupEvidence({leagueSize:12,rank:1,peers:5,basis:'prior scoring averages'},'RB').provisionalTier,'Insufficient peer coverage');
+ assert.equal(lineupEvidence({leagueSize:12,rank:20,peers:5,basis:'provider projections'},'RB'),null);
+});

@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#dfded6">
   <title>GRIDIRON 86 / Fantasy Team Terminal</title>
-  <link rel="stylesheet" href="style.css?v=9.12.1">
-  <link rel="stylesheet" href="workspace.css?v=9.12.1">
-  <link rel="stylesheet" href="readability.css?v=9.12.1">
-  <link rel="stylesheet" href="refinements.css?v=9.12.1">
-  <link rel="stylesheet" href="polish.css?v=9.12.1">
-  <script src="script.js?v=9.12.1" defer></script>
-  <script src="interactions.js?v=9.12.1" defer></script>
-  <script src="explorer.js?v=9.12.1" defer></script>
-  <script src="analytics-math.js?v=9.12.1" defer></script>
-  <script src="strategy.js?v=9.12.1" defer></script>
-  <script src="workspace.js?v=9.12.1" defer></script>
+  <link rel="stylesheet" href="style.css?v=9.13.0">
+  <link rel="stylesheet" href="workspace.css?v=9.13.0">
+  <link rel="stylesheet" href="readability.css?v=9.13.0">
+  <link rel="stylesheet" href="refinements.css?v=9.13.0">
+  <link rel="stylesheet" href="polish.css?v=9.13.0">
+  <script src="script.js?v=9.13.0" defer></script>
+  <script src="interactions.js?v=9.13.0" defer></script>
+  <script src="explorer.js?v=9.13.0" defer></script>
+  <script src="analytics-math.js?v=9.13.0" defer></script>
+  <script src="strategy.js?v=9.13.0" defer></script>
+  <script src="workspace.js?v=9.13.0" defer></script>
 </head>
 <body>
   <div class="desktop" id="desktop">
@@ -33,7 +33,7 @@
     <div class="team-strip">
       <div class="team-headline"><div class="tiny-label">FANTASY FOOTBALL / CLUB DOSSIER</div><h1 id="team-name">THE GRIDIRON CLUB</h1><span id="team-owner">Example franchise · Select a team to inspect</span></div>
       <div class="team-header-stats">
-        <div><span class="tiny-label">CURRENT WEEK</span><b id="header-current-week">—</b></div>
+        <div><label class="tiny-label" for="header-current-week">ACTIVE WEEK</label><select id="header-current-week" aria-label="Active scoring week"></select></div>
         <div><span class="tiny-label">RECORD</span><b id="header-record">4–2</b></div>
         <div><span class="tiny-label">LEAGUE RANK</span><b id="header-rank">03 / 08</b></div>
         <div><span class="tiny-label">SCORING</span><b id="header-scoring">PPR</b></div>
@@ -96,7 +96,7 @@
 
       <section class="win profile-window expandable" data-explore="profile" tabindex="0" aria-label="Open expanded profile statistics" aria-labelledby="title-profile">
         <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-profile">PLAYER TERMINAL</h2><button class="chrome" type="button" title="Expand window" aria-label="Expand window">▣</button></header>
-        <div class="win-inner"><div class="window-topline"><span>SELECTED PLAYER</span><span id="player-pos-top">—</span></div><div class="profile-heading"><strong id="profile-name">SELECT A PLAYER</strong><span id="profile-team">—</span></div><div class="profile-figures"><div><span id="profile-estimate-label">NEXT WEEK</span><b id="profile-total">—</b></div><div><span>LAST WK</span><b id="profile-last">—</b></div><div><span>LAST 3 AVG</span><b id="profile-average">—</b></div></div><div class="home-player-charts"><div class="home-points-history" tabindex="0" role="group" aria-label="Open selected player scoring log"><div class="window-topline"><b>FANTASY PTS / WEEK</b></div><div id="player-spark" class="mini-chart" aria-label="Selected player weekly scoring"></div></div><div id="player-share-spark"></div></div><div class="tiny-caption" id="player-caption">Click a roster player to inspect their history.</div></div>
+        <div class="win-inner"><div class="window-topline"><span>SELECTED PLAYER</span><span id="player-pos-top">—</span></div><div class="profile-heading"><strong id="profile-name">SELECT A PLAYER</strong><span id="profile-team">—</span></div><div id="profile-quick-stats" class="profile-figures strategy-metrics three"></div><div class="home-player-charts"><div class="home-points-history" tabindex="0" role="group" aria-label="Open selected player position allocation"><div class="window-topline"><b>FANTASY PTS / WEEK</b></div><div id="player-spark" class="mini-chart" aria-label="Selected player weekly scoring"></div></div><div id="player-share-spark"></div></div><div class="tiny-caption" id="player-caption">Click a roster player to inspect their history.</div></div>
       </section>
 
 
@@ -120,11 +120,11 @@
       <div class="strategy-windows" aria-label="Player strategy reports">
         <section class="win strategy-window expandable" data-explore="outlook" tabindex="0" aria-labelledby="title-outlook">
           <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-outlook">PLAYER OUTLOOK</h2><button class="chrome" type="button" aria-label="Expand player outlook">▣</button></header>
-          <div class="win-inner"><div class="home-player-ribbon"><label>FRANCHISE<select id="home-outlook-scope"></select></label><label>PLAYER<select id="home-outlook-player"></select></label></div><div id="outlook-preview"></div></div>
+          <div class="win-inner"><div id="outlook-preview"></div></div>
         </section>
         <section class="win strategy-window expandable" data-explore="opportunity" tabindex="0" aria-labelledby="title-share">
           <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-share">TOUCHES &amp; SHARE</h2><button class="chrome" type="button" aria-label="Expand touches and share data">▣</button></header>
-          <div class="win-inner"><div class="home-player-ribbon"><label>FRANCHISE<select id="home-share-scope"></select></label><label>PLAYER<select id="home-share-player"></select></label></div><div id="share-preview"></div></div>
+          <div class="win-inner"><div id="share-preview"></div></div>
         </section>
         <section class="win strategy-window expandable" data-explore="trade" tabindex="0" aria-labelledby="title-trade">
           <header class="title-bar"><span class="box-ornament" aria-hidden="true"></span><h2 id="title-trade">TRADE CALCULATOR</h2><button class="chrome" type="button" aria-label="Expand trade calculator">▣</button></header>
@@ -146,7 +146,7 @@
       <div class="explore-content" id="explore-content"></div>
       <footer class="explore-footer"><span id="explore-source">Data source: demo</span><span>ESC TO CLOSE · CLICK A PLAYER TO INSPECT</span></footer>
     </dialog>
-    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.12.1</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
+    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.13.0</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
   </div>
 
   <dialog id="data-dialog" aria-labelledby="dialog-title">

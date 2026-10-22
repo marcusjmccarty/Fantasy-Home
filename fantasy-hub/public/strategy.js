@@ -1,7 +1,7 @@
 /* Strategy workspaces: observed opportunity, transparent estimates, roster analysis. */
 'use strict';
 const STRATEGY={identity:'',player:null,scope:'all',homeScope:'active',homePlayer:null,lastCurrent:null,leaders:'active',period:'season',position:'ALL',search:'',sort:'opportunities',usage:new Map(),usageBusy:new Set(),usageErrors:new Map(),defense:new Map(),defenseBusy:new Set(),ai:new Map(),aiBusy:new Set(),aiErrors:new Map(),trade:{team:null,partner:null,give:[],get:[],mode:'balanced',format:'standard',drops:{give:[],get:[]},alternatives:[]}};
-const strategyWeek=()=>Math.max(1,Math.min(18,Number(model.currentWeek||model.liveWeek||(model.source==='demo'?7:currentWeek)||1)));
+const strategyWeek=()=>Math.max(1,Math.min(18,Number(currentWeek||model.currentWeek||model.liveWeek||1)));
 function usagePlayer(r){const data=usageDataset();return getPool().find(p=>usageFor(p,data)===r)||{id:'usage:'+r.gsis_id,name:r.name,pos:r.position,nfl:Object.values(r.weeks).at(-1)?.team,scores:{},status:'Availability not supplied'};}
 function strategyPlayerPool(scope='all'){
  const pool=scope==='all'?getPool():tradeRoster(scope==='active'?getTeam():findTeam(scope));
@@ -25,7 +25,7 @@ function strategyPlayerPicker(p,extra=''){
 }
 function strategyMetric(label,value,detail='',accent=''){return `<div class="strategy-metric ${accent}"><span>${esc(label)}</span><strong>${value}</strong><small>${esc(detail)}</small></div>`;}
 function renderStrategy(type){strategyContext();if(XL.player&&['outlook','opportunity'].includes(type)&&!STRATEGY.player)STRATEGY.player=XL.player;if(type==='outlook')renderDefensiveOutlook();else if(type==='opportunity')renderOpportunity();else renderTrade();}
-function currentProjection(p){return FantasyMath.outlook(p,strategyWeek());}
+function currentProjection(p){const week=strategyWeek(),providerWeek=Number(model.currentWeek||model.liveWeek||model.weeks?.at(-1));return FantasyMath.outlook(p,week,{historical:week!==providerWeek});}
 const RANGE_HELP={floor:'The lower scenario shifts the historical 20th percentile around the current center, using up to eight earlier scoring weeks. At least four observations are required. It is not a minimum: a player can score below this number.',center:'Uses the provider’s projection for this week. If none was supplied, the center is the mean of up to eight earlier recorded weeks, labeled Historical mean. This is an estimate, not a guaranteed score.',ceiling:'The upper scenario shifts the historical 80th percentile around the current center, using up to eight earlier scoring weeks. At least four observations are required. It is not a maximum or a calibrated confidence bound.'};
 function rangeBar(o){
  if(o.floor===null||o.ceiling===null)return '<div class="range-unavailable">Range requires four prior scoring weeks.</div>';
@@ -51,18 +51,30 @@ function opponentMetrics(p){
  const rows=[[isDefense?'Points / game':'Points allowed / game',rating?.[isDefense?'offensePPG':'defenseAllowedPPG'],null,'points'],['Yards / play',unit?.yardsPerPlay,avg('yardsPerPlay'),'number'],['Net pass yards / play',unit?.netPassYardsPerPlay,avg('netPassYardsPerPlay'),'number'],['Rush yards / play',unit?.rushYardsPerPlay,avg('rushYardsPerPlay'),'number'],[isDefense?'Sack rate conceded':'Sack rate generated',unit?.sackRate,avg('sackRate'),'percent'],[isDefense?'Giveaways / game':'Takeaways / game',unit?.turnoversPerGame,avg('turnoversPerGame'),'number'],['EPA / play',unit?.epaPerPlay,avg('epaPerPlay'),'epa'],['Success rate',unit?.successRate,avg('successRate'),'percent'],['Explosive play rate',unit?.explosiveRate,avg('explosiveRate'),'percent']];
  return `<div class="opponent-table">${expandTable(['OPPONENT METRIC',isDefense?'OFFENSE':'DEFENSE','NFL UNIT AVG','DIFFERENCE'],rows.map(([label,value,mean,kind])=>{const fmt=n=>kind==='percent'?labPct(n):labFormat(n,kind==='epa'?2:1),delta=value!=null&&mean!=null?value-mean:null;return `<tr><th scope="row">${label}</th><td><b>${fmt(value)}</b></td><td>${fmt(mean)}</td><td>${kind==='points'?(rank?'#'+rank+' / '+data.rankedTeams:'—'):delta===null?'—':(delta>0?'+':'')+labFormat(delta,kind==='epa'?2:1)+(kind==='percent'?' pp':'')}</td></tr>`}))}</div>`;
 }
-function aiKey(p){return `${model.source}:${model.leagueId||model.league}:${model.season}:${strategyWeek()}:${p.id}:${JSON.stringify(p.scores)}:${currentProjection(p).center}`;}
-function homeOpponent(p){
- const {opp,isDefense,rating,unit}=matchupContext(p);
- if(!opp){const recent=FantasyMath.scoringHistory(p,strategyWeek()).slice(-3);return `<div class="home-outlook-context"><h4>RECENT SCORING</h4><table class="home-opponent-table"><thead><tr><th>WEEK</th><th>PROJ.</th><th>ACTUAL</th></tr></thead><tbody>${recent.map(r=>`<tr><th scope="row">W${r.week}</th><td>${labFormat(r.projection)}</td><td>${labFormat(r.actual)}</td></tr>`).join('')}</tbody></table>${matchupAI(p,true)}</div>`;}
- const rows=[[isDefense?'Points / game':'Points allowed / game',labFormat(rating?.[isDefense?'offensePPG':'defenseAllowedPPG'])],['Yards / play',labFormat(unit?.yardsPerPlay)],[isDefense?'Sack rate conceded':'Sack rate generated',labPct(unit?.sackRate)],[isDefense?'Giveaways / game':'Takeaways / game',labFormat(unit?.turnoversPerGame)]];
- return `<div class="home-outlook-context"><h4>${isDefense?'OPPOSING OFFENSE':'DEFENSIVE OUTLOOK'} · ${esc(opp)}</h4><table class="home-opponent-table"><tbody>${rows.map(([k,v])=>`<tr><th scope="row">${k}</th><td>${v}</td></tr>`).join('')}</tbody></table>${matchupAI(p,true)}</div>`;
+function lineupContext(p){
+ const o=currentProjection(p),provider=o.source==='Provider projection',week=strategyWeek(),pos=p.pos;
+ const value=player=>provider?(Number.isFinite(player.projections?.[week])?player.projections[week]:week===Number(model.currentWeek||model.liveWeek)?number(player.espnProj):null):FantasyMath.outlook({...player,projections:{},espnProj:null},week).mean;
+ const score=value(p),peers=getPool().filter(x=>x.pos===pos).map(value).filter(Number.isFinite);
+ return {leagueSize:model.teams.length,scoring:model.scoring,rank:score===null?null:1+peers.filter(v=>v>score).length,peers:peers.length,basis:provider?'provider projections':'prior scoring averages'};
 }
+function lineupRead(p){
+ const c=lineupContext(p),o=currentProjection(p),data=usageDataset(),f=usageForecast(p,data),row=usageFor(p,data),prior=Object.entries(row?.weeks||{}).filter(([w])=>Number(w)<strategyWeek()).map(([,r])=>r);
+ const unavailable=/^(OUT|IR|INJURED_RESERVE|SUSPENDED)$/i.test(p.status||'');
+ let label='Role uncertain';
+ if(unavailable)label='Bench · unavailable';
+ else if(c.rank&&c.peers>=c.leagueSize){const band=Math.ceil(c.rank/c.leagueSize);label=['RB','WR'].includes(p.pos)?band<3?p.pos+band+'-range':band===3?'Flex-range':'Depth / emergency flex':band===1?p.pos+'1-range':band===2?'Streaming option':'Bench depth';}
+ let summary=unavailable?'Keep this player out of the starting plan while that availability status holds.':c.rank&&c.peers>=c.leagueSize?`${label} in the loaded player pool, based on ${c.basis}.`:'The loaded comparison pool is too small to assign a dependable lineup tier.';
+ if(!unavailable&&prior.length){const avg=prior.reduce((n,r)=>n+Number(r.carries||0)+Number(r.receptions||0),0)/prior.length,trend=avg>0&&f.recentTouches!==null?f.recentTouches/avg:1;
+ summary+=trend>1.15?' The recent workload is growing, supporting a stronger volume floor if that role holds.':trend<.85?' Recent touches are declining; favor a steadier alternative unless you need upside.':' Recent usage is stable, so the case rests on sustaining the role rather than a sudden workload jump.';
+ if(f.recentRedzone<1)summary+=' Limited red-zone involvement makes a touchdown-led ceiling harder to rely on.';
+ }else if(!unavailable&&o.sample>=4){summary+=o.floor<o.center*.65?' The scoring downside is wide; lean toward steadier options when protecting a lead.':' The recorded scoring range supports a steadier role, but does not establish future touches.';}
+ return {label,summary,context:c};
+}
+function aiKey(p){return `${model.source}:${model.leagueId||model.league}:${model.season}:${strategyWeek()}:${p.id}:${p.status}:${JSON.stringify(p.scores)}:${currentProjection(p).center}:${JSON.stringify(lineupContext(p))}:v5`;}
 function matchupAI(p,compact=false){
- const key=aiKey(p),result=STRATEGY.ai.get(key),busy=STRATEGY.aiBusy.has(key),error=STRATEGY.aiErrors.get(key);
- if(result)return `<div class="matchup-ai ${compact?'compact':''}"><span class="strategy-section-label">AI MATCHUP OVERVIEW · ${esc(result.provider)}</span>${result.outlook.split(/\n\s*\n/).filter(Boolean).map(t=>`<p>${esc(t)}</p>`).join('')}</div>`;
- if(compact)return `<p class="matchup-home-copy">${esc(matchupSummary(p))}</p>`;
- return `<div class="matchup-ai"><p>${esc(matchupSummary(p))}</p>${model.source==='demo'?'<p class="lab-note">AI analysis is available for connected league players; demonstration scores are never presented as real NFL evidence.</p>':`<button class="lab-action" data-matchup-ai="${esc(p.id)}" ${busy?'disabled':''}>${busy?'Analyzing matchup…':'Generate AI matchup overview ↗'}</button><span class="ai-generation-note" role="status">${esc(error||'2–3 paragraphs · generated from scoring and verified opponent data')}</span>`}</div>`;
+ const key=aiKey(p),result=STRATEGY.ai.get(key),busy=STRATEGY.aiBusy.has(key),error=STRATEGY.aiErrors.get(key),read=lineupRead(p);
+ if(result){const paragraphs=result.outlook.split(/\n\s*\n/).filter(Boolean);return `<div class="matchup-ai ${compact?'compact':''}"><span class="strategy-section-label">AI OVERVIEW${compact?'':' · '+esc(result.provider)}</span>${(compact?paragraphs.slice(0,1):paragraphs).map(t=>`<p>${esc(t)}</p>`).join('')}</div>`;}
+ return `<div class="matchup-ai ${compact?'compact':''}"><span class="strategy-section-label">${model.source==='demo'?'EXHIBITION OUTLOOK':'LINEUP OUTLOOK'}</span><p>${esc(read.summary)}</p>${model.source==='demo'?'':`<button class="lab-action" data-matchup-ai="${esc(p.id)}" ${busy?'disabled':''}>${busy?'Analyzing matchup…':'Generate AI overview ↗'}</button>${error?`<span class="ai-generation-note" role="status">${esc(error)}</span>`:''}`}</div>`;
 }
 function priorScoring(p,compact=false){
  const rows=FantasyMath.scoringHistory(p,strategyWeek());
@@ -87,9 +99,9 @@ async function loadStrategyDefense(force=false){
 }
 async function generateMatchupAI(p){
  if(!p||model.source==='demo')return;
- const key=aiKey(p);if(STRATEGY.aiBusy.has(key))return;STRATEGY.aiBusy.add(key);STRATEGY.aiErrors.delete(key);if(XL.open==='outlook')renderDefensiveOutlook();
+ const key=aiKey(p);if(STRATEGY.aiBusy.has(key))return;STRATEGY.aiBusy.add(key);STRATEGY.aiErrors.delete(key);if(XL.open==='outlook')renderDefensiveOutlook();renderStrategyHome();
  const o=currentProjection(p),scores=o.observations,values=scores.map(r=>r.points),recent=values.slice(-3);
- try{const response=await fetch('/api/ai/outlook',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({report:'matchup',player:{id:p.id,name:p.name,pos:p.pos,nfl:normalizeNFLAbbr(p.nfl),status:p.status,season:Number(model.season),week:strategyWeek(),projection:o.source==='Provider projection'?o.center:null,floor:o.floor,ceiling:o.ceiling,average:o.mean,games:o.sample,recent:recent.length?recent.reduce((a,b)=>a+b,0)/recent.length:null,last:values.at(-1),best:values.length?Math.max(...values):null,low:values.length?Math.min(...values):null,recentWeeks:scores.slice(-5)}})});const data=await response.json();if(!response.ok)throw Error(data.error||'Matchup analysis unavailable.');STRATEGY.ai.set(key,data);}catch(e){STRATEGY.aiErrors.set(key,e.message||'Unable to generate the overview. Retry shortly.');}finally{STRATEGY.aiBusy.delete(key);if(XL.open==='outlook'&&String(strategyPlayer()?.id)===String(p.id))renderDefensiveOutlook();renderStrategyHome();}
+ try{const response=await fetch('/api/ai/outlook',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({report:'matchup',lineupContext:lineupContext(p),player:{id:p.id,name:p.name,pos:p.pos,nfl:normalizeNFLAbbr(p.nfl),status:p.status,season:Number(model.season),week:strategyWeek(),projection:o.source==='Provider projection'?o.center:null,floor:o.floor,ceiling:o.ceiling,average:o.mean,games:o.sample,recent:recent.length?recent.reduce((a,b)=>a+b,0)/recent.length:null,last:values.at(-1),best:values.length?Math.max(...values):null,low:values.length?Math.min(...values):null,recentWeeks:scores.slice(-5)}})});const data=await response.json();if(!response.ok)throw Error(data.error||'Matchup analysis unavailable.');STRATEGY.ai.set(key,data);}catch(e){STRATEGY.aiErrors.set(key,e.message||'Unable to generate the overview. Retry shortly.');}finally{STRATEGY.aiBusy.delete(key);if(XL.open==='outlook'&&String(strategyPlayer()?.id)===String(p.id))renderDefensiveOutlook();renderStrategyHome();}
 }
 let demoUsageCache=null;
 function demoUsage(){
@@ -164,9 +176,14 @@ function usageForecast(p,data){
  return {...estimate,recentTouches:avg(['carries','receptions']),recentRedzone:avg(['redzone_carries','redzone_targets']),chance:unavailable||noGame?null:estimate?.chance??null};
 }
 function usageStatCards(p,v,data,compact=false){
- const f=usageForecast(p,data),o=FantasyMath.outlook(p,strategyWeek()),a=usageApplicability(p,v);
+ const f=usageForecast(p,data),o=currentProjection(p),a=usageApplicability(p,v);
  if(!a.skill)return usageTile((o.source==='Provider projection'?'Projection':'Scoring avg')+' · W'+strategyWeek(),labFormat(o.center),'projection');
  return usageTile('Touches',labFormat(v?.touches,0),'touches')+usageTile('Opportunities',labFormat(v?.opportunities,0),'opportunities')+usageTile('Red-zone chances',labFormat(v?.redzone,0),'redzone')+(a.rush?usageTile('Inside-5 carries',labFormat(v?.inside5_carries,0),'inside5'):usageTile('Inside-5 targets',labFormat(v?.inside5_targets,0),'inside5Targets'))+usageTile(compact?'Est. TD chance':'Est. TD chance · W'+strategyWeek(),labPct(f.chance),'td')+usageTile((o.source==='Provider projection'?'Projection':'Scoring avg')+' · W'+strategyWeek(),labFormat(o.center),'projection')+usageTile(compact?'Touches / game':'Recent touches / game',labFormat(f.recentTouches),'recentTouches')+usageTile(compact?'RZ / game':'Recent RZ / game',labFormat(f.recentRedzone),'recentRedzone');
+}
+function homeUsageCards(p,v,data){
+ const f=usageForecast(p,data),a=usageApplicability(p,v);
+ if(!a.skill)return playerQuickStats(p);
+ return usageTile('Touches / game',labFormat(f.recentTouches),'recentTouches')+usageTile('RZ chances / game',labFormat(f.recentRedzone),'recentRedzone')+usageTile('TD chance · W'+strategyWeek(),labPct(f.chance),'td');
 }
 function usageSnapshot(p,v){
  return `<section class="lab-panel usage-snapshot" id="usage-snapshot"><div class="strategy-section-title"><div><span class="strategy-section-label">PLAYER SNAPSHOT</span><h4>${esc(p.name)}</h4></div><span>${v?v.weeks+' recorded weeks':'No matched play-by-play record'}</span></div><div class="strategy-metrics usage-metrics">${usageStatCards(p,v,usageDataset())}</div><div class="strategy-share-grid">${shareBars(v,p)}</div></section>`;
@@ -226,7 +243,7 @@ function openShareHistory(event){
 // Bars select a week; the remaining chart surface opens the season report.
 document.addEventListener('click',event=>{if(event.target.closest('[data-share-chart]')){event.stopPropagation();openShareHistory(event);}},true);
 document.addEventListener('keydown',event=>{const chart=event.target.closest('[data-share-chart]');if(chart&&event.target===chart&&['Enter',' '].includes(event.key)){event.preventDefault();openShareHistory(event);}});
-function tradeRoster(team){return (team?.playerIds||[]).map(id=>model.players[id]).filter(Boolean);}
+function tradeRoster(team){const historical=strategyWeek()!==Number(model.currentWeek||model.liveWeek||model.weeks?.at(-1));return (team?.playerIds||[]).map(id=>model.players[id]).filter(Boolean).map(p=>historical?{...p,espnProj:null}:p);}
 function tradeTeam(){return findTeam(STRATEGY.trade.team)||getTeam();}
 function tradeConfig(){return FantasyMath.leagueLineup(model);}
 function tradeFormatLabel(){const counts=new Map();for(const slot of tradeConfig().slots){const label=FantasyMath.slotLabel(slot);counts.set(label,(counts.get(label)||0)+1);}return [...counts].map(([label,count])=>count+' '+label).join(' · ')||'Lineup settings unavailable';}
@@ -283,7 +300,7 @@ function requestTradeRecommendations(){
  tradeSearch.worker?.terminate();tradeSearch.key=key;tradeSearch.result=null;tradeSearch.visible=24;tradeSearch.error='';
  if(typeof Worker==='undefined'){tradeSearch.error='Automatic comparisons need browser worker support.';renderTradeRecommendations();return;}
  try{
-  const worker=new Worker('trade-search-worker.js?v=9.12.1');tradeSearch.worker=worker;
+  const worker=new Worker('trade-search-worker.js?v=9.13.0');tradeSearch.worker=worker;
   worker.onmessage=event=>{if(tradeSearch.key!==key)return;tradeSearch.result=event.data;worker.terminate();tradeSearch.worker=null;renderTradeRecommendations();};
   worker.onerror=()=>{if(tradeSearch.key!==key)return;worker.terminate();tradeSearch.worker=null;tradeSearch.error='Trade search could not finish. Change a team to retry.';renderTradeRecommendations();};
   worker.postMessage({own,their,slots,week,mode});
@@ -291,7 +308,7 @@ function requestTradeRecommendations(){
 }
 function tradeFavorBar(a,compact=false){
  const signals=FantasyMath.tradeSignals(a),known=signals.yourShare!==null;
- return `<div class="trade-favor ${compact?'compact':''}"><span class="trade-favor-title">PACKAGE VALUE RECEIVED</span><span class="trade-favor-labels"><b>A ${known?labFormat(signals.yourShare,0)+'%':'—'}</b><b>B ${known?labFormat(signals.theirShare,0)+'%':'—'}</b></span><span class="trade-favor-track ${known?'':'is-empty'}"><i style="width:${known?signals.yourShare:50}%"></i></span></div>`;
+ return `<div class="trade-favor ${compact?'compact':''}"><span class="trade-favor-title">${compact?'PACKAGE FAVOR':'PACKAGE VALUE RECEIVED'}</span><span class="trade-favor-labels"><b>A ${known?labFormat(signals.yourShare,0)+'%':'—'}</b><b>B ${known?labFormat(signals.theirShare,0)+'%':'—'}</b></span><span class="trade-favor-track ${known?'':'is-empty'}"><i style="width:${known?signals.yourShare:50}%"></i></span></div>`;
 }
 function tradeBalance(a){return `<div class="trade-balance-ring" style="--balance:${a.ready?a.balance:0}%" role="img" aria-label="Package balance ${a.ready?labFormat(a.balance,0)+' percent':'not available'}"><span><b>${a.ready?labFormat(a.balance,0)+'%':'—'}</b><small>BALANCE</small></span></div>`;}
 function tradeImpactCard(label,team,before,after,impact,percent,ready){
@@ -325,17 +342,12 @@ function homeTradeSide(team,side,value){
  const selected=STRATEGY.trade[side],roster=tradeRoster(team);
  return `<div class="home-trade-side"><label><span>${side==='give'?'A SENDS':'B SENDS'}</span><b class="home-trade-total">${labFormat(value)}</b><select data-home-trade-add="${side}" aria-label="Add player to ${side==='give'?'send':'receive'}"><option value="">+ Add a player…</option>${roster.filter(p=>!selected.includes(String(p.id))).map(p=>`<option value="${esc(p.id)}">${esc(p.name)} · ${esc(p.pos)} · ${labFormat(FantasyMath.value(p,strategyWeek(),STRATEGY.trade.mode))}</option>`).join('')}</select></label><div class="home-trade-picks">${selected.map(id=>{const p=roster.find(p=>String(p.id)===id);return p?`<button data-home-trade-remove="${side}" data-id="${esc(id)}" aria-label="Remove ${esc(p.name)} from ${side==='give'?'send':'receive'}">${esc(p.name)} <b>×</b></button>`:''}).join('')||'<span>No players selected</span>'}</div></div>`;
 }
-function homePlayer(){const pool=strategyPlayerPool(STRATEGY.homeScope);return pool.find(p=>String(p.id)===String(STRATEGY.homePlayer||currentPlayerId))||pool[0];}
+function homePlayer(){return tradeRoster(getTeam()).find(p=>String(p.id)===String(currentPlayerId))||tradeRoster(getTeam())[0];}
 function renderStrategyHome(){
- const host=el('outlook-preview');if(!host)return;strategyContext();
- if(STRATEGY.lastCurrent!==currentPlayerId){STRATEGY.lastCurrent=currentPlayerId;STRATEGY.homePlayer=null;}
- const pool=strategyPlayerPool(STRATEGY.homeScope),p=pool.find(x=>String(x.id)===String(STRATEGY.homePlayer||currentPlayerId))||pool[0];
- const options=pool.map(x=>`<option value="${esc(x.id)}" ${String(x.id)===String(p?.id)?'selected':''}>${esc(x.name)} · ${esc(x.pos)}</option>`).join('')||'<option value="">No roster loaded</option>',scopes=scopeOptions(STRATEGY.homeScope);
- for(const id of ['home-outlook-player','home-share-player']){const select=el(id);setStrategyHTML(select,options);if(select)select.disabled=!p;}
- for(const id of ['home-outlook-scope','home-share-scope'])setStrategyHTML(el(id),scopes);
+ const host=el('outlook-preview');if(!host)return;strategyContext();const p=homePlayer();
  const o=p?currentProjection(p):{floor:null,center:null,ceiling:null,sample:0},key=`${model.season}:${strategyWeek()}`,data=usageDataset(),v=usageTotals(usageFor(p,data),data);
- setStrategyHTML(host,`<div class="window-topline"><span>WEEK ${strategyWeek()} / FANTASY PTS</span><span>${esc(model.scoring)}</span></div>${rangeMetrics(o,true)}${rangeBar(o)}${p?homeOpponent(p):''}${p&&/^(OUT|IR|INJURED_RESERVE|SUSPENDED)$/i.test(p.status||'')?'<p class="tiny-caption">PLAYER UNAVAILABLE</p>':''}`);
- setStrategyHTML(el('share-preview'),`<div class="window-topline"><span>${usagePeriodLabel()} OPPORTUNITY</span><span>WEEK ${strategyWeek()}</span></div><div class="strategy-metrics home-usage-metrics">${p?usageStatCards(p,v,data,true):''}</div><div class="strategy-home-share-grid">${shareBars(v,p)}</div>${model.source==='demo'?'<p class="tiny-caption">SYNTHETIC EXHIBITION DATA</p>':''}`);
+ setStrategyHTML(host,`<div class="window-topline"><b>${esc(p?.name||'Select a player')}</b><span>W${strategyWeek()} · ${esc(model.scoring)}</span></div>${rangeMetrics(o,true)}${rangeBar(o)}${p?matchupAI(p,true):''}${p&&/^(OUT|IR|INJURED_RESERVE|SUSPENDED)$/i.test(p.status||'')?'<p class="tiny-caption">PLAYER UNAVAILABLE</p>':''}`);
+ setStrategyHTML(el('share-preview'),`<div class="window-topline"><b>${esc(p?.name||'Select a player')}</b><span>${usagePeriodLabel()}</span></div><div class="strategy-metrics home-usage-metrics">${p?homeUsageCards(p,v,data):''}</div><div class="strategy-home-share-grid">${shareBars(v,p)}</div>${model.source==='demo'?'<p class="tiny-caption">SYNTHETIC EXHIBITION DATA</p>':''}`);
  renderPlayerShareCharts();
  renderHomeTrade();
  if(model.source!=='demo'){if(!STRATEGY.usage.has(Number(model.season))&&!STRATEGY.usageErrors.has(Number(model.season)))void loadUsage();if(!STRATEGY.defense.has(key))void loadStrategyDefense();}
@@ -343,7 +355,7 @@ function renderStrategyHome(){
 function renderHomeTrade(){
  const others=ensureTrade(),t=STRATEGY.trade,own=tradeRoster(tradeTeam()),partner=findTeam(t.partner),their=tradeRoster(partner),give=own.filter(x=>t.give.includes(String(x.id))),get=their.filter(x=>t.get.includes(String(x.id))),g=give.length?FantasyMath.packageValue(give,strategyWeek(),t.mode).total:null,r=get.length?FantasyMath.packageValue(get,strategyWeek(),t.mode).total:null;
  const ready=g!==null&&r!==null,a={ready,sent:{total:g},received:{total:r},balance:ready?100*(1-Math.min(1,Math.abs(r-g)/Math.max(Math.abs(g),Math.abs(r),1))):null};
- setStrategyHTML(el('trade-preview'),`<div class="home-trade-controls"><label>TEAM A<select id="home-trade-team">${tradeTeamOptions(t.team)}</select></label><label>TEAM B<select id="home-trade-partner">${tradeTeamOptions(t.partner,t.team)}</select></label></div><div class="home-trade-dashboard">${tradeBalance(a)}${tradeFavorBar(a,true)}</div><div class="home-trade-builder" aria-live="polite">${homeTradeSide(tradeTeam(),'give',g)}<div class="home-trade-difference"><span>DIFFERENCE</span><b>${tradeSigned(ready?r-g:null)}</b></div>${homeTradeSide(partner,'get',r)}</div><div class="home-trade-footer"><span>POINTS / WEEK</span><button class="lab-action" id="home-trade-clear">Reset</button></div>`);
+ setStrategyHTML(el('trade-preview'),`<div class="home-trade-controls"><label>TEAM A<select id="home-trade-team">${tradeTeamOptions(t.team)}</select></label><label>TEAM B<select id="home-trade-partner">${tradeTeamOptions(t.partner,t.team)}</select></label></div><div class="home-trade-dashboard">${tradeFavorBar(a,true)}</div><div class="home-trade-builder" aria-live="polite">${homeTradeSide(tradeTeam(),'give',g)}<div class="home-trade-difference"><span>DIFFERENCE</span><b>${tradeSigned(ready?r-g:null)}</b><span class="home-balance-label">BALANCE</span><strong>${ready?labFormat(a.balance,0)+'%':'—'}</strong></div>${homeTradeSide(partner,'get',r)}</div><div class="home-trade-footer"><span>POINTS / WEEK</span><button class="lab-action" id="home-trade-clear">Reset</button></div>`);
 }
 function updateTradeControl(target){
  const id=target.id?.replace(/^home-/,''),mapping={'trade-team':'team','trade-partner':'partner','trade-mode':'mode'},t=STRATEGY.trade;
@@ -359,7 +371,7 @@ document.addEventListener('click',event=>{
  const route=event.target.closest('[data-strategy-open]');if(route){STRATEGY.player=route.dataset.strategyPlayer||null;openExplorer(route.dataset.strategyOpen,STRATEGY.player);return;}
  const profile=event.target.closest('[data-strategy-profile]');if(profile){const p=strategyPlayer();if(p&&String(p.id).startsWith('usage:')&&!getPool().some(x=>String(x.id)===String(p.id)))XL.free.push(p);openExplorer('profile',profile.dataset.strategyProfile);return;}
  const player=event.target.closest('[data-usage-player]');if(player){selectUsagePlayer(player.dataset.usagePlayer);return;}
- const ai=event.target.closest('[data-matchup-ai]');if(ai){void generateMatchupAI(strategyPlayer());return;}
+ const ai=event.target.closest('[data-matchup-ai]');if(ai){void generateMatchupAI(getPool().find(p=>String(p.id)===ai.dataset.matchupAi)||strategyPlayer());return;}
  if(event.target.id==='trade-more'){tradeSearch.visible+=24;renderTradeRecommendations();return;}
  const recommendation=event.target.closest('[data-trade-recommendation]');if(recommendation){const r=tradeSearch.result?.results[Number(recommendation.dataset.tradeRecommendation)];if(r){STRATEGY.trade.give=[...r.give];STRATEGY.trade.get=[...r.get];STRATEGY.trade.drops={give:[...r.drops.give],get:[...r.drops.get]};renderTrade();el('explore-content').scrollTop=0;}return;}
  const alternative=event.target.closest('[data-trade-alternative]');if(alternative){STRATEGY.trade[alternative.dataset.side].push(alternative.dataset.tradeAlternative);STRATEGY.trade.alternatives=[];STRATEGY.trade.searched=false;renderTrade();return;}
@@ -378,8 +390,6 @@ document.addEventListener('change',event=>{
  if(t.id==='strategy-player'){STRATEGY.player=t.value;XL.player=t.value;renderStrategy(XL.open);}
  if(t.id==='strategy-scope'){const selected=strategyPlayer()?.id;STRATEGY.scope=t.value;const pool=strategyPlayerPool(t.value);STRATEGY.player=pool.find(p=>String(p.id)===String(selected))?.id||pool[0]?.id||null;XL.player=STRATEGY.player;renderStrategy(XL.open);}
  const usage={'usage-period':'period','usage-position':'position','usage-sort':'sort','usage-leaders':'leaders'};if(usage[t.id]){STRATEGY[usage[t.id]]=t.value;updateOpportunityResults();if(t.id==='usage-period')renderStrategyHome();}
- if(['home-outlook-scope','home-share-scope'].includes(t.id)){STRATEGY.homeScope=t.value;STRATEGY.homePlayer=null;renderStrategyHome();}
- if(['home-outlook-player','home-share-player'].includes(t.id)){STRATEGY.homePlayer=t.value;if(tradeRoster(getTeam()).some(p=>String(p.id)===t.value)){currentPlayerId=t.value;drawRoster(getTeam());drawProfile(getTeam());}else renderStrategyHome();}
  if(t.id&&el(t.id))el(t.id).focus?.({preventScroll:true});
 });
 el('explore-content').addEventListener('input',event=>{if(event.target.id==='usage-search'){const text=event.target.value,pos=event.target.selectionStart;STRATEGY.search=text;deferRender('usage',()=>{if(XL.open!=='opportunity')return;updateOpportunityResults();const input=el('usage-search');input?.focus({preventScroll:true});input?.setSelectionRange(pos,pos);});}});

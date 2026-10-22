@@ -54,3 +54,11 @@ export function focusMatchupFacts(facts){
  }
  return facts;
 }
+
+export function lineupEvidence(input,position){
+ if(!input||!['QB','RB','WR','TE','K','DEF','D/ST'].includes(position))return null;
+ const {leagueSize,rank,peers,basis}=input;
+ if(!Number.isInteger(leagueSize)||leagueSize<2||leagueSize>32||!Number.isInteger(rank)||rank<1||!Number.isInteger(peers)||peers<rank||peers>1000||!['provider projections','prior scoring averages'].includes(basis))return null;
+ const band=Math.ceil(rank/leagueSize),enough=peers>=leagueSize;
+ return {leagueSize,position,rankInLoadedPool:rank,playersWithComparableData:peers,basis,scoring:['PPR','FULL PPR','HALF PPR','STANDARD','CUSTOM','CUSTOM SCORING'].includes(input.scoring)?input.scoring:'League scoring',provisionalTier:!enough?'Insufficient peer coverage':['RB','WR'].includes(position)?band<3?position+band:band===3?'Flex-range':'Depth / emergency flex':band===1?position+'1':band===2?'Streaming option':'Bench depth',scope:'League rosters and loaded free agents only, not a complete NFL ranking. A tier is one league-sized band of this pool. Prior averages are descriptive, not projections.'};
+}

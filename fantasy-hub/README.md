@@ -1,4 +1,4 @@
-# Fantasy Hub — GRIDIRON/86 v9.12.1, Cloudflare edition
+# Fantasy Hub — GRIDIRON/86 v9.13.0, Cloudflare edition
 
 Live site: https://fantasy-home.fantasy-hub.workers.dev/
 
@@ -241,3 +241,11 @@ The reproducible 19-counteroffer benchmark fell from 163.81ms to 91.87ms (44% lo
 - Show every matchup starter without a scroll box, with larger scores, a black title ribbon, and alternating paper rows. Move Position Allocation's period into its title ribbon.
 - Give Points and Share matching plot geometry, expand Outlook's useful content, and show workload metrics only when applicable to the player.
 - Combine trade package selectors and totals around a centered difference. Enlarge the matchup and starting-lineup tables and align the Club Overview's ledger with its stat grid.
+
+## v9.13 — compact home reports and active-week analysis
+
+- A shared Active Week selector synchronizes the homepage matchup and player forecasts. Historical weeks exclude later scoring and unscoped current projections.
+- Outlook and Share follow Personnel Register selection, with no duplicate home selectors. Share shows three key metrics at home and eight in its full report.
+- Home Outlook displays a compact analytical overview; generated reports now receive league-relative tier evidence and conclude with a provisional lineup role and decision tradeoffs.
+- Matchup scores have a black ribbon with team names and records above the scores. Points chart surfaces open Position Allocation, while week bars still open starting-lineup reports.
+- Player Terminal uses matching white metric tiles with colored strips in both views. The trade home tile uses larger totals, blue/red package favor and a central difference/balance readout.

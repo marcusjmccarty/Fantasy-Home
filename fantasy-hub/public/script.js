@@ -92,7 +92,6 @@ function updateUI() {
   el('team-owner').textContent=`${team.owner || 'League member'} · ${model.league}`;
   el('league-name').textContent=model.league;
   el('season-name').textContent=`${model.season} SEASON`;
-  el('header-current-week').textContent='Week '+String(model.currentWeek || model.liveWeek || Math.max(1,...(model.weeks||[1])));
   el('header-record').textContent=`${team.wins}–${team.losses}${team.ties ? `–${team.ties}`:''}`;
   el('header-rank').textContent=String(ranked().findIndex(t=>String(t.id)===currentTeamId)+1).padStart(2,'0')+` / ${String(model.teams.length).padStart(2,'0')}`;
   el('header-scoring').textContent=model.scoring;
@@ -215,17 +214,26 @@ function homeMatchupRoster(team,week){
  let rows=(h?.lineup?.length?h.lineup:active?team.currentLineup||[]:[]).map(r=>({...r,p:model.players[r.id]})).filter(r=>r.p);
  if(!rows.length)rows=Object.entries(h?.starters||{}).map(([id,points])=>({id,p:model.players[id],points,starter:true})).filter(r=>r.p);
  rows=rows.filter(r=>r.starter!==false);
- return `<section class="home-matchup-team"><header><b title="${esc(teamName(team))}">${esc(teamName(team))}</b><span>${team.wins}–${team.losses}${team.ties?'–'+team.ties:''}</span></header><div class="matchup-roster-scroll" aria-label="${esc(teamName(team))} week ${week} starters">${rows.length?rows.map(r=>`<button type="button" class="matchup-roster-player" data-matchup-player="${esc(r.id)}"><span>${esc(r.p.pos)}</span><b title="${esc(r.p.name)}">${esc(r.p.name)}</b><strong>${nfmt(number(r.points)??number(r.p.scores?.[week]),1)}</strong></button>`).join(''):'<p class="lab-note">Starter scores unavailable.</p>'}</div></section>`;
+ return `<section class="home-matchup-team"><div class="matchup-roster-scroll" aria-label="${esc(teamName(team))} week ${week} starters">${rows.length?rows.map(r=>`<button type="button" class="matchup-roster-player" data-matchup-player="${esc(r.id)}"><span>${esc(r.p.pos)}</span><b title="${esc(r.p.name)}">${esc(r.p.name)}</b><strong>${nfmt(number(r.points)??number(r.p.scores?.[week]),1)}</strong></button>`).join(''):'<p class="lab-note">Starter scores unavailable.</p>'}</div></section>`;
 }
 el('matchup-panel').addEventListener('click',event=>{const player=event.target.closest('[data-matchup-player]');if(player){event.stopPropagation();openExplorer('profile',player.dataset.matchupPlayer);}});
 
+function availableActiveWeeks(team){
+ return [...new Set([...(model.weeks||[]),...(team.history||[]).map(h=>Number(h.week)),Number(model.currentWeek||model.liveWeek||0)].filter(w=>Number.isInteger(w)&&w>=1&&w<=18))].sort((a,b)=>a-b);
+}
 function updateWeekMenu(team){
-  const previous=String(currentWeek);
-  const available=[...new Set([...team.history.map(h=>h.week),Number(model.currentWeek||model.liveWeek||0)].filter(w=>Number.isFinite(w)&&w>=1&&w<=18))].sort((a,b)=>a-b);
-  if(!available.includes(Number(previous))) currentWeek=available.at(-1) || 1;
-  el('week-select').replaceChildren(...available.map(w=>new Option(String(w).padStart(2,'0'),String(w))));
-  if(!available.length)el('week-select').add(new Option('—','0'));
-  el('week-select').value=String(currentWeek);
+ const weeks=availableActiveWeeks(team);
+ if(!weeks.includes(Number(currentWeek)))currentWeek=weeks.at(-1)||1;
+ for(const id of ['header-current-week','week-select']){
+  const picker=el(id);picker.replaceChildren(...weeks.map(w=>new Option(id==='header-current-week'?'Week '+w:String(w).padStart(2,'0'),String(w))));
+  if(!weeks.length)picker.add(new Option('—','1'));
+  picker.value=String(currentWeek);
+ }
+}
+function setActiveWeek(value){
+ const week=Number(value);if(!availableActiveWeeks(getTeam()).includes(week))return;
+ currentWeek=week;updateUI();
+ if(typeof XL!=='undefined'&&XL.open){if(['matchup','summary'].includes(XL.open))XL.viewWeek=week;renderExplorer();}
 }
 
 function drawMatchup(team){
@@ -243,7 +251,7 @@ function drawMatchup(team){
   const other=opposite?.officialDisplay??otherOfficial??opposite?.computedActual??null;
   const result=own===null?'NOT STARTED':other===null?'NO OPPONENT':own===other?'TIE':own>other?'VICTORY':'DEFEAT';
   const provisional=Number(model.currentWeek||model.liveWeek)===Number(current.week);
-  el('matchup-panel').innerHTML=`<div class="matchup-original-score"><div class="matchup-competitors"><div class="matchup-side"><strong>${nfmt(own,1)}</strong></div><div class="matchup-divider"><b>VS</b><small>${provisional?'LIVE':result}</small></div><div class="matchup-side right"><strong>${nfmt(other,1)}</strong></div></div></div><div class="matchup-roster-pair">${homeMatchupRoster(team,week)}${homeMatchupRoster(opponent,week)}</div>`;
+  el('matchup-panel').innerHTML=`<div class="matchup-original-score"><div class="matchup-competitors"><div class="matchup-side"><div class="matchup-score-club"><b>${esc(teamName(team))}</b><span>${team.wins}–${team.losses}${team.ties?'–'+team.ties:''}</span></div><strong>${nfmt(own,1)}</strong></div><div class="matchup-divider"><b>VS</b><small>${provisional?'LIVE':result}</small></div><div class="matchup-side right"><div class="matchup-score-club"><b>${esc(opponent?teamName(opponent):'BYE')}</b><span>${opponent?opponent.wins+'–'+opponent.losses:'—'}</span></div><strong>${nfmt(other,1)}</strong></div></div></div><div class="matchup-roster-pair">${homeMatchupRoster(team,week)}${homeMatchupRoster(opponent,week)}</div>`;
   el('matchup-comment').textContent='';
 
 }
@@ -279,6 +287,12 @@ el('player-rows').addEventListener('keydown',e=>{
   const row=e.target.closest('tr[data-player]');if(!row)return;
   if(e.key==='Enter'||e.key===' '){e.preventDefault();currentPlayerId=row.dataset.player;drawRoster(getTeam());drawProfile(getTeam());e.stopPropagation();}
 });
+function playerQuickStats(p){
+ const week=Number(currentWeek),providerWeek=Number(model.currentWeek||model.liveWeek||model.weeks?.at(-1)),projection=number(p?.projections?.[week])??(week===providerWeek?number(p?.espnProj):null);
+ const prior=Object.entries(p?.scores||{}).filter(([w,v])=>Number(w)<week&&number(v)!==null).sort((a,b)=>Number(a[0])-Number(b[0])).slice(-3).map(([,v])=>v);
+ const stats=[['Proj · W'+week,projection,'Provider fantasy-point projection for the active week. A dash means no projection was supplied.'],['Last wk · W'+Math.max(1,week-1),week>1?number(p?.scores?.[week-1]):null,'Recorded fantasy points in the week immediately before the active week.'],['Last 3 avg',prior.length?sum(prior)/prior.length:null,'Average fantasy points across the last three recorded games before the active week.']];
+ return stats.map(([label,value,help])=>`<button type="button" class="stat-help-trigger strategy-metric player-quick-metric" data-stat-title="${esc(label)}" data-stat-help="${esc(help)}" aria-expanded="false"><span>${esc(label)}</span><strong>${nfmt(value)}</strong></button>`).join('');
+}
 function drawProfile(team){
   const list=rowsFor(team);
   if(!list.some(p=>p.id===currentPlayerId))currentPlayerId=[...list].sort((a,b)=>(b.total??-Infinity)-(a.total??-Infinity))[0]?.id||null;
@@ -286,11 +300,7 @@ function drawProfile(team){
   el('profile-name').textContent=p?.name||'NO SELECTION';
   el('profile-team').textContent=p?`${p.nfl} / ${p.status}`:'—';
   el('player-pos-top').textContent=p?.pos||'—';
-  const upcoming=Number(model.currentWeek||model.liveWeek||(model.source==='demo'?7:currentWeek)||1),projection=number(p?.projections?.[upcoming])??number(p?.espnProj);
-  el('profile-total').textContent=nfmt(projection);el('profile-estimate-label').textContent='W'+upcoming+' PROJ';
-  el('profile-last').textContent=nfmt(p?.last);
-  const recent=Object.entries(p?.scores||{}).filter(([w,v])=>Number(w)<upcoming&&number(v)!==null).sort((a,b)=>Number(a[0])-Number(b[0])).slice(-3).map(([,v])=>v);
-  el('profile-average').textContent=nfmt(recent.length?sum(recent)/recent.length:null);
+  el('profile-quick-stats').innerHTML=playerQuickStats(p);
   if(typeof renderStrategyHome==='function')renderStrategyHome();
   if(!p||!model.weeks.length){el('player-spark').innerHTML='<div class="empty-chart">NO PLAYER HISTORY</div>';return;}
   const values=model.weeks.map(w=>number(p.scores?.[w])),max=Math.max(1,...values.map(v=>v??0));
@@ -479,8 +489,8 @@ el('lookup-user-form').addEventListener('submit',async e=>{e.preventDefault();tr
 el('direct-league-form').addEventListener('submit',e=>{e.preventDefault();connect(el('league-id-input').value,null,null)});
 el('demo-button').addEventListener('click',()=>{model=makeDemo();currentTeamId='1';currentWeek=6;currentPlayerId=null;linkedUserId=null;try{localStorage.removeItem('gridiron86-last')}catch{}updateUI();el('data-dialog').close()});
 el('refresh-button').addEventListener('click',()=>{if(model.source==='sleeper')connect(model.leagueId,currentTeamId,null);else if(model.source==='espn')connectESPN();else if(model.source==='demo')openData();else{openData();selectTab('json');setDialogMessage('Choose your JSON file again to reload it.')}});
-el('team-select').addEventListener('change',e=>{currentTeamId=e.target.value;currentPlayerId=null;currentWeek=Number(model.currentWeek||model.liveWeek||model.weeks.at(-1)||1);updateUI()});
-el('week-select').addEventListener('change',e=>{currentWeek=Number(e.target.value);drawMatchup(getTeam())});
+el('team-select').addEventListener('change',e=>{currentTeamId=e.target.value;currentPlayerId=null;updateUI()});
+for(const id of ['week-select','header-current-week'])el(id).addEventListener('change',e=>setActiveWeek(e.target.value));
 el('sort-players').addEventListener('change',()=>drawRoster(getTeam()));
 el('json-file').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{if(file.size>5000000)throw new Error('File exceeds 5 MB.');const data=JSON.parse(await file.text());importJSON(data);setDialogMessage('FILE IMPORTED','success');el('data-dialog').close()}catch(error){setDialogMessage(`Unable to import: ${error.message}`,'error')}finally{e.target.value=''}});
 el('download-template').addEventListener('click',()=>{
@@ -609,7 +619,7 @@ function drawPlayerDossiers(players){
       <div class="dossier-primary">
         <div class="dossier-metrics">${metric('SEASON POINTS',nfmt(p.total),'OBSERVED TOTAL',color)}${metric('WEEKLY AVG',nfmt(avg),'SCORING WEEKS')}${metric('LATEST WEEK',nfmt(p.last),'MOST RECENT WEEK')}${metric('LAST 3 AVG',nfmt(last3),'RECENT FORM',color)}${metric('BEST / WORST',`${nfmt(high,1)} / ${nfmt(low,1)}`,'RECORDED RANGE')}${metric('CONSISTENCY',nfmt(std,1),'STD. DEVIATION · LOWER = STEADIER')}</div>
         <div class="dossier-featured" aria-label="Player projection and availability"><div><small>ESPN PROJECTION</small><strong>${nfmt(p.espnProj,1)}</strong></div><div><small>AVAILABILITY</small><strong class="${/OUT|INJURED|IR|SUSPENDED/i.test(p.status)?'negative-text':'positive-text'}">${esc(p.status||'NOT REPORTED')}</strong></div></div>
-        <div class="dossier-bottom"><div class="window-topline"><span>WEEKLY SCORING / ${scores.length} REPORTED</span><span>${esc(p.pos)} · ${esc(p.nfl)}</span></div><div class="dossier-chart" data-dossier-chart="${esc(String(p.id))}" tabindex="0" role="button" aria-label="Open ${esc(p.name)} scoring log. Select an individual bar for that week's starter contributions">${bars||'<span class="empty-chart">NO HISTORY AVAILABLE</span>'}</div></div>
+        <div class="dossier-bottom"><div class="window-topline"><span>WEEKLY SCORING / ${scores.length} REPORTED</span><span>${esc(p.pos)} · ${esc(p.nfl)}</span></div><div class="dossier-chart" data-dossier-chart="${esc(String(p.id))}" tabindex="0" role="button" aria-label="Open ${esc(p.name)} position allocation. Select an individual bar for that week's starter contributions">${bars||'<span class="empty-chart">NO HISTORY AVAILABLE</span>'}</div></div>
       </div>
       <div class="dossier-news-panel" id="dossier-news-${esc(String(p.id))}" data-dossier-player-id="${esc(String(p.id))}" data-dossier-name="${esc(p.name)}" data-dossier-news="${p.espnId?esc(String(p.espnId)):''}" tabindex="0" role="button" aria-label="Open ${esc(p.name)} Player Terminal"><div class="dossier-context-outlook"><div class="dossier-panel-heading">PERFORMANCE & OUTLOOK</div><div class="dossier-scroll-copy"><p class="player-news-fallback">${p.espnId?'Retrieving verified outlook and recent performance…':'Performance context loads from recorded scores.'}</p></div></div><div class="dossier-context-news"><div class="dossier-panel-heading">RECENT VERIFIED NEWS</div><div class="dossier-scroll-copy"><p class="player-news-fallback">${p.espnId?'Loading articles for this player…':'No verified player news source attached.'}</p></div></div></div>
     </div></section>`;

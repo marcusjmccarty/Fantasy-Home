@@ -1272,8 +1272,8 @@ function detailPlayer(playerId){const p=model.players[playerId]||XL.free.find(z=
  const extras=Object.entries(metricRow(p)).filter(([k,v])=>['pass_att','pass_cmp','pass_yds','pass_td','int','rush_att','rush_yds','rush_td','receptions','rec_yds','rec_td','targets','yac','air_yards','epa','passer_rating','snap_pct'].includes(k)&&labNum(v)!==null);
  const statusColor=/OUT|INJURED|IR|SUSPENDED/i.test(p.status)?'negative-text':'positive-text';
  setExplorer(heading(playerTitle(p),`${esc(p.status||'UNKNOWN')} · ${teamForPlayer(p)?'Rostered: '+teamName(teamForPlayer(p)):'Free agent / not on current team'} · ${model.season}`)+
- playerRankingMetrics(p)+
- `<div class="lab-two player-terminal-top"><div class="lab-panel player-chart-pair"><div class="player-weekly-panel" data-chart-surface="${esc(p.id)}" tabindex="0" role="group" aria-label="Open scoring log for ${esc(p.name)}"><h4>WEEKLY POINTS</h4><div class="player-weekly-chart">${games.length?trendBars(games.map(g=>({label:'Week '+g.week,short:'W'+g.week,v:g.points,week:g.week})),(v,i)=>['#487ebb','#399676','#9466bc','#b85d70','#d39b43'][i%5]):'<p>No reported scoring weeks.</p>'}</div></div><div id="player-share-history">${shareHistoryChart(p)}</div></div>${scoutingFile(p)}</div>`+
+ playerRankingMetrics(p)+`<div class="player-quick-stats strategy-metrics three">${playerQuickStats(p)}</div>`+
+ `<div class="lab-two player-terminal-top"><div class="lab-panel player-chart-pair"><div class="player-weekly-panel" data-chart-surface="${esc(p.id)}" tabindex="0" role="group" aria-label="Open position allocation for ${esc(p.name)}"><h4>WEEKLY POINTS</h4><div class="player-weekly-chart">${games.length?trendBars(games.map(g=>({label:'Week '+g.week,short:'W'+g.week,v:g.points,week:g.week})),(v,i)=>['#487ebb','#399676','#9466bc','#b85d70','#d39b43'][i%5]):'<p>No reported scoring weeks.</p>'}</div></div><div id="player-share-history">${shareHistoryChart(p)}</div></div>${scoutingFile(p)}</div>`+
  `<div class="lab-panel player-complete-log" data-open-player-analytics tabindex="0" role="button" aria-label="Expand complete player statistical archive"><h4>COMPLETE FANTASY GAME LOG <span class="player-log-open">OPEN COMPLETE STATISTICAL FILE ↗</span></h4>${expandTable(['WK','FANTASY POINTS','ESPN PROJECTION','DIFFERENCE','AVAILABLE STATLINE'],allweeks.map(w=>{const actual=labNum(p.scores?.[w]),proj=labNum(p.projections?.[w]);return `<tr class="lab-clickable player-gamelog-row" data-gamelog-week="${w}" tabindex="0" role="button" title="Open Week ${w} starting lineup"><td>W${w}</td><td><strong>${labFormat(actual,2)}</strong></td><td>${labFormat(proj,2)}</td><td class="${actual!==null&&proj!==null?(actual>=proj?'positive-text':'negative-text'):''}">${actual!==null&&proj!==null?labFormat(actual-proj,2):'—'}</td><td class="lab-statline">${esc(describeStatline(p,w))}</td></tr>`}).concat([`<tr class="player-log-total"><td><b>TOTAL · ${reportedWeeks.length} WK</b></td><td><b>${labFormat(logActual,2)}</b></td><td>${labFormat(logProj,2)}</td><td>${logDiff===null?'—':labFormat(logDiff,2)}</td><td class="lab-statline">${rawTotalCell(logStats)}</td></tr>`]))}<p class="lab-note">Scoring is taken from the connected fantasy league. NFL box-score fields appear only when ESPN returned their underlying stat categories.</p></div>`+
  `<div class="lab-two player-terminal-context" id="player-editorial-anchor"><div class="player-terminal-left"><section class="lab-panel player-terminal-stats"><h4>BOX SCORE / ADVANCED STATISTICS</h4>${extras.length?`<div class="player-compact-boxscore">${extras.map(([k,v])=>`<div class="player-boxscore-metric" title="${esc(META[k]?.name||k)}"><span>${esc(META[k]?.name||k)}</span><b>${labFormat(v,2)}</b></div>`).join('')}</div>`:'<p class="lab-note">Raw NFL statistics unavailable. ESPN or advanced CSV data can provide more detail.</p>'}</section><section class="lab-panel player-terminal-outlook"><h4>PLAYER OUTLOOK / PERFORMANCE & NEXT MATCHUP</h4><div id="lab-player-outlook">${playerContextSections(XL.overview.get(String(p.espnId||p.id)),p).outlookHTML}</div><div id="lab-next-matchup" class="next-matchup-line">Next-week opponent: looking up NFL schedule…</div><div class="ai-outlook-action"><button type="button" class="lab-action" id="lab-generate-ai" data-ai-player="${esc(String(p.id))}">GENERATE AI OUTLOOK ↗</button><span id="lab-ai-status">On demand · server API key required</span></div><div id="lab-ai-outlook" class="ai-outlook-result"></div></section></div><section class="lab-panel player-terminal-news"><h4>VERIFIED PLAYER NEWS</h4><div id="lab-player-news">${playerContextSections(XL.overview.get(String(p.espnId||p.id)),p).newsHTML}</div><button class="lab-action" id="lab-fetch-news" data-news-id="${esc(p.espnId||p.id)}">REFRESH SOURCED NEWS ↻</button></section></div>`);
  void hydrateNextMatchup(p);void hydrateAIStatus(p);if(p.espnId)void hydrateProfileEditorial(p);
@@ -1776,7 +1776,7 @@ dialog.addEventListener('click',e=>{
  if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();
 });
 document.querySelectorAll('.expandable').forEach(box=>{
- box.addEventListener('click',e=>{if(e.target.closest('select,input,label,a,details,[data-stat-help],[data-chart-surface],[data-share-chart],.lab-link,[data-player],[data-team],[data-home-trade-remove],#home-trade-clear'))return;openExplorer(box.dataset.explore,['outlook','opportunity'].includes(box.dataset.explore)?homePlayer()?.id:box.dataset.explore==='profile'?currentPlayerId:null)});
+ box.addEventListener('click',e=>{if(e.target.closest('select,input,label,a,details,[data-stat-help],[data-chart-surface],[data-share-chart],.lab-link,[data-player],[data-team],[data-home-trade-remove],#home-trade-clear,[data-matchup-ai]'))return;openExplorer(box.dataset.explore,['outlook','opportunity'].includes(box.dataset.explore)?homePlayer()?.id:box.dataset.explore==='profile'?currentPlayerId:null)});
  box.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target===box){e.preventDefault();openExplorer(box.dataset.explore,['outlook','opportunity'].includes(box.dataset.explore)?homePlayer()?.id:box.dataset.explore==='profile'?currentPlayerId:null)}});
 });
 // The small homepage chart offers the same direct week-to-lineup path as
@@ -1786,18 +1786,18 @@ el('weekly-chart').addEventListener('click',event=>{
  event.preventDefault();event.stopPropagation();
  openExplorer('summary',null,{teamId:String(currentTeamId),week:Number(bar.dataset.homeWeek),focus:'franchise-lineup'});
 });
-// Player bars select a week; the chart surface opens the player’s complete scoring log.
+// Player bars select a week; the chart surface opens Position Allocation for the player’s franchise.
 el('player-spark').addEventListener('click',event=>{
  const bar=event.target.closest('button[data-home-player-week]');
  event.stopPropagation();
- if(bar){if(!bar.disabled)openPlayerPositionContributions(currentPlayerId,Number(bar.dataset.homePlayerWeek));}else openExplorer('player-analytics',currentPlayerId);
+ if(bar){if(!bar.disabled)openPlayerPositionContributions(currentPlayerId,Number(bar.dataset.homePlayerWeek));}else openPlayerPositionAllocation(currentPlayerId);
 
 });
 el('weekly-chart').addEventListener('keydown',event=>{
  const bar=event.target.closest('[data-home-week]');if(!bar||!['Enter',' '].includes(event.key))return;
  event.preventDefault();event.stopPropagation();bar.click();
 });
-// Individual Player Files use the same week and full scoring-log destinations.
+// Individual Player Files use the same week and Position Allocation destinations.
 const playerDossiers=el('player-dossiers');
 playerDossiers.addEventListener('click',e=>{
  const dossier=e.target.closest('.dossier-window');if(!dossier)return;
@@ -1806,7 +1806,7 @@ playerDossiers.addEventListener('click',e=>{
  if(bar){e.stopPropagation();openPlayerPositionContributions(id,Number(bar.dataset.dossierWeek));return;}
  if(e.target.closest('.dossier-news-panel')){if(e.target.closest('a[href]')){e.stopPropagation();return;}e.preventDefault();e.stopPropagation();openExplorer('profile',id,{focus:'player-editorial'});return;}
  if(e.target.closest('a,select,input'))return;
- if(e.target.closest('[data-dossier-chart]')){e.stopPropagation();openExplorer('player-analytics',id);return;}
+ if(e.target.closest('[data-dossier-chart]')){e.stopPropagation();openPlayerPositionAllocation(id);return;}
  openExplorer('profile',id);
 });
 playerDossiers.addEventListener('keydown',e=>{
@@ -1930,14 +1930,14 @@ el('explore-content').addEventListener('click',e=>{
  }
 });
 el('explore-content').addEventListener('click',async e=>{
- // Graph bars link to a focused starting lineup; the chart surface opens the full player log.
+ // Graph bars link to a focused starting lineup; the chart surface opens Position Allocation.
  const positionWeek=e.target.closest('[data-position-week]');
  if(positionWeek){e.stopPropagation();openExplorer('summary',null,{teamId:String(XL.viewTeamId??currentTeamId),week:Number(positionWeek.dataset.positionWeek),focus:'franchise-lineup'});return;}
  const weeklyBar=e.target.closest('[data-weekly-bar-week]');
  if(weeklyBar){e.stopPropagation();openExplorer('summary',null,{teamId:weeklyBar.dataset.weeklyBarTeam,week:Number(weeklyBar.dataset.weeklyBarWeek),focus:'franchise-lineup'});return;}
  const playerWeek=e.target.closest('[data-player-week]');
  if(playerWeek){e.stopPropagation();openPlayerPositionContributions(XL.player,Number(playerWeek.dataset.playerWeek));return;}
- const scoringChart=e.target.closest('[data-chart-surface]');if(scoringChart){e.stopPropagation();openExplorer('player-analytics',scoringChart.dataset.chartSurface||XL.player||currentPlayerId);return;}
+ const scoringChart=e.target.closest('[data-chart-surface]');if(scoringChart){e.stopPropagation();openPlayerPositionAllocation(scoringChart.dataset.chartSurface||XL.player||currentPlayerId);return;}
  // Clicking the non-player surface of Starting Lineup opens the expanded roster.
  // Player rows still open dossiers, and slot buttons still open what-if substitutions.
  const lineupSurface=e.target.closest('.franchise-week-panel');
@@ -2144,8 +2144,13 @@ el('explore-content').addEventListener('input',e=>{const t=e.target;if(t.id==='a
 explorerUpdate();
 prepareDossierNews();
 
-el('explore-content').addEventListener('keydown',event=>{const chart=event.target.closest('[data-chart-surface]');if(chart&&event.target===chart&&['Enter',' '].includes(event.key)){event.preventDefault();openExplorer('player-analytics',chart.dataset.chartSurface||XL.player||currentPlayerId);}});
+el('explore-content').addEventListener('keydown',event=>{const chart=event.target.closest('[data-chart-surface]');if(chart&&event.target===chart&&['Enter',' '].includes(event.key)){event.preventDefault();openPlayerPositionAllocation(chart.dataset.chartSurface||XL.player||currentPlayerId);}});
 
 const homePointsChart=document.querySelector('.home-points-history');
-homePointsChart.addEventListener('click',event=>{event.stopPropagation();openExplorer('player-analytics',currentPlayerId);});
-homePointsChart.addEventListener('keydown',event=>{if(event.target===homePointsChart&&['Enter',' '].includes(event.key)){event.preventDefault();openExplorer('player-analytics',currentPlayerId);}});
+homePointsChart.addEventListener('click',event=>{event.stopPropagation();openPlayerPositionAllocation(currentPlayerId);});
+homePointsChart.addEventListener('keydown',event=>{if(event.target===homePointsChart&&['Enter',' '].includes(event.key)){event.preventDefault();openPlayerPositionAllocation(currentPlayerId);}});
+
+function openPlayerPositionAllocation(id){
+ const p=model.players[id]||XL.free.find(p=>String(p.id)===String(id)),team=p?teamForPlayer(p):null;
+ openExplorer('positions',null,{teamId:String(team?.id??XL.viewTeamId??currentTeamId)});
+}
