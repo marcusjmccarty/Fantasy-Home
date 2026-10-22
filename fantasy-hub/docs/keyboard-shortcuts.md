@@ -2,13 +2,14 @@
 
 Branch: `codex/keyboard-shortcuts`. Base: verified latest `origin/main` at
 `74c137e48dfa1b83fb7621a162aacdfaf45195ef` (`git fetch origin main` succeeded).
-Implementation: `0f5c9ada1cdecfed45b27bc07d65220b3684ba23`.
+Initial implementation: `0f5c9ada1cdecfed45b27bc07d65220b3684ba23`.
+Follow-up fixes: `3c53e74`, `ad16f86`, `afa820e`, `a209ec7`, `b23844c`.
 
 ## Keymap
 
 | Key | Action |
 | --- | --- |
-| G | Focus existing GO TO on dashboard/report. Use native arrows/Enter to select a destination. |
+| G | Focus GO TO in Windowed mode or the active report tab in Tabbed mode. Use existing arrow navigation. |
 | / | Focus current report search when available (Free agents, Touches & share, Variable lab). Otherwise leave the key alone. |
 | ? | Open keyboard help. |
 | Escape | Dismiss the top card or native modal. Inline tabbed reports stay open. |
@@ -18,12 +19,14 @@ Implementation: `0f5c9ada1cdecfed45b27bc07d65220b3684ba23`.
 KEYS ? buttons in the main menu and report title bar make help discoverable and
 available on touch screens. Help uses existing chrome, a named/described native
 dialog, initial close-button focus, and native focus restoration. Its checkbox
-disables character shortcuts for this page visit; Escape/native controls remain
-available. No storage writes or navigation label changes were added.
+disables character shortcuts; Escape/native controls remain available. The choice
+is remembered under `gridiron86-keyboard-shortcuts-v1`, only written on explicit
+checkbox changes. Blocked storage falls back to a page-local choice. Workspace
+storage and navigation labels are unchanged.
 
 Character shortcuts ignore inputs, textareas, selects, editable regions, custom
 textbox/combobox/slider roles, composition, legacy IME code 229, repeats, prevented
-events, and Ctrl/Meta/Alt combinations. Shift is allowed only for `?`. Data/About/
+events, and Ctrl/Meta/Alt/AltGraph combinations. Shift is allowed only for `?`. Data/About/
 help modals and metric cards suspend navigation shortcuts. Native selects retain
 typeahead; no global arrows were added. Native report `cancel` also dismisses a
 ranking card first when focus is in a form control.
@@ -38,7 +41,9 @@ Previously, report tabs supported arrows/Home/End; tiles/rows supported Enter/Sp
 native dialogs handled Escape/focus return; metric cards consumed Escape in capture;
 ranking cards supported pointer dismissal only. There was no global keymap/help.
 
-Only public/index.html and new public/shortcuts.js change application code. The
+Application changes are public/index.html, new public/shortcuts.js, a small
+modifier/composition guard on the existing interactions.js metric listener, and
+a focus-ownership guard in the strategy.js usage-search debounce. The
 module uses existing selects and `dismissRankHost`, after metric capture handling.
 It does not change graph focus/reordering/redraw/mobile sizing, workspace preference
 writes, tiles, or navigation labels. Parent owns integration. No push, merge,
@@ -52,7 +57,8 @@ deployment, credentials, live provider requests, or paid actions were performed.
 - `npm test`: **72/72 passed**, including local Cloudflare runtime tests.
 - `node --check public/shortcuts.js` and `git diff --check`: passed.
 - From fantasy-hub, serve with `python3 -m http.server 8765 --directory public`,
-  then run `node scripts/verify-shortcuts.cjs` with Playwright available and Chromium
+  then run `node scripts/verify-shortcuts.cjs` and `node scripts/audit-shortcuts.cjs`
+  with Playwright available and Chromium
   installed. Optional `CHROMIUM_PATH` and `SHORTCUTS_BASE_URL` override defaults
   `/usr/bin/chromium` and `http://127.0.0.1:8765`. Playwright is a QA-environment
   dependency, not an app dependency. External requests are blocked; API responses
@@ -70,5 +76,61 @@ Evidence: [desktop help](screenshots/shortcuts-desktop.png),
 Limitations: Chromium/demo data and simulated composition events; not physical
 mobile hardware, actual OS IMEs, native Safari/Firefox, screen-reader browse mode,
 or live league connections. Existing Enter/Space handlers outside this module
-were preserved. Shortcut opt-out intentionally lasts until reload. No outstanding
-implementation blocker.
+were preserved. Renderer-owned focus issues below need coordination before editing.
+
+
+## Deeper audit and next backlog
+
+The additional browser script covers all 15 WORKSPACE_TABS destinations in both
+Windowed and Tabbed modes (30 combinations): summary, matchup, roster, weekly,
+standings, profile, player-analytics, agents, positions, position-compare,
+league-contributions, outlook, opportunity, trade, graph. It exercises real select
+or tab navigation, G, G then /, absent/present search, typing, help return focus,
+and Escape. It also tests reload/re-enable, unchanged workspace storage, blocked
+storage, help after a real renderExplorer update, held Escape, metric modifier/IME
+exclusions, and AltGraph. All passed; original browser QA and 72 Node tests pass.
+
+Five follow-up fixes were supported by failing cases before implementation:
+
+1. `3c53e74`: G targeted a hidden select in Tabbed mode. It now focuses the active
+   tab; existing workspace arrow navigation remains untouched.
+2. `ad16f86`: disabling single keys reset on reload. Opt-out now persists separately
+   from workspace state, supporting users whose assistive technology uses letters.
+3. `afa820e`: removing a help opener with renderExplorer stranded focus on close.
+   The close handler now falls back to the visible help button only when native
+   focus restoration failed, and never steals focus from another modal/control.
+4. `a209ec7`: held Escape dismissed help and then its report; metric capture also
+   consumed Ctrl+Escape/composing events. Repeat Escape no longer cascades through
+   native modals, and metric capture honors modifiers/composition/repeats.
+5. `b23844c`: delayed Touches & share results reclaimed keyboard focus after a
+   move to another control. The standalone callback now restores search selection
+   only if search still owned focus before updating results. Browser tests cover
+   both moved focus and continued typing.
+
+Sequential G then / intentionally leaves Windowed GO TO focused: it is a select,
+so native typing wins. In Tabbed mode G focuses a tab, and / then focuses report
+search when available. Rapid character repeats cannot reopen help or route again.
+Single-key opt-out remains available through the visible button without keyboard
+shortcuts; actual screen-reader browse-mode testing is still needed.
+
+Priority backlog requiring owner/environment coordination:
+
+- **Renderer focus stealing (reproduced; no overlapping edit attempted):** in
+  Tabbed Free agents and Variable lab, dispatch an input change
+  in the search field then focus KEYS ? before the 170ms debounce expires. After
+  300ms focus returns to agent-search / graph-search respectively.
+  The callbacks unconditionally refocus after updating data. Targets:
+  explorer.js input handler near line 2145 (agents and graph share one handler),
+  Graph focus belongs to the performance task; coordinate ownership before edits.
+  Touches & share was independently fixed in b23844c. Suggested
+  behavior: restore selection only while the same search still owns focus.
+- **Navigation coverage difference (observed; unchanged):** dashboard GO TO lacks
+  position-compare and league-contributions, while report GO TO and tabs include
+  them. All routes were audited through report controls. Site navigation is owned
+  by the UI task/parent; no destinations were added or renamed here.
+- **Cross-browser/assistive technology validation:** native Safari/Firefox,
+  physical keyboards/IME, and screen-reader browse-mode opt-out require those
+  environments. Chromium and synthetic events cannot establish that coverage.
+
+No operations were denied and no outcome is uncertain. The renderer edit is
+pending owner coordination, not a tool/permission rejection.
