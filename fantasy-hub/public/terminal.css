@@ -293,3 +293,94 @@ body[data-layout=tabbed] .arrange-bar{display:none}
 .report-tabs .report-bar{align-content:flex-start;column-gap:2px}
 body[data-layout=tabbed] #explore-team-switch{max-width:170px}
 .explore-title-bar>.report-tabs #workspace-tab-dashboard{font-weight:600}
+
+/* ---------- Position allocation: choose which position's rank the first tile shows ---------- */
+.home-position-metrics .position-focus-tile{display:flex;flex-direction:column;min-width:0;background:#fff;border:1px solid #a9afa7;border-top:3px solid #487ebb}
+.home-position-metrics .position-focus-tile>button.strategy-metric.stat-help-trigger{border:0;min-height:0;flex:1;padding:4px 7px 7px}
+.home-position-metrics .position-focus-tile>button.strategy-metric>span{display:none}
+.position-focus-picker{display:block;padding:6px 6px 0}
+.position-focus-picker select{width:100%;min-height:26px;padding:2px 4px;font:600 12px var(--mono);color:#263027;background:#f4f4ed;border:1px solid #8b8e86;cursor:pointer}
+
+/* Player outlook: projections → range bar → the evidence behind them. */
+.strategy-range .strategy-metrics+.range-track{margin-top:4px}
+.strategy-range .range-labels{margin-bottom:14px}
+.range-evidence-label{font:600 11.5px var(--mono);letter-spacing:.8px;text-transform:uppercase;color:#4d5650;padding-top:10px;border-top:1px dashed #b8bab2;margin-bottom:6px}
+
+/* ---------- Window title bar: expand box matches the move box on the left ---------- */
+/* Drawn as a 13px box (black centre, thin light ring) like the classic ▣; the
+   button keeps an invisible 24px click target around it. */
+.title-bar .chrome{position:relative;width:24px;height:24px;min-width:24px;min-height:24px;padding:0;margin:0 -5px 0 0;border:0!important;background:transparent!important;box-shadow:none!important;font-size:0!important;color:transparent;display:inline-grid;place-items:center;outline-offset:0}
+.title-bar .chrome::before{content:'';width:13px;height:13px;box-sizing:border-box;border:1px solid #62635f;background:#2b2d2a;box-shadow:inset 0 0 0 2px #ebeae2}
+.title-bar .chrome:hover::before{background:#3f6b5e;border-color:#1c1e1d}
+.title-bar .chrome:focus-visible{outline:2px solid #1f5fa8;outline-offset:-2px}
+.title-bar .tile-handle,.title-bar .box-ornament{width:13px;height:13px;box-sizing:border-box}
+@media (forced-colors:active){.title-bar .chrome::before{forced-color-adjust:none;background:ButtonText;border-color:ButtonText;box-shadow:inset 0 0 0 2px Canvas}}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important;border:0!important}
+
+/* ---------- Contrast pass 2: every remaining small grey reaches 4.5:1 ---------- */
+.utility-bar .separator{color:#5b5e58}
+#team-owner,.team-headline>span{color:#4f524d}
+.win small,.lab-panel small,.graph-screen small,.lab-stats small,.strategy-metric small{color:#55605b}
+.lab-info,.lab-note,.muted-note{color:#4b5552}
+.graph-screen b,.lab-filter-count b{color:#4b5552}
+:is(.positive-text,.num.positive-text,td.positive-text,b.positive-text,.positive){color:#1b6345!important}
+:is(.negative-text,.negative){color:#a3303f}
+/* Disabled history arrows stay legible (WCAG exempts them, but they should still be readable). */
+.explore-icon:disabled{color:#7c8380;opacity:1}
+.matchup-original-score small,.matchup-divider small,.matchup-competitors small{color:#d6d8d0}
+#explore-back:disabled,#explore-forward:disabled{color:#7c8380!important;opacity:1!important}
+.utility-bar .separator{color:#4d504a}
+.dossiers-heading span{color:#4f524d}
+.explore-content small{color:#55605b}
+.explore-content [class*=series],.explore-content .weekly-series-note{color:#55605b}
+.graph-screen label b,.graph-screen .lab-count b,.explore-content b[style*="909d98"]{color:#4b5552!important}
+.lab-dictionary b{color:#56625d}
+.weekly-panel-header>span{color:#55605b}
+.archive-banner small{color:#4f6158}
+
+/* ---- AI advice card (decision-first Gemini output; explorer.js aiAdviceCard) ---- */
+.ai-advice-card{--verdict:#4d5551;border:1px solid #91a28b;border-left:6px solid var(--verdict);background:#fbfdf7;box-shadow:2px 2px 0 #ccd6c5;padding:10px 12px;margin:8px 0 0;color:#1c1e1d;font:14px/1.5 var(--sans);min-width:0}
+.ai-advice-card.verdict-start,.ai-advice-card.verdict-add{--verdict:#1f6b45}
+.ai-advice-card.verdict-flex,.ai-advice-card.verdict-watch,.ai-advice-card.verdict-monitor{--verdict:#7f5300}
+.ai-advice-card.verdict-sit{--verdict:#a3282f}
+.ai-advice-card.verdict-pass{--verdict:#4d5551}
+.ai-advice-card.verdict-trade-for{--verdict:#1f4f7a}
+.ai-advice-head{display:flex;gap:10px;align-items:flex-start}
+.ai-verdict-badge{flex:0 0 auto;background:var(--verdict);color:#fff;font:bold 16px/1 var(--mono);letter-spacing:.8px;padding:9px 11px;border:1px solid #1c1e1d;box-shadow:2px 2px 0 #b9c3b4;min-width:64px;text-align:center}
+.ai-advice-label{display:block;font:bold 12px var(--mono);letter-spacing:.4px;color:#46554d;margin:0 0 2px}
+.ai-advice-card h5.ai-advice-headline{font:600 15px/1.4 var(--sans);margin:0 0 3px;color:#1c1e1d}
+.ai-advice-confidence{font:12px var(--mono);color:#46554d}.ai-advice-confidence b{color:#1c1e1d}
+.ai-advice-context{margin:8px 0 0;font-size:13px;color:#3d4842}
+.ai-advice-range{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 0 0;padding:6px 8px;border:1px dashed #a9b6a4;background:#fff;font:12px var(--mono);color:#46554d}
+.ai-advice-range b{font-size:15px;color:#1c1e1d;margin-left:3px}
+.ai-advice-card h6{font:bold 12px var(--mono);letter-spacing:.4px;margin:10px 0 3px;color:#2e4a3d;text-transform:uppercase}
+.ai-advice-card ul{margin:0;padding-left:18px}.ai-advice-card li{margin:2px 0}
+.ai-advice-risks li::marker{content:'! ';color:#a3282f;font-weight:bold}
+.ai-advice-extra{margin:8px 0 0;font-size:13px}.ai-advice-extra b{font:bold 12px var(--mono)}
+.ai-advice-why{margin:6px 0 0;font-size:13px}
+.ai-advice-foot{margin-top:9px;padding-top:6px;border-top:1px solid #d3dbcf;font:12px var(--mono);color:#52605a}
+.ai-advice-plain p{margin:4px 0 8px}
+.ai-advice-loading,.ai-advice-error{font:13px/1.5 var(--sans);margin:8px 0 0;padding:7px 9px;border:1px solid #a9b6a4;background:#fbfdf7;color:#2f3b35}
+.ai-advice-loading::before{content:'▌';display:inline-block;margin-right:6px;animation:ai-advice-blink 1s steps(2) infinite}
+.ai-advice-error{border-color:#c48a8e;color:#7d1f25}
+@keyframes ai-advice-blink{50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.ai-advice-loading::before{animation:none}}
+.ai-advice-card.compact{padding:7px 9px;font-size:13px}.ai-advice-card.compact .ai-verdict-badge{font-size:13px;padding:6px 8px;min-width:52px}.ai-advice-card.compact h5.ai-advice-headline{font-size:13px}
+.matchup-ai .ai-advice-card{max-width:none}.matchup-ai.compact:has(.ai-advice-card){max-height:none;overflow:visible}
+#outlook-preview .matchup-ai.compact .ai-advice-card p{display:block;-webkit-line-clamp:unset}
+@media (max-width:650px){.ai-advice-head{flex-direction:column;gap:6px}}
+.lab-scoreboard small,.explore-content .lab-scoreboard small{color:#d6d8d0}
+.position-focus-picker{display:flex;align-items:center;gap:6px;padding:6px 7px 0}
+.position-focus-picker::before{content:'RANK';font:11px var(--mono);letter-spacing:.4px;color:#4d5650}
+.position-focus-picker select{flex:1;min-width:0;min-height:24px;padding:1px 2px;font:600 11.5px var(--mono)}
+.home-position-metrics .position-focus-tile>button.strategy-metric.stat-help-trigger{padding:2px 7px 7px}
+.home-position-metrics .position-focus-tile>button.strategy-metric>strong{margin-top:6px}
+/* The picker reads as the tile's label: "BEST POSITION ▾" / "RB RANK ▾". */
+.position-focus-picker::before{content:none}
+.position-focus-picker{padding:7px 7px 0}
+.position-focus-picker select{-webkit-appearance:none;appearance:none;width:auto;max-width:100%;flex:0 1 auto;min-height:24px;padding:2px 18px 2px 4px;margin-left:-4px;border:1px dashed transparent;background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0h8L4 5z' fill='%23263027'/%3E%3C/svg%3E") no-repeat right 4px center;font:500 12px var(--mono);text-transform:uppercase;color:#4d5650;letter-spacing:.2px;cursor:pointer}
+.position-focus-picker select:hover{border-color:#8b8e86;background-color:#f4f4ed}
+.position-focus-picker select:focus-visible{outline:2px solid #1f5fa8;outline-offset:1px}
+.position-focus-picker select{font-size:11.5px;letter-spacing:0;padding-right:14px;background-position:right 2px center;text-overflow:ellipsis}
+.position-focus-picker{padding:3px 7px 0}.home-position-metrics .position-focus-tile>button.strategy-metric>strong{margin-top:10px}
+.matchup-ai .ai-advice-card p{margin:8px 0 0}.matchup-ai .ai-advice-card .ai-advice-head p,.matchup-ai .ai-advice-card footer{margin-bottom:0}

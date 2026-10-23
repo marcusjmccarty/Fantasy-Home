@@ -7,7 +7,7 @@ test('Cloudflare runtime can import a cookie-authenticated league without follow
   const calls=[];
   let redirect=false;
   const mf=new Miniflare(convertV4MiniflareOptions({
-    modules:[{type:'ESModule',path:path.resolve(__dirname,'../src/worker.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/matchup-context.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/public-read-coalescer.js')}],
+    modules:[{type:'ESModule',path:path.resolve(__dirname,'../src/worker.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/matchup-context.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/public-read-coalescer.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/ai-advice.js')}],
     compatibilityDate:'2026-10-01',
     durableObjects:{ESPN_SESSIONS:{className:'EspnSession',useSQLite:true}},
     outboundService:async request=>{
@@ -41,7 +41,7 @@ test('Cloudflare runtime shares public cold reads without forwarding caller cook
   let calls=0,release,started;
   const gate=new Promise(r=>release=r),ready=new Promise(r=>started=r);
   const mf=new Miniflare(convertV4MiniflareOptions({
-    modules:[{type:'ESModule',path:path.resolve(__dirname,'../src/worker.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/matchup-context.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/public-read-coalescer.js')}],
+    modules:[{type:'ESModule',path:path.resolve(__dirname,'../src/worker.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/matchup-context.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/public-read-coalescer.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/ai-advice.js')}],
     compatibilityDate:'2026-10-01',
     durableObjects:{ESPN_SESSIONS:{className:'EspnSession',useSQLite:true}},
     outboundService:async request=>{
@@ -68,7 +68,7 @@ test('a disconnected public-read caller does not poison a follower or a later re
   let calls=0,release,started;
   const gate=new Promise(r=>release=r),ready=new Promise(r=>started=r),controller=new AbortController();
   const mf=new Miniflare(convertV4MiniflareOptions({
-    modules:[{type:'ESModule',path:path.resolve(__dirname,'../src/worker.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/matchup-context.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/public-read-coalescer.js')}],
+    modules:[{type:'ESModule',path:path.resolve(__dirname,'../src/worker.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/matchup-context.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/public-read-coalescer.js')},{type:'ESModule',path:path.resolve(__dirname,'../src/ai-advice.js')}],
     compatibilityDate:'2026-10-01',
     durableObjects:{ESPN_SESSIONS:{className:'EspnSession',useSQLite:true}},
     outboundService:async()=>{calls++;started();await gate;return new Response('{"events":[]}',{headers:{'Content-Type':'application/json'}})}

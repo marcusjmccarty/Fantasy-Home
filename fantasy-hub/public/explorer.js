@@ -1390,22 +1390,71 @@ async function hydrateAIStatus(p){
    button.disabled=!data.enabled;status.textContent=data.enabled?`${data.provider||'AI'} · generated text, not news`:'Set GEMINI_API_KEY or OPENAI_API_KEY on server';
  }catch{if(status)status.textContent='AI is unavailable on this server';}
 }
+// ---- AI advice: request builder and decision card shared by the player terminal and Player Outlook ----
+function aiAdviceRole(p){const id=String(p.id);if((getTeam()?.playerIds||[]).some(x=>String(x)===id))return 'mine';return model.teams.some(t=>(t.playerIds||[]).some(x=>String(x)===id))?'other':'free';}
+function aiAdviceNumbers(p,week){
+ const providerWeek=Number(model.currentWeek||model.liveWeek||model.weeks?.at(-1));
+ const o=typeof FantasyMath!=='undefined'?FantasyMath.outlook(p,week,{historical:week!==providerWeek&&week<providerWeek}):null;
+ if(!o){const s=summarize(p);return {projection:labNum(p.espnProj),average:s.avg,recent:s.recent,games:s.games,last:s.last,best:s.best,low:s.low,floor:null,ceiling:null,recentWeeks:seriesFor(p).slice(-5)};}
+ const values=o.observations.map(r=>r.points),recent=values.slice(-3);
+ return {projection:o.source==='Provider projection'?o.center:null,average:o.mean,recent:recent.length?recent.reduce((a,b)=>a+b,0)/recent.length:null,games:o.sample,last:values.at(-1)??null,best:values.length?Math.max(...values):null,low:values.length?Math.min(...values):null,floor:o.floor,ceiling:o.ceiling,recentWeeks:o.observations.slice(-5)};
+}
+const aiRound=v=>Number.isFinite(v)?Math.round(v*100)/100:null;
+// Same-position options the manager could use instead: their own roster, plus the best loaded free agents when deciding a lineup.
+function aiAdviceAlternatives(p,role,week){
+ const mine=new Set((getTeam()?.playerIds||[]).map(String)),pos=p.pos,taken=new Set(model.teams.flatMap(t=>(t.playerIds||[]).map(String)));
+ const pick=(list,where)=>list.filter(x=>x&&x.pos===pos&&String(x.id)!==String(p.id)).map(x=>{const n=aiAdviceNumbers(x,week);return {name:String(x.name).slice(0,60),pos:x.pos,nfl:/^[A-Za-z]{2,4}$/.test(x.nfl||'')?x.nfl:undefined,status:String(x.status||'').slice(0,35),projection:aiRound(n.projection),average:aiRound(n.average),recent:aiRound(n.recent),where};}).sort((a,b)=>((b.projection??b.average??-1)-(a.projection??a.average??-1)));
+ const roster=pick([...mine].map(id=>model.players[id]),'roster').slice(0,4);
+ const free=role==='mine'?pick((XL.free||[]).filter(x=>!taken.has(String(x.id))),'free').slice(0,2):[];
+ return [...roster,...free].slice(0,6);
+}
+// How many lineup spots this position can fill: dedicated slots plus flex slots that also accept it.
+function aiAdviceSlots(pos){
+ if(typeof FantasyMath==='undefined')return undefined;const fixed={QB:['QB'],RB:['RB'],WR:['WR'],TE:['TE'],FLEX:['RB','WR','TE'],SUPERFLEX:['QB','RB','WR','TE'],K:['K'],DEF:['DEF','D/ST'],'D/ST':['DEF','D/ST']};
+ const slots=(FantasyMath.leagueLineup(model).slots||[]).map(s=>typeof s==='string'?fixed[s]||[]:s.positions||[]);if(!slots.length)return undefined;
+ const fits=slots.filter(x=>x.includes(pos));return {position:fits.filter(x=>x.length===1||x.every(y=>['DEF','D/ST'].includes(y))).length,flex:fits.filter(x=>x.length>1&&!x.every(y=>['DEF','D/ST'].includes(y))).length};
+}
+function aiAdviceRequest(p,{week,season}){
+ const role=aiAdviceRole(p),n=aiAdviceNumbers(p,week);
+ const lineup=role==='mine'&&typeof lineupContext==='function'?lineupContext(p):null;
+ return {role,scoring:String(model.scoring||'').slice(0,24),alternatives:aiAdviceAlternatives(p,role,week),lineupSlots:aiAdviceSlots(p.pos),...(lineup?{lineupContext:lineup}:{}),
+  player:{id:String(p.id),name:p.name,pos:p.pos,nfl:typeof normalizeNFLAbbr==='function'?normalizeNFLAbbr(p.nfl):p.nfl,status:p.status||'',season:Number(season),week,byeWeek:Number.isInteger(Number(p.byeWeek))?Number(p.byeWeek):undefined,owned:labNum(p.owned),
+   projection:aiRound(n.projection),average:aiRound(n.average),recent:aiRound(n.recent),games:n.games,last:aiRound(n.last),best:aiRound(n.best),low:aiRound(n.low),floor:aiRound(n.floor),ceiling:aiRound(n.ceiling),recentWeeks:n.recentWeeks.map(r=>({week:r.week,points:aiRound(r.points)}))}};
+}
+function aiAdviceError(status,message){
+ if(status===503)return 'AI advice is not switched on for this site yet.';
+ if(status===429)return 'Lots of people are asking for advice right now. Please try again in a minute.';
+ if(status===400)return 'This player is missing some details the advisor needs, so no advice was generated.';
+ return message&&message.length<140?message:'We could not get AI advice right now. Please try again.';
+}
+const AI_DECISION_LABEL={lineup:'LINEUP CALL',waiver:'WAIVER CALL',trade:'TRADE CALL'};
+function aiAdviceCard(payload,{compact=false,week=null}={}){
+ const a=payload?.advice,time=payload?.generatedAt?new Date(payload.generatedAt):null;
+ const foot=`<footer class="ai-advice-foot">AI analysis · ${esc(payload?.provider||'AI')} · may be wrong${time&&!isNaN(time)?` · <time datetime="${esc(payload.generatedAt)}">${esc(time.toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}))}</time>`:''}</footer>`;
+ if(!a)return `<article class="ai-advice-card ai-advice-plain${compact?' compact':''}"><h5 class="ai-advice-label">AI NOTES${week?' · WEEK '+esc(week):''}</h5>${String(payload?.outlook||'').split(/\n\s*\n/).filter(Boolean).slice(0,compact?1:4).map(t=>`<p>${esc(t)}</p>`).join('')}${foot}</article>`;
+ const v=String(a.verdict).toLowerCase().replace(/[^a-z]+/g,'-'),o=a.outlook||{},fmt=x=>x==null?'—':labFormat(x);
+ const list=(title,items,cls)=>items?.length?`<h6>${title}</h6><ul class="${cls}">${items.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:'';
+ return `<article class="ai-advice-card verdict-${esc(v)}${compact?' compact':''}" aria-label="AI ${esc(AI_DECISION_LABEL[a.decision]||'advice').toLowerCase()}: ${esc(a.verdict)}">
+<header class="ai-advice-head"><span class="ai-verdict-badge">${esc(String(a.verdict).toUpperCase())}</span><div><span class="ai-advice-label">${esc(AI_DECISION_LABEL[a.decision]||'AI ADVICE')}${week?' · WEEK '+esc(week):''}</span><h5 class="ai-advice-headline">${esc(a.headline)}</h5><span class="ai-advice-confidence confidence-${esc(String(a.confidence).toLowerCase())}">Confidence: <b>${esc(a.confidence)}</b></span></div></header>
+${a.context&&!compact?`<p class="ai-advice-context">${esc(a.context)}</p>`:''}
+<p class="ai-advice-range" aria-label="Points outlook: floor ${fmt(o.floor)}, ${o.medianBasis==='season average'?'season average':'median projection'} ${fmt(o.median)}, ceiling ${fmt(o.ceiling)}"><span>Floor <b>${fmt(o.floor)}</b></span><span>${o.medianBasis==='season average'?'Avg':'Median'} <b>${fmt(o.median)}</b></span><span>Ceiling <b>${fmt(o.ceiling)}</b></span></p>
+${compact?(a.reasons?.[0]?`<p class="ai-advice-why">${esc(a.reasons[0])}</p>`:''):list('Why',a.reasons,'ai-advice-reasons')+list('Watch out',a.risks,'ai-advice-risks')}
+${!compact&&a.compare?`<p class="ai-advice-extra"><b>Compare:</b> ${esc(a.compare)}</p>`:''}${!compact&&a.waiver?`<p class="ai-advice-extra"><b>Waivers:</b> ${esc(a.waiver)}</p>`:''}
+${foot}</article>`;
+}
 async function generateAIOutlook(){
  const p=model.players[XL.player]||XL.free.find(z=>String(z.id)===String(XL.player));if(!p)return;
  const button=el('lab-generate-ai'),out=el('lab-ai-outlook');if(!button||!out)return;
- button.disabled=true;out.textContent='Generating a statistics-grounded outlook…';
+ out.setAttribute('role','status');out.setAttribute('aria-live','polite');out.setAttribute('aria-busy','true');
+ button.disabled=true;out.innerHTML='<p class="ai-advice-loading">Reading the numbers and weighing your options…</p>';
  try{
    const matchup=await verifiedUpcomingOpponent(p);
-   const s=summarize(p);
-   const request={player:{id:String(p.id),name:p.name,pos:p.pos,nfl:p.nfl,status:p.status||'',
-     total:s.total,average:s.avg,recent:s.recent,last:s.last,best:s.best,low:s.low,games:s.games,
-     projection:labNum(p.espnProj),week:matchup.week,opponent:matchup.opponent,
-     recentWeeks:seriesFor(p).slice(-4)},season:model.season};
+   const request=aiAdviceRequest(p,{week:matchup.week,season:model.season});request.player.opponent=matchup.opponent||undefined;
    const response=await fetch('/api/ai/outlook',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)});
-   const payload=await response.json();if(!response.ok)throw Error(payload.error||'AI outlook could not be generated');
-   if(out.isConnected&&String(XL.player)===String(p.id))out.innerHTML=`<b>${esc(payload.provider||'AI')} OUTLOOK · NOT VERIFIED NEWS</b><p>${esc(payload.outlook)}</p><small>Generated using supplied recorded statistics and verified schedule context; not a guaranteed projection.</small>`;
- }catch(error){if(out.isConnected)out.textContent='AI Outlook unavailable: '+String(error.message||error);}
- finally{if(button.isConnected)button.disabled=false;}
+   const payload=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(Error(payload.error||''),{status:response.status});
+   if(out.isConnected&&String(XL.player)===String(p.id)){out.innerHTML=aiAdviceCard(payload,{week:matchup.week});out.firstElementChild?.scrollIntoView?.({block:'nearest',behavior:'smooth'});}
+ }catch(error){if(out.isConnected)out.innerHTML=`<p class="ai-advice-error">${esc(aiAdviceError(error.status,error.message))}</p>`;}
+ finally{out.removeAttribute('aria-busy');if(button.isConnected)button.disabled=false;}
 }
 async function fetchNews(id){
  const host=el('lab-player-news');if(host)host.innerHTML='<p class="lab-note">Checking verified player reports…</p>';
