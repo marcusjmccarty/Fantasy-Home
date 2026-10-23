@@ -241,11 +241,29 @@ function drawPositions(team){
  const rankedBy=fn=>peers.map(r=>({id:String(r.team.id),name:teamName(r.team),value:fn(r)})).filter(r=>r.value!==null).sort((a,b)=>b.value-a.value||a.name.localeCompare(b.name)).map((r,i,rows)=>({...r,rank:1+rows.filter(x=>x.value>r.value+1e-9).length}));
  const positions=Object.keys(totals).map(pos=>{const rows=rankedBy(r=>r.counts[pos]?r.totals[pos]:null),mine=rows.find(r=>r.id===String(team.id));return {pos,rows,rank:mine?.rank??Infinity};}).sort((a,b)=>a.rank-b.rank||totals[b.pos]-totals[a.pos]);
  const best=positions[0],pps=rankedBy(r=>r.known?sum(Object.values(r.totals))/r.known:null),share=rankedBy(r=>{const t=sum(Object.values(r.totals));return r.known&&t>0?r.totals[leader[0]]/t*100:null;});
- const metrics=[['Best position',Number.isFinite(best.rank)?best.pos+' #'+best.rank:'—',best.rows,best.pos+' POINTS'],['Points / start',known?nfmt(total/known,1):'—',pps,'POINTS / START'],['Leading share',known&&total>0?leader[0]+' '+nfmt(leader[1]/total*100,0)+'%':'—',share,leader[0]+' SHARE %']];
- el('home-position-metrics').innerHTML=metrics.map(([label,value,rows,unit])=>`<button type="button" class="stat-help-trigger strategy-metric" data-stat-title="${esc(label)} / ${esc(periodName)}" data-stat-help="" data-stat-rankings="${esc(JSON.stringify(rows))}" data-stat-unit="${esc(unit)}" aria-expanded="false"><span>${esc(label)}</span><strong>${esc(value)}</strong></button>`).join('');
+ // The first tile shows your best position by default, or any position you pick:
+ // "Best position · TE #1" or "RB rank · RB #4", each opening that position's league ranking.
+ const want=typeof homePositionFocus==='string'?homePositionFocus:'best',focusPos=positions.some(x=>x.pos===want)?want:'best';
+ const focus=focusPos==='best'?best:positions.find(x=>x.pos===focusPos);
+ const focusLabel=focusPos==='best'?'Best position':`${focusPos} rank`;
+ const metrics=[[focusLabel,Number.isFinite(focus.rank)?focus.pos+' #'+focus.rank:'—',focus.rows,focus.pos+' POINTS'],['Points / start',known?nfmt(total/known,1):'—',pps,'POINTS / START'],['Leading share',known&&total>0?leader[0]+' '+nfmt(leader[1]/total*100,0)+'%':'—',share,leader[0]+' SHARE %']];
+ const tile=([label,value,rows,unit])=>`<button type="button" class="stat-help-trigger strategy-metric" data-stat-title="${esc(label)} / ${esc(periodName)}" data-stat-help="" data-stat-rankings="${esc(JSON.stringify(rows))}" data-stat-unit="${esc(unit)}" aria-expanded="false"><span>${esc(label)}</span><strong>${esc(value)}</strong></button>`;
+ const order=['QB','RB','WR','TE','K','DEF'].filter(pos=>positions.some(x=>x.pos===pos));
+ const focusPicker=`<label class="position-focus-picker"><span class="sr-only">Show league rank for</span><select id="home-position-focus" aria-label="Show league rank for a position"><option value="best"${focusPos==='best'?' selected':''}>Best position</option>${order.map(pos=>`<option value="${pos}"${focusPos===pos?' selected':''}>${pos} rank</option>`).join('')}</select></label>`;
+ el('home-position-metrics').innerHTML=`<div class="position-focus-tile">${focusPicker}${tile(metrics[0])}</div>`+metrics.slice(1).map(tile).join('');
  el('position-chart').innerHTML=known?Object.entries(totals).map(([pos,value])=>`<div class="position-row"><strong>${pos}</strong><div class="meter-track"><button type="button" class="meter-fill" data-home-position="${pos}" style="width:${Math.max(1,Math.min(100,100*Math.max(0,value)/max)).toFixed(1)}%;background:${colors[pos]}" aria-label="Open ${pos} position allocation${period==='all'?' for the season':' for week '+period}"></button></div><b>${nfmt(value,1)}<small>${total>0&&value>=0?nfmt(value/total*100,0)+'%':''}</small></b></div>`).join(''):'<div class="empty-chart">NO POSITION DATA</div>';
 }
+var homePositionFocus=homePositionFocus||'best'; // var: drawPositions may run before this line
+try{homePositionFocus=localStorage.getItem('gridiron86-position-focus')||homePositionFocus;}catch{}
 el('home-position-week').addEventListener('change',()=>drawPositions(getTeam()));
+el('home-position-metrics').addEventListener('change',event=>{
+ if(event.target.id!=='home-position-focus')return;
+ event.stopPropagation();
+ homePositionFocus=event.target.value;
+ try{localStorage.setItem('gridiron86-position-focus',homePositionFocus);}catch{}
+ drawPositions(getTeam());
+ el('home-position-focus')?.focus();
+});
 el('position-chart').addEventListener('click',event=>{if(!event.target.closest('[data-home-position]'))return;event.stopPropagation();const period=el('home-position-week').value;openExplorer('positions',null,period==='all'?{}:{week:Number(period)});});
 // Slot order is shared by home matchup and trade rosters. Preserve provider assignments.
 function lineupSlotLabel(entry){

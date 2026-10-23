@@ -62,10 +62,45 @@
  }
  resetButton.addEventListener('click',resetLayout);
  syncReset();
+ // Re-fit after load, whenever the column count changes, and when fonts settle.
+ let lastCols=0;
+ const refit=()=>{const c=columns();if(c!==lastCols){lastCols=c;}fitRows();};
+ new ResizeObserver(()=>{const c=columns();if(c!==lastCols)refit();}).observe(grid);
+ requestAnimationFrame(refit);document.fonts?.ready.then(refit);
+
+ /* ---------- No holes: rows always fill the width ----------
+    Some windows are wide (Variable Lab spans two columns, Roster the full row,
+    Standings the full row on medium screens). When a wide window doesn't fit
+    after the one before it, CSS grid would leave an empty gap. Instead, the
+    window before the gap widens to fill its row, as does the last window. Your
+    order is never changed. */
+ function naturalSpan(tile,cols){
+  const cs=getComputedStyle(tile),start=cs.gridColumnStart,end=cs.gridColumnEnd;
+  if(start==='1'&&end==='-1')return cols;
+  const m=/span\s+(\d+)/.exec(start)||/span\s+(\d+)/.exec(end);
+  return Math.min(cols,m?Number(m[1]):1);
+ }
+ function fitRows(){
+  const list=tiles();
+  for(const tile of list){tile.style.gridColumn='';tile.classList.remove('is-stretched');}
+  const cols=columns();
+  if(cols<2)return;
+  const spans=list.map(tile=>naturalSpan(tile,cols)),widen=new Map();
+  let used=0,last=-1;
+  const close=()=>{if(last>=0&&used>0&&used<cols)widen.set(last,spans[last]+cols-used);used=0;last=-1;};
+  list.forEach((tile,i)=>{
+   if(used+spans[i]>cols)close();
+   used+=spans[i];last=i;
+   if(used===cols)close();
+  });
+  close();
+  for(const [i,span] of widen){list[i].style.gridColumn=`span ${span}`;list[i].classList.add('is-stretched');}
+ }
 
  /* ---------- FLIP animation: windows glide to their new places ---------- */
  function snapshot(){return new Map(tiles().map(tile=>[tile,tile.getBoundingClientRect()]));}
  function animateFrom(before,skip=null){
+  fitRows();
   if(reduceMotion.matches)return;
   for(const [tile,old] of before){
    if(tile===skip)continue;
@@ -255,5 +290,5 @@
  grid.addEventListener('click',event=>{if(dragJustEnded){event.preventDefault();event.stopImmediatePropagation();}},true);
  grid.addEventListener('contextmenu',event=>{if(drag?.type==='touch')event.preventDefault();});
 
- window.gridironArrange={reset:resetLayout,get order(){return tiles().map(idOf);},DEFAULT_ORDER};
+ window.gridironArrange={fit:fitRows,reset:resetLayout,get order(){return tiles().map(idOf);},DEFAULT_ORDER};
 })();
