@@ -8,23 +8,23 @@
   <link rel="preload" href="fonts/IBMPlexMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/IBMPlexMono-Bold.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/IBMPlexSerif-Regular.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="type.css?v=9.23.0">
-  <link rel="stylesheet" href="style.css?v=9.23.0">
-  <link rel="stylesheet" href="workspace.css?v=9.23.0">
-  <link rel="stylesheet" href="readability.css?v=9.23.0">
-  <link rel="stylesheet" href="refinements.css?v=9.23.0">
-  <link rel="stylesheet" href="polish.css?v=9.23.0">
-  <link rel="stylesheet" href="terminal.css?v=9.23.0">
-  <link rel="stylesheet" href="keyboard.css?v=9.23.0">
-  <script src="script.js?v=9.23.0" defer></script>
-  <script src="interactions.js?v=9.23.0" defer></script>
-  <script src="explorer.js?v=9.23.0" defer></script>
-  <script src="analytics-math.js?v=9.23.0" defer></script>
-  <script src="strategy.js?v=9.23.0" defer></script>
-  <script src="workspace.js?v=9.23.0" defer></script>
-  <script src="arrange.js?v=9.23.0" defer></script>
-  <script src="page-width.js?v=9.23.0" defer></script>
-  <script src="shortcuts.js?v=9.23.0" defer></script>
+  <link rel="stylesheet" href="type.css?v=9.24.0">
+  <link rel="stylesheet" href="style.css?v=9.24.0">
+  <link rel="stylesheet" href="workspace.css?v=9.24.0">
+  <link rel="stylesheet" href="readability.css?v=9.24.0">
+  <link rel="stylesheet" href="refinements.css?v=9.24.0">
+  <link rel="stylesheet" href="polish.css?v=9.24.0">
+  <link rel="stylesheet" href="terminal.css?v=9.24.0">
+  <link rel="stylesheet" href="keyboard.css?v=9.24.0">
+  <script src="script.js?v=9.24.0" defer></script>
+  <script src="interactions.js?v=9.24.0" defer></script>
+  <script src="explorer.js?v=9.24.0" defer></script>
+  <script src="analytics-math.js?v=9.24.0" defer></script>
+  <script src="strategy.js?v=9.24.0" defer></script>
+  <script src="workspace.js?v=9.24.0" defer></script>
+  <script src="arrange.js?v=9.24.0" defer></script>
+  <script src="page-width.js?v=9.24.0" defer></script>
+  <script src="shortcuts.js?v=9.24.0" defer></script>
 
 </head>
 <body>
@@ -149,15 +149,16 @@
       <div class="explore-content" id="explore-content"></div>
       <footer class="explore-footer"><span id="explore-source">Data source: demo</span><span class="explore-footer-keys">ESC CLOSES CARDS, THEN RETURNS TO THE DASHBOARD · CTRL+K FIND · ? KEYS</span></footer>
     </dialog>
-    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.23.0</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
+    <footer class="statusbar"><span><span class="dark-square">■</span> GRIDIRON/86 — STATBOARD EDITION 9.24.0</span><span id="footer-source">OFFLINE EXHIBITION / NOT CONNECTED</span><span>DATA: <a href="https://docs.sleeper.com/" target="_blank" rel="noopener noreferrer">SLEEPER API</a> · <button id="load-help" class="text-button">INSTRUCTIONS</button></span></footer>
   </div>
 
   <dialog id="data-dialog" aria-labelledby="dialog-title">
     <div class="dialog-title"><b id="dialog-title">▦ OPEN FANTASY DATA</b><button type="button" class="dialog-x" data-close-dialog aria-label="Close">×</button></div>
-    <div class="dialog-inner"><p class="dialog-lead">Connect ESPN (including private leagues), Sleeper, or a local JSON file. Each browser gets its own temporary ESPN connection.</p>
+    <div class="dialog-inner"><p class="dialog-lead">Connect your ESPN or Sleeper league, or open a local JSON file. Most ESPN leagues need only the league ID.</p>
       <div class="dialog-tabs" role="tablist" aria-label="Choose data source"><button id="tab-espn" class="active" data-tab="espn" role="tab" aria-selected="true">ESPN</button><button id="tab-sleeper" data-tab="sleeper" role="tab" aria-selected="false">SLEEPER LIVE</button><button id="tab-json" data-tab="json" role="tab" aria-selected="false">JSON FILE</button></div>
       <div id="espn-pane" class="tab-pane">
-<form id="espn-form"><label class="field-label" for="espn-league">ESPN LEAGUE ID</label><div class="field-grid direct"><input id="espn-league" value="" placeholder="Your league ID" inputmode="numeric" required><input id="espn-season" type="number" value="2026" min="2018" max="2100" aria-label="Season"><button class="action-button" type="submit" id="espn-submit">CONNECT</button></div><p class="dialog-hint">For private leagues, enter ESPN session cookies once. The bridge reuses them for up to three hours or until you clear the session.</p><label class="field-label" for="espn-swid">SWID (PRIVATE LEAGUES)</label><input id="espn-swid" autocomplete="off" placeholder="{...}"><label class="field-label" for="espn-s2" style="margin-top:10px">ESPN_S2 (PRIVATE LEAGUES)</label><input id="espn-s2" type="password" autocomplete="new-password" placeholder="Paste cookie value only"><p class="dialog-hint">No ESPN OAuth sign-in exists for third-party hobby dashboards. Log into ESPN in your browser, then paste fresh session cookies here once; the Cloudflare bridge holds them temporarily.</p><p id="espn-session-state" class="dialog-hint">Checking authorization…</p><button type="button" id="espn-forget">CLEAR PRIVATE SESSION</button></form></div><div id="sleeper-pane" class="tab-pane" hidden>
+<form id="espn-form"><label class="field-label" for="espn-league">ESPN LEAGUE ID</label><div class="field-grid direct"><input id="espn-league" value="" placeholder="e.g. 28375786" inputmode="numeric" required><input id="espn-season" type="number" value="2026" min="2018" max="2100" aria-label="Season"><button class="action-button" type="submit" id="espn-submit">CONNECT</button></div><p class="dialog-hint">The league ID is the number after <code>leagueId=</code> in your ESPN league URL. Public leagues load with just the ID.</p>
+<details id="espn-private"><summary>Private league? Add ESPN cookies</summary><p class="dialog-hint">If your league is private, this site can't read it with the ID alone. Log into ESPN in your browser, copy your <code>SWID</code> and <code>espn_s2</code> cookie values, and paste them once — they're held temporarily on the server (up to 3 hours) and never saved in your browser. Or ask your commissioner to set the league's visibility to public in ESPN league settings.</p><label class="field-label" for="espn-swid">SWID</label><input id="espn-swid" autocomplete="off" placeholder="{...}"><label class="field-label" for="espn-s2" style="margin-top:10px">ESPN_S2</label><input id="espn-s2" type="password" autocomplete="new-password" placeholder="Paste cookie value only"><p id="espn-session-state" class="dialog-hint">Checking authorization…</p><button type="button" id="espn-forget">CLEAR PRIVATE SESSION</button></details></form></div><div id="sleeper-pane" class="tab-pane" hidden>
         <form id="lookup-user-form"><label class="field-label" for="username-input">LOOK UP A USERNAME</label><div class="field-grid"><input id="username-input" placeholder="Sleeper username" autocomplete="off"><input id="season-input" type="number" min="2017" max="2100" value="2026" aria-label="Season year"><button type="submit" class="action-button">FIND LEAGUES</button></div></form>
         <div id="league-results" class="league-results" aria-live="polite"></div>
         <div class="or-rule"><span>OR</span></div>

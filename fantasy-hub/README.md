@@ -1,4 +1,4 @@
-# Fantasy Hub — GRIDIRON/86 v9.23.0, Cloudflare edition
+# Fantasy Hub — GRIDIRON/86 v9.24.0, Cloudflare edition
 
 Live site: https://fantasy-home.fantasy-hub.workers.dev/
 
@@ -41,12 +41,12 @@ If creating a new Worker, use **Workers & Pages → Create application / Create 
 ## 3. Connect ESPN
 
 1. Open the deployed HTTPS website. The existing demo should load.
-2. Open league connection → **ESPN**. Enter league ID and season. The ID is the number after `leagueId=` in an ESPN league URL.
-3. Public league: try both cookie fields blank.
-4. Private league: log into ESPN in a browser with an account that can view the league. Open developer tools. Chrome/Edge: **Application → Storage → Cookies**. Safari: enable web developer features, then **Develop → Show Web Inspector → Storage → Cookies**.
+2. Open league connection → **ESPN**. Enter the league ID and season, then click **CONNECT**. The ID is the number after `leagueId=` in an ESPN league URL. **Public leagues load with just the league ID — no cookies.**
+3. If the league is private, the connect form reveals the **Private league? Add ESPN cookies** section and explains what to do. (A commissioner can also make the league public under ESPN's league settings, after which the ID alone works.)
+4. For a private league: log into ESPN in a browser with an account that can view the league. Open developer tools. Chrome/Edge: **Application → Storage → Cookies**. Safari: enable web developer features, then **Develop → Show Web Inspector → Storage → Cookies**.
 5. Find `SWID` and `espn_s2` under ESPN's domains. Copy each **value only**, without `SWID=`, `espn_s2=`, semicolons or cookie attributes. Retain SWID's braces if present.
 6. Paste the values into the matching site fields and click **CONNECT**. Allow time for the weekly box scores to load.
-7. Each friend connects with their own league and authorized ESPN cookies. Do not configure one owner's cookies for everyone.
+7. Each friend connects with their own league and, only for a private league, their own authorized ESPN cookies. Do not configure one owner's cookies for everyone.
 
 Each browser receives a random HttpOnly session cookie. ESPN credentials stay in a separate Cloudflare Durable Object for up to three hours and are deleted on expiry or **CLEAR PRIVATE SESSION**. This is temporary Cloudflare server storage, **not RAM-only**, unlike the old Python bridge. Closing a tab does not immediately delete it. Credentials are never returned in JSON, put in URLs, saved in browser storage, or logged by this code. Observability is disabled. Do not enable request-header/body logging when debugging.
 

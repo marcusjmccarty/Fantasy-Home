@@ -254,7 +254,7 @@ body[data-layout=tabbed] .utility-bar,body[data-layout=tabbed] .team-strip{displ
 .tile-handle:focus-visible{outline:2px solid #1f5fa8;outline-offset:3px}
 body.is-dragging,body.is-dragging *{cursor:grabbing!important;-webkit-user-select:none;user-select:none}
 .window-grid>.win.is-lifted{position:relative;z-index:50;box-shadow:8px 12px 0 rgba(28,30,29,.28),0 18px 40px rgba(28,30,29,.25);transition:box-shadow .15s;will-change:transform;pointer-events:none}
-.window-grid>.win.is-lifted .title-bar{background:#3f6b5e;color:#fff}
+.window-grid>.win.is-lifted .title-bar{background:#1f5fa8;color:#fff}
 body.is-arranging .window-grid>.win:not(.is-lifted):not(.is-held){animation:tile-wiggle .32s ease-in-out infinite alternate}
 body.is-arranging .window-grid>.win:nth-child(2n):not(.is-lifted):not(.is-held){animation-delay:-.16s}
 @keyframes tile-wiggle{from{rotate:-.25deg}to{rotate:.25deg}}
@@ -384,3 +384,14 @@ body[data-layout=tabbed] #explore-team-switch{max-width:170px}
 .position-focus-picker select{font-size:11.5px;letter-spacing:0;padding-right:14px;background-position:right 2px center;text-overflow:ellipsis}
 .position-focus-picker{padding:3px 7px 0}.home-position-metrics .position-focus-tile>button.strategy-metric>strong{margin-top:10px}
 .matchup-ai .ai-advice-card p{margin:8px 0 0}.matchup-ai .ai-advice-card .ai-advice-head p,.matchup-ai .ai-advice-card footer{margin-bottom:0}
+
+/* ---------- ESPN connect: private-league cookies are advanced/optional ---------- */
+#espn-private{margin:12px 0 4px;border:1px solid #b6b8b0;background:#f4f4ee}
+#espn-private>summary{cursor:pointer;padding:8px 10px;font:600 12px var(--mono);color:#2d322e;list-style:none}
+#espn-private>summary::-webkit-details-marker{display:none}
+#espn-private>summary::before{content:'▸ ';color:#4d5650}
+#espn-private[open]>summary::before{content:'▾ '}
+#espn-private>summary:hover{background:#e9e9e1}
+#espn-private>:not(summary){margin-left:10px;margin-right:10px}
+#espn-private>:last-child{margin-bottom:10px}
+#espn-private code,.dialog-hint code{font:12px var(--mono);background:#e4e4db;padding:0 3px;border-radius:2px}

@@ -666,12 +666,19 @@ function importESPN(data,league,season){
  next.weeks=[...new Set(next.teams.flatMap(t=>t.history.map(h=>h.week)))].sort((a,b)=>a-b);next.liveWeek=next.currentWeek;model=next;currentTeamId=String(data.preferredTeamId||next.teams[0].id);currentPlayerId=null;currentWeek=Number(next.currentWeek)||next.weeks.at(-1)||1;updateUI();el('data-dialog').close();
  if(typeof loadFreeAgentPool==='function')loadFreeAgentPool(true);
 }
-async function checkESPN(){try{const r=await fetch('/api/espn/session',{credentials:'same-origin'});if(!r.ok)throw Error();const s=await r.json();el('espn-session-state').textContent=s.active?'ESPN SESSION ACTIVE (UP TO 3 HOURS)':'NO PRIVATE SESSION ACTIVE';return s}catch{el('espn-session-state').textContent='ESPN BRIDGE UNAVAILABLE — CHECK DEPLOYMENT';return {active:false}}}
+async function checkESPN(){try{const r=await fetch('/api/espn/session',{credentials:'same-origin'});if(!r.ok)throw Error();const s=await r.json();el('espn-session-state').textContent=s.active?'Private session active (up to 3 hours).':'No private session saved — not needed for public leagues.';return s}catch{el('espn-session-state').textContent='';return {active:false}}}
 async function connectESPN(){
  const league=el('espn-league').value.trim(),season=Number(el('espn-season').value),swid=el('espn-swid').value.trim(),s2=el('espn-s2').value.trim();
  if(!/^\d{1,18}$/.test(league)){setDialogMessage('Invalid ESPN league ID','error');return}
  const button=el('espn-submit');button.disabled=true;setDialogMessage('Retrieving ESPN league and weekly scores…');
- try{const r=await fetch('/api/espn/league',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({leagueId:league,season,swid,s2})});const data=await r.json();if(!r.ok)throw Error(data.error||'ESPN request failed');importESPN(data,league,season);el('espn-swid').value='';el('espn-s2').value='';await checkESPN()}
+ try{const r=await fetch('/api/espn/league',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({leagueId:league,season,swid,s2})});const data=await r.json();
+  if(!r.ok){
+   // A public league loads with just the ID. Access denied with no cookies supplied
+   // means the league is private, so reveal the cookie fields and explain.
+   if((r.status===401||r.status===403)&&!swid){const d=el('espn-private');if(d){d.open=true;el('espn-swid').focus();}throw Error('This looks like a private league. Add your ESPN SWID and espn_s2 cookies below, then connect again. (Or ask your commissioner to make the league public.)');}
+   throw Error(data.error||'ESPN request failed');
+  }
+  importESPN(data,league,season);el('espn-swid').value='';el('espn-s2').value='';await checkESPN()}
  catch(e){setDialogMessage(e.message,'error')}finally{button.disabled=false}
 }
 el('espn-form').addEventListener('submit',e=>{e.preventDefault();connectESPN()});
